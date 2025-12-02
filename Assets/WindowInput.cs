@@ -12,8 +12,24 @@ public class WindowInput : MonoBehaviour
     [DllImport("user32.dll")]
     public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, int dwExtraInfo);
 
+    [DllImport("user32.dll")]
+    public static extern bool GetCursorPos(out POINT lpPoint);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct POINT
+    {
+        public int X;
+        public int Y;
+    }
+
     private const uint MOUSEEVENTF_LEFTDOWN = 0x0002;
     private const uint MOUSEEVENTF_LEFTUP = 0x0004;
+
+    [Header("Testing Controls")]
+    [Tooltip("Enable to test coordinate calculations without sending actual clicks")]
+    public bool demoMode = true;
+    [Tooltip("Show detailed coordinate information")]
+    public bool debugCoordinates = true;
 
     private UwcWindowTexture uwcTexture;
     private Camera mainCamera;
@@ -28,7 +44,7 @@ public class WindowInput : MonoBehaviour
         if (mainCamera == null)
             Debug.LogError("WindowInput: Main Camera not found! (Is it tagged 'MainCamera'?)");
 
-        Debug.Log("WindowInput: Script Started.");
+        Debug.Log($"WindowInput: Script Started. Demo Mode: {demoMode}");
     }
 
     void Update()
@@ -43,6 +59,13 @@ public class WindowInput : MonoBehaviour
 
             Debug.Log("WindowInput: Click detected. Firing ray...");
             HandleClick();
+        }
+
+        // Toggle demo mode with T key
+        if (Keyboard.current.tKey.wasPressedThisFrame)
+        {
+            demoMode = !demoMode;
+            Debug.Log($"WindowInput: Demo mode {(demoMode ? "ENABLED" : "DISABLED")}");
         }
     }
 
@@ -69,19 +92,33 @@ public class WindowInput : MonoBehaviour
                     return;
                 }
 
-                // Translation Y-FLIP
+                // Calculate coordinates (keeping your existing Y handling)
                 int windowX = window.x;
                 int windowY = window.y;
                 int clickX = windowX + (int)(uv.x * window.width);
                 int clickY = windowY + (int)(uv.y * window.height);
 
+                if (debugCoordinates)
+                {
+                    Debug.Log($"WindowInput: UV Coordinates: ({uv.x:F3}, {uv.y:F3})");
+                    Debug.Log($"WindowInput: Window Bounds: x={windowX}, y={windowY}, w={window.width}, h={window.height}");
+                    Debug.Log($"WindowInput: Calculated Click Position: ({clickX}, {clickY})");
+                    
+                    if (GetCursorPos(out POINT currentPos))
+                    {
+                        Debug.Log($"WindowInput: Current Cursor Position: ({currentPos.X}, {currentPos.Y})");
+                    }
+                }
 
-                Debug.Log("WindowInput: SUCCESS! Sending click to Windows at (" + clickX + ", " + clickY + ")");
-
-                //Send to Windows
-                SetCursorPos(clickX, clickY);
-                mouse_event(MOUSEEVENTF_LEFTDOWN, (uint)clickX, (uint)clickY, 0, 0);
-                mouse_event(MOUSEEVENTF_LEFTUP, (uint)clickX, (uint)clickY, 0, 0);
+                if (demoMode)
+                {
+                    Debug.Log($"WindowInput: DEMO MODE - Would send click to Windows at ({clickX}, {clickY})");
+                }
+                else
+                {
+                    Debug.Log($"WindowInput: LIVE MODE - Sending click to Windows at ({clickX}, {clickY})");
+                    SendClickToWindows(clickX, clickY);
+                }
             }
             else
             {
@@ -92,5 +129,12 @@ public class WindowInput : MonoBehaviour
         {
             Debug.LogWarning("WindowInput: Click detected, but raycast hit nothing.");
         }
+    }
+
+    void SendClickToWindows(int x, int y)
+    {
+        SetCursorPos(x, y);
+        mouse_event(MOUSEEVENTF_LEFTDOWN, (uint)x, (uint)y, 0, 0);
+        mouse_event(MOUSEEVENTF_LEFTUP, (uint)x, (uint)y, 0, 0);
     }
 }
