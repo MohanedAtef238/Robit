@@ -97,14 +97,20 @@ public static class WindowManager
         #endif
     }
 
-    public static void SetWindowPosition(int x, int y, int width, int height)
+    public static void SetOverlaySize()
     {
         #if !UNITY_EDITOR
         IntPtr hWnd = GetWindowHandle();
         if (hWnd == IntPtr.Zero) return;
         
-        SetWindowPos(hWnd, HWND_TOPMOST, x, y, width, height, SWP_SHOWWINDOW);
-        Debug.Log($"[WindowManager] Window positioned at ({x}, {y}) with size {width}x{height}");
+        int screenWidth = Screen.currentResolution.width;
+        int screenHeight = Screen.currentResolution.height;
+        int windowWidth = (int)(screenWidth * 0.7f);
+        int windowHeight = (int)(screenHeight * 0.7f);
+        
+        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, windowWidth, windowHeight, SWP_SHOWWINDOW);
+        
+        Debug.Log($"[WindowManager] Window resized to: {windowWidth}x{windowHeight}");
         #endif
     }
 
