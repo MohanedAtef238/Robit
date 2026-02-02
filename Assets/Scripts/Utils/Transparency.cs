@@ -3,22 +3,23 @@ using System;
 using System.Runtime.InteropServices;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
+using System.Collections;
 
 public class Transparency : MonoBehaviour
 {
+    #if !UNITY_EDITOR
     private IntPtr hWnd;
     private bool isClickThrough = true;
-    private bool isTransparencyEnabled = true; // Can be disabled when returning home
-    private Camera mainCamera; // Cached camera reference
-    
-    // Debug display state
+    private bool isTransparencyEnabled = true;
     private string debugHitInfo = "none";
     private Vector2 debugCursorPos;
     private bool debugOverUI = false;
     
-    // Debounce: 6 frames at 60Hz = 100ms
     private const float TOGGLE_COOLDOWN = 0.1f;
     private float lastToggleTime = 0f;
+    #endif
+    
+    private Camera mainCamera;
     
     [StructLayout(LayoutKind.Sequential)]
     private struct POINT
@@ -32,53 +33,96 @@ public class Transparency : MonoBehaviour
     [DllImport("user32.dll")]
     private static extern bool ScreenToClient(IntPtr hWnd, ref POINT lpPoint);
     
+    [Tooltip("Check this for the Overlay scene. Uncheck it for the Home/Menu scene.")]
+    public bool startInTransparentMode = true; 
+
     void Start()
     {
-        // CRITICAL: Keep running even when window loses focus
         Application.runInBackground = true;
-        
+
         #if !UNITY_EDITOR
         hWnd = WindowManager.GetWindowHandle();
-        WindowManager.MakeTransparent();
-        
-        // Cache camera - try Camera.main first, then fallback to FindObjectOfType
         mainCamera = Camera.main;
-        if (mainCamera == null)
+        if (mainCamera == null) mainCamera = FindObjectOfType<Camera>();
+
+        if (startInTransparentMode)
         {
-            mainCamera = FindObjectOfType<Camera>();
-            Debug.LogWarning("[Transparency] Camera.main is null! Using FindObjectOfType fallback. Consider tagging your camera as 'MainCamera'.");
+            WindowManager.MakeTransparent(); 
+            if (mainCamera != null)
+            {
+                mainCamera.clearFlags = CameraClearFlags.SolidColor;
+                mainCamera.backgroundColor = new Color(0, 0, 0, 0);
+            }
+        }
+        else
+        {
+            StartCoroutine(ForceOpaqueRoutine());
         }
         
-        Debug.Log($"[Transparency] Window initialized. Camera found: {mainCamera != null}, runInBackground: {Application.runInBackground}");
+        Debug.Log($"[Transparency] Initialized. Mode: {(startInTransparentMode ? "Transparent" : "Opaque")}");
         #endif
     }
-    
-    /// <summary>
-    /// Call this before switching to home/main scene to fully disable transparency mode.
-    /// </summary>
-    public void DisableTransparency()
+
+    public void SwitchToHomeMode()
     {
-        isTransparencyEnabled = false;
-        isClickThrough = false;
-        Debug.Log("[Transparency] Transparency mode disabled");
+        StartCoroutine(SwitchToHomeRoutine());
+    }
+
+    private IEnumerator ForceOpaqueRoutine()
+    {
+        WindowManager.MakeOpaque();
+        if (mainCamera != null)
+        {
+            mainCamera.clearFlags = CameraClearFlags.SolidColor;
+            mainCamera.backgroundColor = new Color(mainCamera.backgroundColor.r, mainCamera.backgroundColor.g, mainCamera.backgroundColor.b, 1f);
+        }
+        yield break;
+    }
+
+    // Waits for an opaque frame to render before stripping window styles
+    private IEnumerator SwitchToHomeRoutine()
+    {
+        if (mainCamera != null)
+        {
+            mainCamera.backgroundColor = new Color(mainCamera.backgroundColor.r, mainCamera.backgroundColor.g, mainCamera.backgroundColor.b, 1f);
+        }
+
+        yield return new WaitForEndOfFrame();
+        yield return new WaitForEndOfFrame(); 
+
+        WindowManager.MakeOpaque();
+        this.enabled = false;
     }
     
-    /// <summary>
-    /// Re-enable transparency mode (called when entering overlay scene).
-    /// </summary>
+    public void DisableTransparency()
+    {
+        #if !UNITY_EDITOR
+        isTransparencyEnabled = false;
+        #endif
+        SetClickThrough(false);
+        if (mainCamera != null)
+        {
+            mainCamera.backgroundColor = new Color(mainCamera.backgroundColor.r, mainCamera.backgroundColor.g, mainCamera.backgroundColor.b, 1f);
+        }
+        enabled = false; 
+    }
+    
     public void EnableTransparency()
     {
+        #if !UNITY_EDITOR
         isTransparencyEnabled = true;
+        #endif
+        SetClickThrough(true);
         #if !UNITY_EDITOR
         WindowManager.MakeTransparent();
         #endif
         Debug.Log("[Transparency] Transparency mode enabled");
     }
 
+    // Polls cursor position and toggles click-through based on UI/3D hits
     void Update()
     {
         #if !UNITY_EDITOR
-        // Skip all processing if transparency is disabled (e.g., returning to home)
         if (!isTransparencyEnabled)
         {
             debugHitInfo = "DISABLED";
@@ -93,10 +137,8 @@ public class Transparency : MonoBehaviour
         ScreenToClient(hWnd, ref clientPos);
         
         Vector2 unityScreenPos = new Vector2(clientPos.X, Screen.height - clientPos.Y);
-        
         bool overUI = IsPointerOverUI(unityScreenPos, out string hitInfo);
         
-        // Store for debug display
         debugCursorPos = unityScreenPos;
         debugHitInfo = hitInfo;
         debugOverUI = overUI;
@@ -106,21 +148,20 @@ public class Transparency : MonoBehaviour
         
         if (overUI && isClickThrough)
         {
-            Debug.Log($"[Transparency] SWITCHING: Click-through OFF. Hit: {hitInfo}");
+            Debug.Log($"[Transparency] Click-through OFF. Hit: {hitInfo}");
             SetClickThrough(false);
-            WindowManager.FocusWindow(); // Regain focus when entering UI area
+            WindowManager.FocusWindow();
             lastToggleTime = Time.time;
         }
         else if (!overUI && !isClickThrough)
         {
-            Debug.Log($"[Transparency] SWITCHING: Click-through ON (no hit)");
+            Debug.Log($"[Transparency] Click-through ON");
             SetClickThrough(true);
             lastToggleTime = Time.time;
         }
         #endif
     }
     
-    // On-screen debug display
     void OnGUI()
     {
         #if !UNITY_EDITOR
@@ -140,24 +181,19 @@ public class Transparency : MonoBehaviour
                           $"Camera: {(mainCamera != null ? "OK" : "NULL")}\n" +
                           $"EventSystem: {(EventSystem.current != null ? "OK" : "NULL")}";
         
-        // Draw background box
         GUI.backgroundColor = new Color(0, 0, 0, 0.8f);
         GUI.Box(new Rect(10, 10, 280, 140), "");
         
-        // Draw text with rich text
         style.richText = true;
         GUI.Label(new Rect(10, 10, 280, 140), debugText, style);
         #endif
     }
     
-    /// <summary>
-    /// Checks if the pointer is over any UI element or 3D object with a collider.
-    /// </summary>
+    // Raycasts UI elements first, then 3D colliders
     private bool IsPointerOverUI(Vector2 screenPosition, out string hitInfo)
     {
         hitInfo = "none";
         
-        // 1. Check UI Elements
         if (EventSystem.current != null)
         {
             PointerEventData eventData = new PointerEventData(EventSystem.current);
@@ -177,7 +213,6 @@ public class Transparency : MonoBehaviour
             hitInfo = "NO_EVENTSYSTEM";
         }
 
-        // 2. Check 3D Objects (like the robit model that triggers UI)
         if (mainCamera != null)
         {
             Ray ray = mainCamera.ScreenPointToRay(screenPosition);

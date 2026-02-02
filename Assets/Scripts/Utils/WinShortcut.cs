@@ -5,17 +5,12 @@ using System.Text;
 
 namespace LnkParser
 {
-    /// <summary>
-    /// Represents partial properties of a Windows shortcut file.
-    /// </summary>
+    // Represents partial properties of a Windows shortcut file.
     public class WinShortcut
     {
         private string _hotKey;
 
-        /// <summary>
-        /// Initialize an instance of this class using the path of shortcut file.
-        /// </summary>
-        /// <param name="path">The path of the shortcut file</param>
+        // Initialize an instance of this class using the path of shortcut file.
         public WinShortcut(string path)
         {
             using (var istream = File.OpenRead(path))
@@ -31,19 +26,11 @@ namespace LnkParser
             }
         }
 
-        /// <summary>
-        /// The real path of target this shortcut refers to.
-        /// </summary>
+        // The real path of target this shortcut refers to.
         public string TargetPath { get; private set; }
 
-        /// <summary>
-        /// Whether the target this shortcut refers to is a directory.
-        /// </summary>
         public bool IsDirectory { get; private set; }
 
-        /// <summary>
-        /// Hotkey of this shortcut.
-        /// </summary>
         public string HotKey
         {
             get { return this._hotKey ?? ""; }
@@ -63,11 +50,7 @@ namespace LnkParser
             }
         }
 
-        /// <summary>
-        /// Parse the header.
-        /// </summary>
-        /// <param name="stream"></param>
-        /// <returns>The flags that specify the presence of optional structures</returns>
+        // Reads flags and file attributes from header.
         private int ParseHeader(Stream stream)
         {
             stream.Seek(20, SeekOrigin.Begin);//jump to the LinkFlags part of ShellLinkHeader
@@ -98,10 +81,7 @@ namespace LnkParser
             return linkFlags;
         }
 
-        /// <summary>
-        /// Parse the TargetIDList part.
-        /// </summary>
-        /// <param name="stream"></param>
+        // Skips the TargetIDList section.
         private void ParseTargetIDList(Stream stream)
         {
             stream.Seek(76, SeekOrigin.Begin);//jump to the LinkTargetIDList part
@@ -112,10 +92,7 @@ namespace LnkParser
             stream.Seek(size, SeekOrigin.Current);
         }
 
-        /// <summary>
-        /// Parse the LinkInfo part.
-        /// </summary>
-        /// <param name="stream"></param>
+        // Extracts the target path from LinkInfo.
         private void ParseLinkInfo(Stream stream)
         {
             var start = stream.Position;//save the start position of LinkInfo

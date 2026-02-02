@@ -12,6 +12,9 @@ public static class WindowManager
     private const uint SWP_SHOWWINDOW = 0x0040;
     private const uint SWP_NOSIZE = 0x0001;
     private const uint SWP_NOMOVE = 0x0002;
+    private const uint SWP_FRAMECHANGED = 0x0020;
+    private const int SW_SHOW = 5;
+    private const int SW_RESTORE = 9;
     
     private struct MARGINS
     {
@@ -37,32 +40,40 @@ public static class WindowManager
     private static extern IntPtr SetActiveWindow(IntPtr hWnd);
     [DllImport("user32.dll")]
     private static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
-    // Cache the Unity window handle - set once at startup, never changes
     private static IntPtr unityHwnd = IntPtr.Zero;
 
-    // Call this once at app startup to cache Unity's window handle
     public static void Initialize()
     {
         #if !UNITY_EDITOR
         if (unityHwnd == IntPtr.Zero)
         {
             unityHwnd = GetActiveWindow();
-            Debug.Log($"[WindowManager] Initialized with Unity window handle: {unityHwnd}");
+            Debug.Log($"[WindowManager] Initialized: {unityHwnd}");
         }
         #endif
     }
 
     public static IntPtr GetWindowHandle()
     {
-        // If not initialized, do it now
         if (unityHwnd == IntPtr.Zero)
-        {
             Initialize();
-        }
         return unityHwnd;
     }
 
+    private static uint GetExtendedStyle(IntPtr hWnd)
+    {
+        return GetWindowLong(hWnd, GWL_EXSTYLE);
+    }
+
+    private static void SetExtendedStyle(IntPtr hWnd, uint style)
+    {
+        SetWindowLong(hWnd, GWL_EXSTYLE, style);
+    }
+
+    // Sets WS_EX_LAYERED + WS_EX_TRANSPARENT and extends DWM frame
     public static void MakeTransparent()
     {
         #if !UNITY_EDITOR
@@ -72,34 +83,35 @@ public static class WindowManager
         MARGINS margins = new MARGINS { cxLeftWidth = -1 };
         DwmExtendFrameIntoClientArea(hWnd, ref margins);
         
-        SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_LAYERED | WS_EX_TRANSPARENT);
-        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
+        uint currentStyle = GetExtendedStyle(hWnd);
+        uint newStyle = currentStyle | WS_EX_LAYERED | WS_EX_TRANSPARENT;
+        SetExtendedStyle(hWnd, newStyle);
+        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED);
         
-        Debug.Log("[WindowManager] Window set to transparent overlay mode");
+        Debug.Log("[WindowManager] Transparent");
         #endif
     }
 
+    // Strips WS_EX_LAYERED + WS_EX_TRANSPARENT and resets DWM frame
     public static void MakeOpaque()
     {
         #if !UNITY_EDITOR
         IntPtr hWnd = GetWindowHandle();
         if (hWnd == IntPtr.Zero) return;
         
-        Debug.Log($"[WindowManager] MakeOpaque called with hWnd: {hWnd}");
+        uint currentStyle = GetExtendedStyle(hWnd);
+        uint newStyle = currentStyle & ~WS_EX_LAYERED & ~WS_EX_TRANSPARENT;
+        SetExtendedStyle(hWnd, newStyle);
         
-        // Reset glass frame
         MARGINS margins = new MARGINS { cxLeftWidth = 0, cxRightWidth = 0, cyTopHeight = 0, cyBottomHeight = 0 };
         DwmExtendFrameIntoClientArea(hWnd, ref margins);
         
-        // Remove ALL extended styles
-        SetWindowLong(hWnd, GWL_EXSTYLE, 0);
+        SetWindowPos(hWnd, IntPtr.Zero, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
+        ShowWindow(hWnd, SW_RESTORE);
+        SetForegroundWindow(hWnd);
+        SetActiveWindow(hWnd);
         
-        // Restore full screen and remove topmost
-        int screenWidth = Screen.currentResolution.width;
-        int screenHeight = Screen.currentResolution.height;
-        SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, screenWidth, screenHeight, SWP_SHOWWINDOW);
-        
-        Debug.Log($"[WindowManager] Window reset to opaque: {screenWidth}x{screenHeight}");
+        Debug.Log("[WindowManager] Opaque");
         #endif
     }
 
@@ -120,39 +132,36 @@ public static class WindowManager
         #endif
     }
 
+    // Toggles WS_EX_TRANSPARENT while keeping WS_EX_LAYERED
     public static void SetClickThrough(bool enabled)
     {
         #if !UNITY_EDITOR
         IntPtr hWnd = GetWindowHandle();
         if (hWnd == IntPtr.Zero) return;
         
+        uint currentStyle = GetExtendedStyle(hWnd);
+        uint newStyle = currentStyle | WS_EX_LAYERED;
+        
         if (enabled)
-        {
-            SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_LAYERED | WS_EX_TRANSPARENT);
-        }
+            newStyle |= WS_EX_TRANSPARENT;
         else
-        {
-            SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_LAYERED);
-        }
+            newStyle &= ~WS_EX_TRANSPARENT;
+        
+        SetExtendedStyle(hWnd, newStyle);
+        SetWindowPos(hWnd, IntPtr.Zero, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
         #endif
     }
 
-    /// <summary>
-    /// Brings the Unity window to the foreground and gives it focus.
-    /// Call this when cursor enters UI area to ensure clicks are captured.
-    /// </summary>
     public static void FocusWindow()
     {
         #if !UNITY_EDITOR
         IntPtr hWnd = GetWindowHandle();
         if (hWnd == IntPtr.Zero) return;
         
-        // Only attempt to focus if we're not already the foreground window
         if (GetForegroundWindow() != hWnd)
         {
             SetForegroundWindow(hWnd);
             SetActiveWindow(hWnd);
-            Debug.Log("[WindowManager] Window brought to foreground");
         }
         #endif
     }

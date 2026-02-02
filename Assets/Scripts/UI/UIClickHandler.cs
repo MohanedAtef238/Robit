@@ -7,12 +7,7 @@ public class UIClickHandler : MonoBehaviour, IPointerEnterHandler, IPointerExitH
 
     void Start()
     {
-        // To use this script:
-        // 1. Attach this script to all of your UI elements in the "OverlayScene".
-        // 2. Make sure the "Transparency" script exists somewhere in the scene.
-        // 3. Ensure there is an EventSystem in the scene.
-
-        transparency = FindObjectOfType<Transparency>();
+        transparency = FindFirstObjectByType<Transparency>();
         if (transparency == null)
         {
             Debug.LogError("Transparency script not found in the scene! Make sure it's attached to a GameObject.");
@@ -29,9 +24,7 @@ public class UIClickHandler : MonoBehaviour, IPointerEnterHandler, IPointerExitH
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        if (transparency != null)
-        {
+        if (transparency != null && transparency.enabled)
             transparency.SetClickThrough(true);
-        }
     }
 }

@@ -14,22 +14,21 @@ public class HomeButton : MonoBehaviour
         }
     }
 
+    // Disables click handler to prevent ghost exit, then safely transitions to Home
     void GoHome()
     {
-        // First disable the Transparency script so it stops processing
-        Transparency transparency = FindObjectOfType<Transparency>();
+        UIClickHandler myHandler = GetComponent<UIClickHandler>();
+        if (myHandler != null) 
+            myHandler.enabled = false;
+
+        Transparency transparency = FindFirstObjectByType<Transparency>();
         if (transparency != null)
-        {
-            transparency.DisableTransparency();
-        }
-        
-        // Reset window to normal opaque state before switching scenes
-        WindowManager.MakeOpaque();
+            transparency.SwitchToHomeMode();
+        else
+            WindowManager.MakeOpaque();
         
         if (AppLauncher.Instance != null)
-        {
             AppLauncher.Instance.CloseCurrentApp();
-        }
         
         SceneManager.LoadScene("MainScene");
     }
