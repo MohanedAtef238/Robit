@@ -31,6 +31,12 @@ public static class WindowManager
     private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
     [DllImport("Dwmapi.dll")]
     private static extern uint DwmExtendFrameIntoClientArea(IntPtr hWnd, ref MARGINS margins);
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+    [DllImport("user32.dll")]
+    private static extern IntPtr SetActiveWindow(IntPtr hWnd);
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
 
     // Cache the Unity window handle - set once at startup, never changes
     private static IntPtr unityHwnd = IntPtr.Zero;
@@ -127,6 +133,26 @@ public static class WindowManager
         else
         {
             SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_LAYERED);
+        }
+        #endif
+    }
+
+    /// <summary>
+    /// Brings the Unity window to the foreground and gives it focus.
+    /// Call this when cursor enters UI area to ensure clicks are captured.
+    /// </summary>
+    public static void FocusWindow()
+    {
+        #if !UNITY_EDITOR
+        IntPtr hWnd = GetWindowHandle();
+        if (hWnd == IntPtr.Zero) return;
+        
+        // Only attempt to focus if we're not already the foreground window
+        if (GetForegroundWindow() != hWnd)
+        {
+            SetForegroundWindow(hWnd);
+            SetActiveWindow(hWnd);
+            Debug.Log("[WindowManager] Window brought to foreground");
         }
         #endif
     }

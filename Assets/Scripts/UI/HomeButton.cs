@@ -16,7 +16,14 @@ public class HomeButton : MonoBehaviour
 
     void GoHome()
     {
-        // Reset window to normal opaque state before switching scenes, otherwise the UI elements break "" very important to keep this feature working properly "" 
+        // First disable the Transparency script so it stops processing
+        Transparency transparency = FindObjectOfType<Transparency>();
+        if (transparency != null)
+        {
+            transparency.DisableTransparency();
+        }
+        
+        // Reset window to normal opaque state before switching scenes
         WindowManager.MakeOpaque();
         
         if (AppLauncher.Instance != null)
