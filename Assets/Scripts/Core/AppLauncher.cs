@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using System.Diagnostics;
 using UnityEngine.SceneManagement;
 using System.IO;
@@ -41,7 +42,7 @@ public class AppLauncher : MonoBehaviour
             
             SceneManager.LoadScene("OverlayScene"); 
         }
-        catch (System.Exception e)
+        catch (Exception e)
         {
             UnityEngine.Debug.LogError($"Failed to launch application: {path}, Error: {e.Message}");
         }
@@ -56,7 +57,10 @@ public class AppLauncher : MonoBehaviour
                 currentProcess.CloseMainWindow();
                 currentProcess.Dispose();
             }
-            catch{}
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogWarning($"Failed to close process gracefully: {e.Message}");
+            }
             finally
             {
                 currentProcess = null;
