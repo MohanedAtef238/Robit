@@ -56,13 +56,37 @@ public class EyeTrackingInput : MonoBehaviour
             udpClient.Client.ReceiveTimeout = 1000;
             receiveThread = new Thread(ReceiveLoop) { IsBackground = true };
             receiveThread.Start();
-            Debug.Log($"[EyeInput] Listening on port {receivePort}");
+            Debug.Log($"[EyeInput] UDP Receiver successfully bound to port {receivePort}. Waiting for data...");
         }
-        catch (Exception e) { Debug.LogError($"[EyeInput] UDP Error: {e.Message}"); }
+        catch (SocketException se) 
+        { 
+            Debug.LogError($"[EyeInput] UDP SocketException detected! Is port {receivePort} already in use? Details: {se.Message}"); 
+        }
+        catch (Exception e) 
+        { 
+            Debug.LogError($"[EyeInput] UDP Generic Error: {e.Message}"); 
+        }
     }
+
+    private System.Collections.Generic.Queue<string> messageQueue = new System.Collections.Generic.Queue<string>();
+    private object queueLock = new object();
 
     private void Update()
     {
+        // Process all queued messages
+        while (true)
+        {
+            string json = null;
+            lock (queueLock)
+            {
+                if (messageQueue.Count > 0)
+                    json = messageQueue.Dequeue();
+            }
+
+            if (json == null) break;
+            ProcessMessage(json);
+        }
+
         // Connection timeout check
         IsConnected = (Time.time - lastPacketTime) < 2.0f;
     }
@@ -76,10 +100,18 @@ public class EyeTrackingInput : MonoBehaviour
             {
                 byte[] data = udpClient.Receive(ref remoteEP);
                 string json = System.Text.Encoding.UTF8.GetString(data);
-                ProcessMessage(json);
+                
+                // Enqueue for main thread processing
+                lock (queueLock)
+                {
+                    messageQueue.Enqueue(json);
+                }
             }
             catch (SocketException) { continue; }
-            catch (Exception e) { if (isRunning) Debug.LogWarning($"[EyeInput] Receive error: {e.Message}"); }
+            catch (Exception e) 
+            { 
+               if (isRunning) Debug.LogWarning($"[EyeInput] Receive error in background thread: {e.Message}"); 
+            }
         }
     }
 
@@ -100,17 +132,14 @@ public class EyeTrackingInput : MonoBehaviour
                     smoothedNormGaze = Vector2.Lerp(smoothedNormGaze, targetNorm, smoothingFactor);
                 }
 
-                lock (threadLock)
-                {
-                    NormalizedGaze = smoothedNormGaze;
-                    // Convert to Unity Bottom-Left screen space
-                    GazePosition = new Vector2(
-                        smoothedNormGaze.x * Screen.width, 
-                        (1.0f - smoothedNormGaze.y) * Screen.height
-                    );
-                    IsBlinking = msg.blink;
-                    FixationStrength = msg.fixation;
-                }
+                NormalizedGaze = smoothedNormGaze;
+                // Convert to Unity Bottom-Left screen space
+                GazePosition = new Vector2(
+                    smoothedNormGaze.x * Screen.width, 
+                    (1.0f - smoothedNormGaze.y) * Screen.height
+                );
+                IsBlinking = msg.blink;
+                FixationStrength = msg.fixation;
 
                 if (simulateMouse)
                 {
@@ -119,14 +148,21 @@ public class EyeTrackingInput : MonoBehaviour
                 }
             }
         }
-        catch {}
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[EyeInput] Error processing message: {ex.Message}");
+        }
     }
 
     private void OnApplicationQuit()
     {
         isRunning = false;
         udpClient?.Close();
-        receiveThread?.Abort();
+        if (receiveThread != null && receiveThread.IsAlive) 
+        {
+            // improved thread cleanup
+            receiveThread.Join(500);
+        }
     }
 
     [Serializable]
