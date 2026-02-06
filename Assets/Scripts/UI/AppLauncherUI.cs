@@ -10,7 +10,6 @@ public class AppLauncherUI : MonoBehaviour
     public Text statusText; // Public reference to the new status text UI element
     private GameObject appCardPrefab;
 
-    // Initializes parser and generates app cards.
     IEnumerator Start()
     {
         // Initialize WindowManager early to cache Unity's window handle, this ensures we wont forget the unity app calls, operation wise.
@@ -69,7 +68,6 @@ public class AppLauncherUI : MonoBehaviour
         GenerateAppCards(desktopParser.shortcuts);
     }
 
-    // Creates UI elements for found apps.
     void GenerateAppCards(List<ShortcutInfo> shortcuts)
     {
         if (shortcuts.Count == 0)
@@ -118,7 +116,6 @@ public class AppLauncherUI : MonoBehaviour
         }
     }
 
-    // Launches selected application.
     void OnAppCardClick(string path, string workingDirectory)
     {
         AppLauncher.Instance.LaunchApplication(path, workingDirectory);
