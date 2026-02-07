@@ -18,6 +18,8 @@ public class DesktopParser : MonoBehaviour
 {
     public List<ShortcutInfo> shortcuts = new List<ShortcutInfo>();
     public bool parsingComplete = false;
+    public bool enableDiskCache = true;
+    public bool enableMemoryCache = true;
     
     private static readonly Dictionary<string, string> IconUrls = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
@@ -65,6 +67,9 @@ public class DesktopParser : MonoBehaviour
         {"outlook", "https://img.icons8.com/color/96/microsoft-outlook-2019--v2.png"},
         {"microsoft outlook", "https://img.icons8.com/color/96/microsoft-outlook-2019--v2.png"},
     };
+
+    private readonly Dictionary<string, Texture2D> memoryCache = new Dictionary<string, Texture2D>(StringComparer.OrdinalIgnoreCase);
+    private string cacheDir;
     
     private static readonly HashSet<string> AllowedApps = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
@@ -107,6 +112,11 @@ public class DesktopParser : MonoBehaviour
 
     void Start()
     {
+        cacheDir = Path.Combine(Application.persistentDataPath, "IconCache");
+        if (enableDiskCache && !Directory.Exists(cacheDir))
+        {
+            Directory.CreateDirectory(cacheDir);
+        }
         StartCoroutine(ParseShortcuts());
     }
     
@@ -179,14 +189,54 @@ public class DesktopParser : MonoBehaviour
     IEnumerator FetchIconAndAddShortcut(string name, string targetPath, string iconUrl)
     {
         Debug.Log($"[DesktopParser] Fetching icon from: {iconUrl}");
-        
+
+        string cacheKey = $"{name}|{iconUrl}";
+        if (enableMemoryCache && memoryCache.TryGetValue(cacheKey, out Texture2D cachedTexture))
+        {
+            Debug.Log($"[DesktopParser] Using memory cached icon for '{name}'");
+            AddShortcut(name, targetPath, cachedTexture);
+            yield break;
+        }
+        // Search in cache first
+        string cachedPath = null;
+        if (enableDiskCache)
+        {
+            string fileName = $"{GetSafeFileName(cacheKey)}.png";
+            cachedPath = Path.Combine(cacheDir, fileName);
+            if (File.Exists(cachedPath))
+            {
+                byte[] bytes = File.ReadAllBytes(cachedPath);
+                Texture2D diskTexture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                if (diskTexture.LoadImage(bytes))
+                {
+                    Debug.Log($"[DesktopParser] Loaded disk cached icon for '{name}'");
+                    if (enableMemoryCache)
+                        memoryCache[cacheKey] = diskTexture;
+                    AddShortcut(name, targetPath, diskTexture);
+                    yield break;
+                }
+            }
+        }
+
+        //For miss, fetch then write to cache
+
         UnityWebRequest request = UnityWebRequestTexture.GetTexture(iconUrl);
         yield return request.SendWebRequest();
-        
+
         if (request.result == UnityWebRequest.Result.Success)
         {
             Texture2D texture = DownloadHandlerTexture.GetContent(request);
             Debug.Log($"[DesktopParser] Downloaded icon for '{name}': {texture.width}x{texture.height}");
+            if (enableDiskCache && cachedPath != null)
+            {
+                byte[] pngBytes = texture.EncodeToPNG();
+                if (pngBytes != null && pngBytes.Length > 0)
+                {
+                    File.WriteAllBytes(cachedPath, pngBytes);
+                }
+            }
+            if (enableMemoryCache)
+                memoryCache[cacheKey] = texture;
             AddShortcut(name, targetPath, texture);
         }
         else
@@ -194,7 +244,7 @@ public class DesktopParser : MonoBehaviour
             Debug.LogError($"[DesktopParser] Failed to fetch icon for '{name}': {request.error}");
             AddShortcut(name, targetPath, null);
         }
-        
+
         request.Dispose();
     }
     
@@ -246,5 +296,12 @@ public class DesktopParser : MonoBehaviour
         }
         
         return false;
+    }
+
+    private string GetSafeFileName(string input)
+    {
+        foreach (char c in Path.GetInvalidFileNameChars())
+            input = input.Replace(c, '_');
+        return input;
     }
 }

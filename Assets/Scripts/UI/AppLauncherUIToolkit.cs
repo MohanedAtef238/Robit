@@ -11,6 +11,7 @@ public class AppLauncherUIToolkit : MonoBehaviour
     public string gridName = "app-grid";
     public string statusName = "status-text";
     public string headerName = "header";
+    public float fadeInDuration = 0.35f;
 
     private ScrollView grid;
     private Label statusLabel;
@@ -38,6 +39,7 @@ public class AppLauncherUIToolkit : MonoBehaviour
 
         VisualElement root = uiDocument.rootVisualElement;
         LoadStylesheet(root);
+        root.style.opacity = 0f;
 
         grid = root.Q<ScrollView>(gridName);
         statusLabel = root.Q<Label>(statusName);
@@ -76,8 +78,8 @@ public class AppLauncherUIToolkit : MonoBehaviour
             Debug.LogError("[AppLauncherUIToolkit] DesktopParser did not complete in time");
             yield break;
         }
-
         GenerateAppCards(desktopParser.shortcuts);
+        StartCoroutine(FadeInRoot(root, fadeInDuration));
     }
 
     void GenerateAppCards(List<ShortcutInfo> shortcuts)
@@ -154,5 +156,25 @@ public class AppLauncherUIToolkit : MonoBehaviour
         {
             Debug.LogWarning("[AppLauncherUIToolkit] app-launcher.uss not found in Resources.");
         }
+    }
+
+    IEnumerator FadeInRoot(VisualElement root, float duration)
+    {
+        if (duration <= 0f)
+        {
+            root.style.opacity = 1f;
+            yield break;
+        }
+
+        float t = 0f;
+        while (t < duration)
+        {
+            float a = t / duration;
+            root.style.opacity = a;
+            t += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        root.style.opacity = 1f;
     }
 }
