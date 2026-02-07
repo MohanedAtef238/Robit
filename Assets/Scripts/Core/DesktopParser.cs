@@ -117,6 +117,7 @@ public class DesktopParser : MonoBehaviour
         {
             Directory.CreateDirectory(cacheDir);
         }
+        Debug.Log($"[DesktopParser] Icon cache directory: {cacheDir}");
         StartCoroutine(ParseShortcuts());
     }
     

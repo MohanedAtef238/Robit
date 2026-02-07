@@ -136,7 +136,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &84450409
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -307,6 +307,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DesktopParser
   parsingComplete: 0
+  enableDiskCache: 1
+  enableMemoryCache: 1
 --- !u!4 &685663978
 Transform:
   m_ObjectHideFlags: 0
@@ -340,7 +342,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &901009597
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -531,6 +533,7 @@ MonoBehaviour:
   gridName: app-grid
   statusName: status-text
   headerName: header
+  fadeInDuration: 0.35
 --- !u!4 &1453387997
 Transform:
   m_ObjectHideFlags: 0
