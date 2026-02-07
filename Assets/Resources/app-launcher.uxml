@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Resources/app-launcher.uss?fileID=7433441132597879392&amp;guid=ee7fd462b8872164d8c0326a8e1839fd&amp;type=3#app-launcher" />
+    <ui:VisualElement name="app-launcher-root" class="app-launcher-root">
+        <ui:Label name="header" text="Apps" class="app-launcher-header" />
+        <ui:Label name="status-text" text="Initializing..." class="app-launcher-status" />
+        <ui:ScrollView name="app-grid" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Auto" class="app-launcher-grid" />
+    </ui:VisualElement>
+</ui:UXML>
