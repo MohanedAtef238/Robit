@@ -82,5 +82,7 @@ crashlytics-build.properties
 /Assets/Plugins/EyeGestures/lib/
 
 # Eye tracking: original library source
-/Assets/eyeGesture-OG
-Assets/eyeGesture-OG.meta
+/Assets/eyeGesture-OG/EyeGestures-main
+/Assets/eyeGesture-OG.meta
+/Assets/eyetracker_examples
+/Assets/Scripts/Editor
