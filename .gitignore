@@ -77,3 +77,10 @@ crashlytics-build.properties
 
 # plugin
 /Assets/MCPForUnity
+
+# Eye tracking: pip-installed dependencies (auto-downloaded)
+/Assets/Plugins/EyeGestures/lib/
+
+# Eye tracking: original library source
+/Assets/eyeGesture-OG
+Assets/eyeGesture-OG.meta

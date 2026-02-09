@@ -14,19 +14,24 @@ IF %ERRORLEVEL% NEQ 0 (
     EXIT /B
 )
 
-:: Check if required packages are installed
-ECHO Checking dependencies...
-pip show eyeGestures >nul 2>&1
-IF %ERRORLEVEL% NEQ 0 (
-    ECHO [INFO] Installing required libraries...
-    pip install eyeGestures opencv-contrib-python numpy
+:: Set local library path (next to this script)
+SET LIB_DIR=%~dp0lib
+
+:: Check if eyeGestures is installed locally
+IF NOT EXIST "%LIB_DIR%\eyeGestures" (
+    ECHO [INFO] EyeGestures not found in local lib folder.
+    ECHO [INFO] Installing from GitHub into %LIB_DIR%...
+    ECHO.
+    pip install --target "%LIB_DIR%" git+https://github.com/NativeSensors/EyeGestures.git
     IF %ERRORLEVEL% NEQ 0 (
-        ECHO [ERROR] Failed to install dependencies.
+        ECHO [ERROR] Failed to install EyeGestures from GitHub.
+        ECHO [ERROR] Check your internet connection and try again.
         PAUSE
         EXIT /B
     )
+    ECHO [OK] EyeGestures installed successfully.
 ) ELSE (
-    ECHO [OK] Dependencies found.
+    ECHO [OK] EyeGestures found in local lib.
 )
 
 :: Run the bridge script
@@ -34,6 +39,6 @@ ECHO.
 ECHO Starting Eye Tracker...
 ECHO Keep this window OPEN while running Unity.
 ECHO.
-python eyeGestures_to_unity.py
+python "%~dp0eyeGestures_to_unity.py"
 
 PAUSE

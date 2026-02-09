@@ -5,7 +5,7 @@ This script runs EyeGestures tracking and sends gaze data to Unity via UDP.
 Supports calibration mode, headless operation, and bidirectional communication.
 
 Requirements:
-    pip install eyeGestures opencv-contrib-python numpy
+    Auto-installed from GitHub on first run via run_eye_tracker.bat
 
 Usage:
     python eyeGestures_to_unity.py              # Normal mode with preview
@@ -13,23 +13,77 @@ Usage:
     python eyeGestures_to_unity.py --calibrate  # Start in calibration mode
 """
 
-import cv2
 import socket
 import json
 import argparse
 import threading
 import time
 import os
+import sys
+import subprocess
 from enum import Enum
 from pathlib import Path
 
-# Try to import EyeGestures (graceful fallback for testing)
+# ── Local lib path (dependencies installed here by run_eye_tracker.bat) ──
+LIB_DIR = Path(__file__).parent / "lib"
+if LIB_DIR.exists():
+    sys.path.insert(0, str(LIB_DIR))
+
+GITHUB_REPO = "git+https://github.com/NativeSensors/EyeGestures.git"
+REQUIRED_PACKAGES = {
+    "eyeGestures": "eyeGestures",
+    "cv2": "opencv-contrib-python",
+    "mediapipe": "mediapipe",
+    "numpy": "numpy",
+}
+
+def ensure_dependencies():
+    """Check for missing packages and auto-install to local lib/ folder."""
+    missing = []
+    for module_name, pip_name in REQUIRED_PACKAGES.items():
+        try:
+            __import__(module_name)
+        except ImportError:
+            missing.append(pip_name)
+
+    if not missing:
+        return True
+
+    print(f"[Bridge] Missing packages: {missing}")
+    print(f"[Bridge] Installing to {LIB_DIR}...")
+
+    try:
+        # Install eyeGestures from GitHub (pulls all deps)
+        subprocess.check_call([
+            sys.executable, "-m", "pip", "install",
+            "--target", str(LIB_DIR),
+            GITHUB_REPO
+        ])
+
+        # Ensure lib is on path after install
+        if str(LIB_DIR) not in sys.path:
+            sys.path.insert(0, str(LIB_DIR))
+
+        print("[Bridge] Dependencies installed successfully.")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"[Bridge] Auto-install failed: {e}")
+        print("[Bridge] Try running: run_eye_tracker.bat to install manually.")
+        return False
+
+# ── Validate & import EyeGestures ──
+ensure_dependencies()
+
+import cv2
+
 try:
     from eyeGestures import EyeGestures_v3
     from eyeGestures.utils import VideoCapture
     EYEGESTURES_AVAILABLE = True
-except ImportError:
-    print("[WARNING] EyeGestures not installed. Running in mock mode.")
+    print("[Bridge] Successfully imported EyeGestures_v3")
+except ImportError as e:
+    print(f"[WARNING] EyeGestures import failed: {e}")
+    print("[WARNING] Running in mock mode (circular cursor movement).")
     EYEGESTURES_AVAILABLE = False
 
 
@@ -230,9 +284,9 @@ class EyeGesturesBridge:
                 # Run calibration step
                 event, cevent = self.gestures.step(
                     frame,
-                    calibrate=True,
-                    screen_width=self.screen_width,
-                    screen_height=self.screen_height,
+                    calibration=True,
+                    width=self.screen_width,
+                    height=self.screen_height,
                     context="unity"
                 )
         except Exception as e:
@@ -348,9 +402,9 @@ class EyeGesturesBridge:
                 
                 event, cevent = self.gestures.step(
                     frame,
-                    calibrate=is_calibrating,
-                    screen_width=self.screen_width,
-                    screen_height=self.screen_height,
+                    calibration=is_calibrating,
+                    width=self.screen_width,
+                    height=self.screen_height,
                     context="unity"
                 )
                 

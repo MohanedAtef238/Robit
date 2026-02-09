@@ -7,15 +7,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
-using UnityEngine;
-using UnityEngine.UI;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
-
 // Manages eye-tracking calibration UI and communication with Python bridge
 public class CalibrationManager : MonoBehaviour
 {
