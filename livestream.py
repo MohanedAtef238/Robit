@@ -32,7 +32,8 @@ def process_livestream(data_stream):
     buffer = collections.deque(maxlen=50)
     
     print("Starting livestream processing...")
-    
+    pred_count = 0
+
     for value in data_stream:
         # Add new value to the buffer
         buffer.append(value)
@@ -68,9 +69,20 @@ def process_livestream(data_stream):
             # Using the imported predict wrapper which handles the thresholding
             prediction = predict(model, input_data)
             
-            print(f"Input: {value:.2f} | Buffer Full | Prediction: {prediction}")
+            # print(f"Input: {value:.2f} | Buffer Full | Prediction: {prediction}")
+            print(f"Input: {value:.2f} | Buffer Full | Calculating...")
+            if prediction:
+                pred_count += 1
+                print(pred_count)
+            if pred_count >= 5:
+                print(f"Prediction: True")
+                pred_count = 0
+                buffer.clear()
         else:
             print(f"Input: {value:.2f} | Buffer Filling: {len(buffer)}/50")
+
+
+        
             
         # Processing is driven by the generator's speed
         # time.sleep(0.05) # Removed to avoid double waiting
