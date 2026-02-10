@@ -14,8 +14,9 @@ import json
 import argparse
 import threading
 import time
-import math
 import ctypes
+
+import numpy as np
 
 import cv2
 from eyeGestures import EyeGestures_v3
@@ -26,6 +27,7 @@ UDP_IP = "127.0.0.1"
 SEND_PORT = 5005       # Gaze data → Unity
 RECEIVE_PORT = 5006    # Commands ← Unity
 HEARTBEAT_SEC = 1.0
+UNITY_CONTEXT = "unity"
 
 
 def get_screen_size():
@@ -54,6 +56,7 @@ def run(args):
 
     # ── EyeGestures ──
     gestures = EyeGestures_v3(calibration_radius=1000)
+    gestures.addContext(UNITY_CONTEXT)
     gestures.setFixation(0.8)
     print("[Bridge] EyeGestures initialized")
 
@@ -64,6 +67,37 @@ def run(args):
     calibrating = False
     running = True
     last_data_time = 0
+    calibration_points = {}
+
+    def send_status(status: str, extra: dict | None = None):
+        payload = {
+            "type": "status",
+            "status": status,
+            "timestamp": time.time()
+        }
+        if extra:
+            payload.update(extra)
+        send(payload)
+
+    def apply_calibration_map():
+        if not calibration_points:
+            send_status("CALIBRATION_SKIPPED", {"reason": "no_points"})
+            return
+
+        ordered_points = [calibration_points[idx] for idx in sorted(calibration_points.keys())]
+        cal_array = np.array(ordered_points, dtype=np.float32)
+        gestures.uploadCalibrationMap(cal_array, context=UNITY_CONTEXT)
+        try:
+            acceptance = max(40, int(min(screen_w, screen_h) * 0.05))
+            gestures.clb[UNITY_CONTEXT].acceptance_radius = acceptance
+        except Exception as e:
+            print(f"[Bridge] Warning applying acceptance radius: {e}")
+            acceptance = 0
+
+        send_status("CALIBRATION_APPLIED", {
+            "points": len(ordered_points),
+            "acceptance_radius": acceptance
+        })
 
     def send(data: dict):
         """Send JSON to Unity."""
@@ -79,13 +113,36 @@ def run(args):
             try:
                 data, _ = recv_sock.recvfrom(4096)
                 msg = json.loads(data.decode())
-                cmd = msg.get("command", "")
+                cmd = msg.get("command", "").upper()
+                payload = msg.get("data")
                 print(f"[Bridge] Command: {cmd}")
 
                 if cmd == "CALIBRATE_START":
+                    calibration_points.clear()
                     calibrating = True
-                elif cmd in ("CALIBRATE_END", "CALIBRATE_CANCEL"):
+                    send_status("CALIBRATION_STARTED", None)
+                elif cmd == "CALIBRATE_POINT":
+                    if isinstance(payload, dict):
+                        idx = int(payload.get("index", len(calibration_points)))
+                        px = float(payload.get("x", 0.5))
+                        py = float(payload.get("y", 0.5))
+                        calibration_points[idx] = (px, py)
+                        send_status("CALIBRATION_POINT_RECEIVED", {
+                            "received": len(calibration_points),
+                            "last_index": idx
+                        })
+                elif cmd == "CALIBRATE_END":
                     calibrating = False
+                    apply_calibration_map()
+                elif cmd == "CALIBRATE_CANCEL":
+                    calibrating = False
+                    calibration_points.clear()
+                    send_status("CALIBRATION_CANCELLED", None)
+                elif cmd == "CHECK_CALIBRATION":
+                    send_status("CALIBRATION_STATE", {
+                        "points": len(calibration_points),
+                        "calibrating": calibrating
+                    })
                 elif cmd == "QUIT":
                     running = False
             except socket.timeout:
@@ -107,38 +164,51 @@ def run(args):
             if not ret:
                 time.sleep(0.05)
                 continue
+            # this is where eye tracking does actually run
+            try:
+                # step() always returns (Gevent, Cevent) - > this is a future note
+                event, _cevent = gestures.step(
+                    frame,
+                    calibration=calibrating,
+                    width=screen_w,
+                    height=screen_h,
+                    context="unity"
+                )
 
-            frame = cv2.flip(frame, 1)
-
-            # Run eye tracking
-            event, cevent = gestures.step(
-                frame,
-                calibration=calibrating,
-                width=screen_w,
-                height=screen_h,
-                context="unity"
-            )
-
-            # Send gaze data
-            if event is not None and not calibrating:
-                gx, gy = event.point
-                send({
-                    "type": "gaze",
-                    "source": "eyegestures",
-                    "gaze_x": float(gx),
-                    "gaze_y": float(gy),
-                    "norm_x": max(0.0, min(1.0, gx / screen_w)),
-                    "norm_y": max(0.0, min(1.0, gy / screen_h)),
-                    "blink": bool(event.blink),
-                    "fixation": float(event.fixation),
-                    "timestamp": time.time()
-                })
-                last_data_time = time.time()
+                # Send gaze data
+                if event is not None and not calibrating:
+                    # Check if point exists and has valid data
+                    if hasattr(event, 'point') and len(event.point) >= 2:
+                        gx, gy = event.point
+                        send({
+                            "type": "gaze",
+                            "source": "eyegestures",
+                            "gaze_x": float(gx),
+                            "gaze_y": float(gy),
+                            "norm_x": max(0.0, min(1.0, gx / screen_w)),
+                            "norm_y": max(0.0, min(1.0, gy / screen_h)),
+                            "blink": bool(event.blink) if hasattr(event, 'blink') else False,
+                            "fixation": float(event.fixation) if hasattr(event, 'fixation') else 0.0,
+                            "timestamp": time.time()
+                        })
+                        last_data_time = time.time()
+                
+            except AttributeError as e:
+                # Catch internal EyeGestures/MediaPipe errors (e.g. NoneType has no attribute 'multi_face_landmarks')
+                # only print every 60 frames to avoid spam
+                if frame_count % 60 == 0:
+                    print(f"[Bridge Warning] Tracking error (face lost?): {e}")
+            except Exception as e:
+                print(f"[Bridge Error] Unexpected error in step: {e}")
 
             # Heartbeat
             if time.time() - last_data_time > HEARTBEAT_SEC:
-                send({"type": "heartbeat", "timestamp": time.time()})
-                last_data_time = time.time()
+                # Send heartbeat so Unity knows the bridge is alive
+                try:
+                   send({"type": "heartbeat", "timestamp": time.time()})
+                   last_data_time = time.time()
+                except Exception:
+                   pass
 
             # Preview window
             if not args.headless:

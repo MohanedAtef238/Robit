@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Diagnostics;
 using System.IO;
-using System.Collections.Generic;
 
 namespace Core
 {
@@ -14,8 +13,8 @@ namespace Core
         [Header("Sidecar Configuration")]
         [SerializeField] private string scriptPath = "Assets/Plugins/EyeGestures/eyeGestures_to_unity.py";
         [SerializeField] private string venvPath = "Assets/Plugins/EyeGestures/.venv";
-        [SerializeField] private string arguments = ""; // e.g. "--headless"
-        [SerializeField] private bool showConsole = false; // Useful for debugging
+        [SerializeField] private string arguments = "--headless"; // Default headless when launched as sidecar
+        [SerializeField] private bool showConsole = false; // Set true to debug sidecar output in a visible terminal
         [SerializeField] private bool autoStartInEditor = true;
 
         private Process sidecarProcess;
@@ -24,17 +23,15 @@ namespace Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void AutoInitialize()
         {
-            // Auto-create if it doesn't exist
-            if (Instance == null)
+            if (Instance != null) return;
+
+            var existing = FindFirstObjectByType<SidecarService>();
+            if (existing == null)
             {
-                var existing = FindFirstObjectByType<SidecarService>();
-                if (existing == null)
-                {
-                    var go = new GameObject("SidecarService");
-                    go.AddComponent<SidecarService>();
-                    DontDestroyOnLoad(go);
-                    UnityEngine.Debug.Log("[Sidecar] Service auto-initialized.");
-                }
+                var go = new GameObject("SidecarService");
+                go.AddComponent<SidecarService>();
+                DontDestroyOnLoad(go);
+                UnityEngine.Debug.Log("[Sidecar] Service auto-initialized.");
             }
         }
 
@@ -59,6 +56,8 @@ namespace Core
             }
             else if (!Application.isEditor)
             {
+                // In a build, the venv path would need to be relative to the build output.
+                // For now, warn and skip.
                 UnityEngine.Debug.LogWarning("[Sidecar] Build path logic not yet implemented. Sidecar won't start in build.");
             }
         }
@@ -82,28 +81,34 @@ namespace Core
 
             if (!File.Exists(pythonExe))
             {
-                UnityEngine.Debug.LogError($"[Sidecar] Python executable not found at: {pythonExe}");
+                string batPath = Path.GetFullPath(Path.Combine(Application.dataPath, "Plugins", "EyeGestures", "run_eye_tracker.bat"));
+                UnityEngine.Debug.LogError(
+                    $"[Sidecar] Python venv not found at: {pythonExe}\n" +
+                    $"  → Run the setup script first: {batPath}\n" +
+                    $"  → This creates the .venv and installs EyeGestures dependencies.");
                 return;
             }
 
             if (!File.Exists(script))
             {
-                UnityEngine.Debug.LogError($"[Sidecar] Script not found at: {script}");
+                UnityEngine.Debug.LogError($"[Sidecar] Bridge script not found at: {script}");
                 return;
             }
 
             try
             {
-                ProcessStartInfo startInfo = new ProcessStartInfo();
-                startInfo.FileName = pythonExe;
-                // Combine script path and user arguments
-                startInfo.Arguments = $"\"{script}\" {arguments}"; 
-                
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = pythonExe,
+                    Arguments = $"\"{script}\" {arguments}",
+                    WorkingDirectory = Path.GetDirectoryName(script)
+                };
+
                 if (!showConsole)
                 {
                     startInfo.WindowStyle = ProcessWindowStyle.Hidden;
                     startInfo.CreateNoWindow = true;
-                    startInfo.UseShellExecute = false; // Required for CreateNoWindow=true
+                    startInfo.UseShellExecute = false;
                     startInfo.RedirectStandardOutput = true;
                     startInfo.RedirectStandardError = true;
                     startInfo.StandardOutputEncoding = System.Text.Encoding.UTF8;
@@ -111,10 +116,8 @@ namespace Core
                 }
                 else
                 {
-                    startInfo.UseShellExecute = true; // Opens separate terminal window
+                    startInfo.UseShellExecute = true;
                 }
-
-                startInfo.WorkingDirectory = Path.GetDirectoryName(script);
 
                 UnityEngine.Debug.Log($"[Sidecar] Launching: {pythonExe} {startInfo.Arguments}");
 
@@ -123,7 +126,6 @@ namespace Core
                 
                 if (!showConsole)
                 {
-                    // log forwarding
                     sidecarProcess.OutputDataReceived += (s, e) => { 
                         if (!string.IsNullOrEmpty(e.Data)) 
                             UnityEngine.Debug.Log($"[Sidecar Py] {e.Data}"); 
@@ -133,12 +135,13 @@ namespace Core
                         if (!string.IsNullOrEmpty(e.Data))
                         {
                             string msg = e.Data;
+                            // Python logging modules emit INFO/WARNING on stderr
                             if (msg.Contains("INFO"))
-                                UnityEngine.Debug.Log($"[Sidecar Py Info] {msg}");
+                                UnityEngine.Debug.Log($"[Sidecar Py] {msg}");
                             else if (msg.Contains("WARNING"))
-                                UnityEngine.Debug.LogWarning($"[Sidecar Py Warn] {msg}");
+                                UnityEngine.Debug.LogWarning($"[Sidecar Py] {msg}");
                             else
-                                UnityEngine.Debug.LogError($"[Sidecar Py Error] {msg}");
+                                UnityEngine.Debug.LogError($"[Sidecar Py] {msg}");
                         }
                     };
                     sidecarProcess.BeginOutputReadLine();
@@ -155,24 +158,27 @@ namespace Core
 
         public void StopSidecar()
         {
-            if (sidecarProcess != null && !sidecarProcess.HasExited)
+            if (sidecarProcess == null || sidecarProcess.HasExited)
             {
-                try
-                {
-                    UnityEngine.Debug.Log("[Sidecar] Stopping process...");
-                    sidecarProcess.Kill();
-                    sidecarProcess.WaitForExit(1000); // Wait up to 1s
-                }
-                catch (System.Exception e)
-                {
-                    UnityEngine.Debug.LogWarning($"[Sidecar] Error stopping process: {e.Message}");
-                }
-                finally
-                {
-                    sidecarProcess.Dispose();
-                    sidecarProcess = null;
-                    isRunning = false;
-                }
+                isRunning = false;
+                return;
+            }
+
+            try
+            {
+                UnityEngine.Debug.Log("[Sidecar] Stopping process...");
+                sidecarProcess.Kill();
+                sidecarProcess.WaitForExit(2000);
+            }
+            catch (System.Exception e)
+            {
+                UnityEngine.Debug.LogWarning($"[Sidecar] Error stopping process: {e.Message}");
+            }
+            finally
+            {
+                sidecarProcess.Dispose();
+                sidecarProcess = null;
+                isRunning = false;
             }
         }
 

@@ -18,7 +18,7 @@ public class EyeTrackingInput : MonoBehaviour
     [SerializeField] private float minMoveThreshold = 0.005f; // Normalized
     
     [Header("Mouse Simulation")]
-    [SerializeField] private bool simulateMouse = true;
+    [SerializeField] private bool simulateMouse = false;
     
     public Vector2 GazePosition { get; private set; } // Unity screen space
     public Vector2 NormalizedGaze { get; private set; } // 0-1 range
@@ -26,6 +26,9 @@ public class EyeTrackingInput : MonoBehaviour
     public bool IsBlinking { get; set; }
     public float FixationStrength { get; private set; }
     public string Source { get; private set; } = "unknown";
+    public string LastStatus { get; private set; } = "init";
+    public int LastStatusPointCount { get; private set; }
+    public bool BridgeReportsCalibrating { get; private set; }
 
     private UdpClient udpClient;
     private Thread receiveThread;
@@ -83,7 +86,6 @@ public class EyeTrackingInput : MonoBehaviour
                 if (messageQueue.Count > 0)
                     json = messageQueue.Dequeue();
             }
-
             if (json == null) break;
             ProcessMessage(json);
         }
@@ -94,24 +96,36 @@ public class EyeTrackingInput : MonoBehaviour
 
     private void ReceiveLoop()
     {
-        IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
+        var remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
+
         while (isRunning)
         {
             try
             {
-                byte[] data = udpClient.Receive(ref remoteEP);
+                byte[] data = udpClient.Receive(ref remoteEndPoint);
                 string json = System.Text.Encoding.UTF8.GetString(data);
-                
-                // Enqueue for main thread processing
+
                 lock (queueLock)
                 {
                     messageQueue.Enqueue(json);
                 }
             }
-            catch (SocketException) { continue; }
-            catch (Exception e) 
-            { 
-               if (isRunning) Debug.LogWarning($"[EyeInput] Receive error in background thread: {e.Message}"); 
+            catch (SocketException se)
+            {
+                if (!isRunning) break;
+                if (se.SocketErrorCode == SocketError.TimedOut) continue;
+                Debug.LogWarning($"[EyeInput] UDP receive socket error: {se.Message}");
+            }
+            catch (ObjectDisposedException)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                if (isRunning)
+                {
+                    Debug.LogWarning($"[EyeInput] ReceiveLoop error: {ex.Message}");
+                }
             }
         }
     }
@@ -120,33 +134,56 @@ public class EyeTrackingInput : MonoBehaviour
     {
         try
         {
-            var msg = JsonUtility.FromJson<BridgeMessage>(json);
-            lastPacketTime = Time.time;
+            var baseMsg = JsonUtility.FromJson<BaseBridgeMessage>(json);
+            if (baseMsg == null || string.IsNullOrEmpty(baseMsg.type)) return;
 
-            if (msg.type == "gaze")
+            switch (baseMsg.type)
             {
-                Vector2 targetNorm = new Vector2(msg.norm_x, msg.norm_y);
-                
-                // Jump threshold check to filter micro-jitter
-                if (Vector2.Distance(smoothedNormGaze, targetNorm) > minMoveThreshold)
+                case "gaze":
                 {
-                    smoothedNormGaze = Vector2.Lerp(smoothedNormGaze, targetNorm, smoothingFactor);
+                    var msg = JsonUtility.FromJson<GazeMessage>(json);
+                    lastPacketTime = Time.time;
+
+                    var targetNorm = new Vector2(msg.norm_x, msg.norm_y);
+                    if (Vector2.Distance(smoothedNormGaze, targetNorm) > minMoveThreshold)
+                    {
+                        smoothedNormGaze = Vector2.Lerp(smoothedNormGaze, targetNorm, smoothingFactor);
+                    }
+
+                    NormalizedGaze = smoothedNormGaze;
+                    GazePosition = new Vector2(
+                        smoothedNormGaze.x * Screen.width,
+                        (1.0f - smoothedNormGaze.y) * Screen.height
+                    );
+                    IsBlinking = msg.blink;
+                    FixationStrength = msg.fixation;
+                    Source = string.IsNullOrEmpty(msg.source) ? "unknown" : msg.source;
+
+                    if (simulateMouse)
+                    {
+                        SetCursorPos((int)msg.gaze_x, (int)msg.gaze_y);
+                    }
+
+                    break;
                 }
-
-                NormalizedGaze = smoothedNormGaze;
-                // Convert to Unity Bottom-Left screen space
-                GazePosition = new Vector2(
-                    smoothedNormGaze.x * Screen.width, 
-                    (1.0f - smoothedNormGaze.y) * Screen.height
-                );
-                IsBlinking = msg.blink;
-                FixationStrength = msg.fixation;
-                Source = string.IsNullOrEmpty(msg.source) ? "unknown" : msg.source;
-
-                if (simulateMouse)
+                case "status":
                 {
-                    // Windows uses Top-Left coordinates
-                    SetCursorPos((int)(msg.gaze_x), (int)(msg.gaze_y));
+                    var status = JsonUtility.FromJson<StatusMessage>(json);
+                    LastStatus = status.status;
+                    LastStatusPointCount = status.points;
+                    BridgeReportsCalibrating = status.calibrating;
+
+                    if (!string.IsNullOrEmpty(status.status))
+                    {
+                        Debug.Log($"[EyeInput] Sidecar status: {status.status} (points={status.points}, calibrating={status.calibrating})");
+                    }
+
+                    break;
+                }
+                default:
+                {
+                    Debug.Log($"[EyeInput] Unrecognized bridge message type '{baseMsg.type}'");
+                    break;
                 }
             }
         }
@@ -168,9 +205,14 @@ public class EyeTrackingInput : MonoBehaviour
     }
 
     [Serializable]
-    private class BridgeMessage
+    private class BaseBridgeMessage
     {
         public string type;
+    }
+
+    [Serializable]
+    private class GazeMessage
+    {
         public string source;
         public float gaze_x;
         public float gaze_y;
@@ -178,5 +220,13 @@ public class EyeTrackingInput : MonoBehaviour
         public float norm_y;
         public bool blink;
         public float fixation;
+    }
+
+    [Serializable]
+    private class StatusMessage
+    {
+        public string status;
+        public int points;
+        public bool calibrating;
     }
 }

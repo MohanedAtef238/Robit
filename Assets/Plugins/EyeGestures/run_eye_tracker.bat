@@ -96,7 +96,7 @@ ECHO.
 ECHO [4/4] Starting Eye Tracker Bridge...
 ECHO       Keep this window OPEN while running Unity.
 ECHO       Press Ctrl+C or 'q' to stop.
-ECHO ──────────────────────────────────────────────
+ECHO ----------------------------------------------
 ECHO.
 
 "%VENV_PYTHON%" "%BRIDGE%" %*
