@@ -36,8 +36,13 @@ EXIT /B 0
 :: ─── Step 2: Create venv if needed ───
 :CheckVenv
 IF EXIST "%VENV_PYTHON%" (
-    ECHO [2/4] Virtual environment already exists.
-    GOTO CheckDeps
+    IF EXIST "%VENV_DIR%\Lib" (
+        ECHO [2/4] Virtual environment exists.
+        GOTO CheckDeps
+    ) ELSE (
+        ECHO [2/4] Virtual environment found but Lib is missing. Recreating...
+        RMDIR /S /Q "%VENV_DIR%"
+    )
 )
 
 ECHO.
@@ -59,7 +64,7 @@ IF %ERRORLEVEL% EQU 0 (
 )
 
 ECHO.
-ECHO [3/4] Installing dependencies (first run, may take a minute)...
+ECHO [3/4] Installing dependencies...
 
 :: Upgrade pip first
 "%VENV_PYTHON%" -m pip install --upgrade pip >nul 2>&1
