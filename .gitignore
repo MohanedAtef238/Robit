@@ -76,3 +76,4 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
 emg_stream.csv
+.__pycache__
