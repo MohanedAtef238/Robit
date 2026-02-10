@@ -41,6 +41,8 @@ public class EyeTrackingTester : MonoBehaviour
         {
             string color = EyeTrackingInput.Instance.IsConnected ? "green" : "red";
             GUILayout.Label($"Status: <color={color}>{(EyeTrackingInput.Instance.IsConnected ? "Connected" : "Disconnected")}</color>");
+            string sourceColor = EyeTrackingInput.Instance.Source == "mock" ? "yellow" : "green";
+            GUILayout.Label($"Source: <color={sourceColor}>{EyeTrackingInput.Instance.Source}</color>");
             GUILayout.Label($"Gaze Pos: {EyeTrackingInput.Instance.GazePosition}");
             GUILayout.Label($"Blink: {(EyeTrackingInput.Instance.IsBlinking ? "YES" : "NO")}");
         }

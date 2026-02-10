@@ -1,44 +1,98 @@
-@echo off
-TITLE EyeGestures Unity Bridge
-ECHO ========================================================
-ECHO    EyeGestures to Unity Bridge - Launcher
-ECHO ========================================================
-ECHO.
+@ECHO OFF
+SETLOCAL EnableDelayedExpansion
+TITLE EyeGestures to Unity Bridge
 
-:: Check if Python is installed
-python --version >nul 2>&1
+:: ─── Configuration ───
+SET "SCRIPT_DIR=%~dp0"
+SET "VENV_DIR=%SCRIPT_DIR%.venv"
+SET "VENV_PYTHON=%VENV_DIR%\Scripts\python.exe"
+SET "VENV_PIP=%VENV_DIR%\Scripts\pip.exe"
+SET "REQ_FILE=%SCRIPT_DIR%requirements.txt"
+SET "BRIDGE=%SCRIPT_DIR%eyeGestures_to_unity.py"
+SET "GITHUB_REPO=git+https://github.com/NativeSensors/EyeGestures.git"
+
+:: ─── Step 1: Ensure Python 3.11 is available ───
+ECHO [1/4] Checking for Python 3.11...
+py -3.11 --version >nul 2>&1
 IF %ERRORLEVEL% NEQ 0 (
-    ECHO [ERROR] Python is not found! 
-    ECHO Please install Python 3.8+ and add it to your PATH.
-    PAUSE
-    EXIT /B
-)
-
-:: Set local library path (next to this script)
-SET LIB_DIR=%~dp0lib
-
-:: Check if eyeGestures is installed locally
-IF NOT EXIST "%LIB_DIR%\eyeGestures" (
-    ECHO [INFO] EyeGestures not found in local lib folder.
-    ECHO [INFO] Installing from GitHub into %LIB_DIR%...
-    ECHO.
-    pip install --target "%LIB_DIR%" git+https://github.com/NativeSensors/EyeGestures.git
+    ECHO [INFO] Python 3.11 not found. Installing via winget...
+    winget install Python.Python.3.11 --silent --accept-package-agreements --accept-source-agreements
     IF %ERRORLEVEL% NEQ 0 (
-        ECHO [ERROR] Failed to install EyeGestures from GitHub.
-        ECHO [ERROR] Check your internet connection and try again.
+        ECHO [ERROR] Failed to install Python 3.11.
+        ECHO [ERROR] Please install manually from https://python.org/downloads/
         PAUSE
-        EXIT /B
+        EXIT /B 1
     )
-    ECHO [OK] EyeGestures installed successfully.
+    ECHO [OK] Python 3.11 installed. You may need to restart this script.
+    ECHO     Close this window and double-click run_eye_tracker.bat again.
+    PAUSE
+    EXIT /B 0
+)
+FOR /F "tokens=*" %%V IN ('py -3.11 --version 2^>^&1') DO ECHO [OK] Found %%V
+
+:: ─── Step 2: Create venv if needed ───
+IF NOT EXIST "%VENV_PYTHON%" (
+    ECHO.
+    ECHO [2/4] Creating virtual environment...
+    py -3.11 -m venv "%VENV_DIR%"
+    IF %ERRORLEVEL% NEQ 0 (
+        ECHO [ERROR] Failed to create virtual environment.
+        PAUSE
+        EXIT /B 1
+    )
+    ECHO [OK] Virtual environment created at .venv\
 ) ELSE (
-    ECHO [OK] EyeGestures found in local lib.
+    ECHO [2/4] Virtual environment already exists.
 )
 
-:: Run the bridge script
-ECHO.
-ECHO Starting Eye Tracker...
-ECHO Keep this window OPEN while running Unity.
-ECHO.
-python "%~dp0eyeGestures_to_unity.py"
+:: ─── Step 3: Install dependencies (only if EyeGestures not installed yet) ───
+"%VENV_PYTHON%" -c "from eyeGestures import EyeGestures_v3" >nul 2>&1
+IF %ERRORLEVEL% NEQ 0 (
+    ECHO.
+    ECHO [3/4] Installing dependencies (first run, may take a minute)...
 
+    :: Upgrade pip first
+    "%VENV_PYTHON%" -m pip install --upgrade pip >nul 2>&1
+
+    :: Install EyeGestures from GitHub
+    ECHO       Installing EyeGestures from GitHub...
+    "%VENV_PIP%" install "%GITHUB_REPO%"
+    IF %ERRORLEVEL% NEQ 0 (
+        ECHO [ERROR] Failed to install EyeGestures.
+        PAUSE
+        EXIT /B 1
+    )
+
+    :: Install remaining requirements
+    IF EXIST "%REQ_FILE%" (
+        ECHO       Installing requirements...
+        "%VENV_PIP%" install -r "%REQ_FILE%"
+        IF %ERRORLEVEL% NEQ 0 (
+            ECHO [WARNING] Some optional packages failed to install.
+        )
+    )
+
+    :: Verify
+    "%VENV_PYTHON%" -c "from eyeGestures import EyeGestures_v3; print('[OK] EyeGestures verified')"
+    IF %ERRORLEVEL% NEQ 0 (
+        ECHO [ERROR] EyeGestures verification failed.
+        PAUSE
+        EXIT /B 1
+    )
+) ELSE (
+    ECHO [3/4] Dependencies already installed.
+)
+
+:: ─── Step 4: Run the bridge ───
+ECHO.
+ECHO [4/4] Starting Eye Tracker Bridge...
+ECHO       Keep this window OPEN while running Unity.
+ECHO       Press Ctrl+C or 'q' to stop.
+ECHO ──────────────────────────────────────────────
+ECHO.
+
+"%VENV_PYTHON%" "%BRIDGE%" %*
+
+ECHO.
+ECHO [Bridge] Stopped.
 PAUSE

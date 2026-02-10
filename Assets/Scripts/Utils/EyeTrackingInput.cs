@@ -25,6 +25,7 @@ public class EyeTrackingInput : MonoBehaviour
     public bool IsConnected { get; private set; }
     public bool IsBlinking { get; set; }
     public float FixationStrength { get; private set; }
+    public string Source { get; private set; } = "unknown";
 
     private UdpClient udpClient;
     private Thread receiveThread;
@@ -140,6 +141,7 @@ public class EyeTrackingInput : MonoBehaviour
                 );
                 IsBlinking = msg.blink;
                 FixationStrength = msg.fixation;
+                Source = string.IsNullOrEmpty(msg.source) ? "unknown" : msg.source;
 
                 if (simulateMouse)
                 {
@@ -169,6 +171,7 @@ public class EyeTrackingInput : MonoBehaviour
     private class BridgeMessage
     {
         public string type;
+        public string source;
         public float gaze_x;
         public float gaze_y;
         public float norm_x;

@@ -80,6 +80,7 @@ crashlytics-build.properties
 
 # Eye tracking: pip-installed dependencies (auto-downloaded)
 /Assets/Plugins/EyeGestures/lib/
+/Assets/Plugins/EyeGestures/.venv/
 
 # Eye tracking: original library source
 /Assets/eyeGesture-OG/EyeGestures-main
