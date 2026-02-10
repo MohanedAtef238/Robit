@@ -49,8 +49,8 @@ def run(args):
     recv_sock.bind((UDP_IP, RECEIVE_PORT))
     recv_sock.settimeout(0.1)
 
-    print(f"[Bridge] UDP send → {UDP_IP}:{SEND_PORT}")
-    print(f"[Bridge] UDP recv ← {UDP_IP}:{RECEIVE_PORT}")
+    print(f"[Bridge] UDP send -> {UDP_IP}:{SEND_PORT}")
+    print(f"[Bridge] UDP recv <- {UDP_IP}:{RECEIVE_PORT}")
 
     # ── EyeGestures ──
     gestures = EyeGestures_v3(calibration_radius=1000)
