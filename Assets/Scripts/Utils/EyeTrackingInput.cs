@@ -180,6 +180,11 @@ public class EyeTrackingInput : MonoBehaviour
 
                     break;
                 }
+                case "heartbeat":
+                {
+                    lastPacketTime = Time.time;
+                    break;
+                }
                 default:
                 {
                     Debug.Log($"[EyeInput] Unrecognized bridge message type '{baseMsg.type}'");
