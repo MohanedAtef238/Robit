@@ -1,4 +1,20 @@
 {
+  "scopedRegistries": [
+    {
+      "name": "Keijiro",
+      "url": "https://registry.npmjs.com",
+      "scopes": [
+        "jp.keijiro"
+      ]
+    },
+    {
+      "name": "creativeikep",
+      "url": "https://registry.npmjs.com",
+      "scopes": [
+        "jp.ikep"
+      ]
+    }
+  ],
   "dependencies": {
     "com.unity.ai.navigation": "2.0.9",
     "com.unity.collab-proxy": "2.10.2",
