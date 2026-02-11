@@ -8,6 +8,7 @@ import random
 import asyncio
 import threading
 import websockets
+import ctypes
 
 # Import local modules
 from feature_engineering import calculate_emg_features
@@ -88,6 +89,9 @@ def process_livestream(
     print("Starting livestream processing...")
     pred_count = 0
     ws = WebSocketBroadcaster(ws_host, ws_port)
+    user32 = ctypes.windll.user32
+    MOUSEEVENTF_LEFTDOWN = 0x0002
+    MOUSEEVENTF_LEFTUP = 0x0004
 
     try:
         for value in data_stream:
@@ -133,6 +137,9 @@ def process_livestream(
                 if pred_count >= 5:
                     print(f"Prediction: True")
                     ws.broadcast(udp_message)
+                    # Trigger a global left click from Python (Windows).
+                    user32.mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+                    user32.mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
                     pred_count = 0
                     buffer.clear()
             else:

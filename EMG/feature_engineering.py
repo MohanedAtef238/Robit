@@ -2,16 +2,6 @@ import numpy as np
 from statsmodels.tsa.ar_model import AutoReg
 
 def calculate_emg_features(signal, ar_order=4):
-    """
-    Calculates EMG features from a signal array based on the provided images.
-    
-    Parameters:
-    signal (np.array): The input EMG time-series data.
-    ar_order (int): The order P for Auto-regressive and Cepstral coefficients.
-    
-    Returns:
-    dict: A dictionary containing the calculated features.
-    """
     x = np.array(signal)
     N = len(x)
     
