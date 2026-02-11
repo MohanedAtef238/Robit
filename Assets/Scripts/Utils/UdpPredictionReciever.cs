@@ -5,6 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Net.WebSockets;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 
 public class UdpPredictionReceiver : MonoBehaviour
 {
@@ -65,8 +67,22 @@ public class UdpPredictionReceiver : MonoBehaviour
 
     private void OnPredictionTrue()
     {
-        // TODO: put your Unity actions here
-        Debug.Log("Prediction TRUE received.");
+        // Simulate a global left mouse click via the new Input System.
+        if (Mouse.current == null)
+        {
+            Debug.LogWarning("No Mouse device found for simulated click.");
+            return;
+        }
+
+        var press = new MouseState { buttons = 1 };
+        InputSystem.QueueStateEvent(Mouse.current, press);
+        InputSystem.Update();
+
+        var release = new MouseState { buttons = 0 };
+        InputSystem.QueueStateEvent(Mouse.current, release);
+        InputSystem.Update();
+
+        Debug.Log("Prediction TRUE received (mouse click simulated).");
     }
 
     void OnDestroy()
