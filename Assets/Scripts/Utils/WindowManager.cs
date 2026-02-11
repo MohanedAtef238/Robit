@@ -165,4 +165,46 @@ public static class WindowManager
         }
         #endif
     }
+
+    // Window enumeration for focusing background apps
+
+    private const uint GW_HWNDNEXT = 2;
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern int GetWindowTextLength(IntPtr hWnd);
+
+    /// this will find the first visible window behind Unity in Z-order and focuses it.
+    /// Returns true if a window was found and focused.
+    public static bool FocusWindowBehind()
+    {
+        #if !UNITY_EDITOR
+        IntPtr hWnd = GetWindowHandle();
+        if (hWnd == IntPtr.Zero) return false;
+
+        // Walk Z-order starting from Unity's window
+        IntPtr next = GetWindow(hWnd, GW_HWNDNEXT);
+        while (next != IntPtr.Zero)
+        {
+            // Skip invisible windows and windows with no title (system windows)
+            if (IsWindowVisible(next) && GetWindowTextLength(next) > 0 && next != hWnd)
+            {
+                SetForegroundWindow(next);
+                Debug.Log($"[WindowManager] Focused window behind: {next}");
+                return true;
+            }
+            next = GetWindow(next, GW_HWNDNEXT);
+        }
+
+        Debug.LogWarning("[WindowManager] No visible window found behind Unity");
+        return false;
+        #else
+        return false;
+        #endif
+    }
 }

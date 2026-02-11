@@ -1,8 +1,11 @@
 # Robit
-### This is a simple readme to record progress and current findings, as to make sure we do not forget what each file was made for as progress happens on sparesly spaced working periods.
+
+### This is a simple readme to record progress and current findings, as to make sure we do not forget what each file was made for as progress happens on sparesly spaced working periods
+
 ---
 
 ## Table of Contents
+
 - [Architecture](#current-architecture-----for-note-keeping)
 - [Windows API Integration](#windows-api-integration)
 - [LNK File Format Constants](#lnk-file-format-constants)
@@ -38,6 +41,7 @@ Mock_OS uses a **two-scene architecture**:
 ```
 
 **Data Flow:**
+
 1. `DesktopParser` scans `.lnk` files → filters to whitelist → fetches icons
 2. `AppLauncherUI` generates clickable cards for each shortcut
 3. User clicks a card → `AppLauncher.LaunchApplication()` starts the process
@@ -55,6 +59,7 @@ The overlay system relies on Windows-specific APIs via P/Invoke. Here's a breakd
 ```csharp
 const int GWL_EXSTYLE = -20;
 ```
+
 **Purpose:** Index parameter for `GetWindowLong`/`SetWindowLong` functions.  
 **Value `-20`:** Retrieves or sets the *extended* window styles (as opposed to `GWL_STYLE = -16` for regular styles).
 
@@ -63,6 +68,7 @@ const int GWL_EXSTYLE = -20;
 ```csharp
 const uint WS_EX_LAYERED = 0x00080000;
 ```
+
 **Purpose:** Creates a "layered window" that supports transparency and alpha blending.  
 **Required for:** Using `SetLayeredWindowAttributes` or `UpdateLayeredWindow` to make windows transparent.  
 **Hex breakdown:** Bit 19 is set (2^19 = 524288 = 0x80000).
@@ -72,6 +78,7 @@ const uint WS_EX_LAYERED = 0x00080000;
 ```csharp
 const uint WS_EX_TRANSPARENT = 0x00000020;
 ```
+
 **Purpose:** Makes the window "click-through" — mouse events pass through to windows below.  
 **How it works:** The window is excluded from hit-testing, so clicks go to whatever is beneath it.  
 **Hex breakdown:** Bit 5 is set (2^5 = 32 = 0x20).
@@ -81,8 +88,10 @@ const uint WS_EX_TRANSPARENT = 0x00000020;
 ```csharp
 private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
 ```
+
 **Purpose:** Special handle value for `SetWindowPos` that places the window above all non-topmost windows.  
 **Alternative values:**
+
 - `HWND_NOTOPMOST (−2)` – Removes topmost status
 - `HWND_TOP (0)` – Top of Z-order (but not topmost)
 - `HWND_BOTTOM (1)` – Bottom of Z-order
@@ -92,8 +101,10 @@ private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
 ```csharp
 const uint SWP_SHOWWINDOW = 0x0040;
 ```
+
 **Purpose:** Flag for `SetWindowPos` that displays the window after repositioning.  
 **Other common flags:**
+
 - `SWP_NOSIZE (0x0001)` – Retains current size
 - `SWP_NOMOVE (0x0002)` – Retains current position
 - `SWP_NOZORDER (0x0004)` – Retains current Z-order
@@ -103,6 +114,7 @@ const uint SWP_SHOWWINDOW = 0x0040;
 ```csharp
 const uint LWA_COLORKEY = 0x00000001;
 ```
+
 **Purpose:** Used with `SetLayeredWindowAttributes` to specify a color that becomes transparent.  
 **Related constant:** `LWA_ALPHA (0x02)` – Uses alpha value for whole-window transparency.
 
@@ -119,6 +131,7 @@ private struct MARGINS
     public int cyBottomHeight;
 }
 ```
+
 **Purpose:** Defines the margins for the glass frame extended into the client area.  
 **Special value:** Setting `cxLeftWidth = -1` extends glass to cover the entire window (full transparency).
 
@@ -130,6 +143,7 @@ private struct MARGINS
 [DllImport("user32.dll")]
 private static extern IntPtr GetActiveWindow();
 ```
+
 **Purpose:** Retrieves the handle of the currently active (focused) window.  
 **Returns:** `HWND` of the Unity application window.
 
@@ -139,8 +153,10 @@ private static extern IntPtr GetActiveWindow();
 [DllImport("user32.dll")]
 private static extern int SetWindowLong(IntPtr hWnd, int nIndex, uint dwNewLong);
 ```
+
 **Purpose:** Changes window attributes (styles, extended styles, etc.).  
 **Parameters:**
+
 - `hWnd` – Window handle
 - `nIndex` – Which attribute to change (`GWL_EXSTYLE = -20`)
 - `dwNewLong` – New value (combination of `WS_EX_*` flags)
@@ -152,8 +168,10 @@ private static extern int SetWindowLong(IntPtr hWnd, int nIndex, uint dwNewLong)
 private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, 
     int X, int Y, int cx, int cy, uint uFlags);
 ```
+
 **Purpose:** Changes the size, position, and Z-order of a window.  
 **Parameters:**
+
 - `hWndInsertAfter` – Z-order (`HWND_TOPMOST = -1` for always-on-top)
 - `X, Y` – New position
 - `cx, cy` – New width and height
@@ -165,6 +183,7 @@ private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter,
 [DllImport("Dwmapi.dll")]
 private static extern uint DwmExtendFrameIntoClientArea(IntPtr hWnd, ref MARGINS margins);
 ```
+
 **Purpose:** Extends the DWM (Desktop Window Manager) glass frame into the client area.  
 **Used for:** Creating true transparency (no background color).  
 **Note:** Only works when DWM composition is enabled (Windows Vista+).
@@ -212,6 +231,7 @@ Bitmask indicating which optional structures are present in the file:
 | `IsUnicode` | `0x00000080` | Strings are encoded as Unicode (vs ANSI) |
 
 **Usage in code:**
+
 ```csharp
 var linkFlags = BitConverter.ToInt32(buffer, 0);
 
@@ -241,6 +261,7 @@ Attributes of the target file (mirrors Windows file attributes):
 | `Encrypted` | `0x4000` | Encrypted file |
 
 **Usage in code:**
+
 ```csharp
 var fileAttrFlags = BitConverter.ToInt32(buffer, 0);
 IsDirectory = (fileAttrFlags & FileAttributes.Directory) == FileAttributes.Directory;
@@ -262,10 +283,12 @@ Indicates where the target is located:
 ### VirtualKeys (Hotkey parsing)
 
 Windows virtual key codes for parsing shortcut hotkeys. The hotkey field is 2 bytes:
+
 - **Low byte:** The key code (A-Z, F1-F24, etc.)
 - **High byte:** Modifier flags
 
 **Modifier flags:**
+
 ```csharp
 HOTKEYF_SHIFT   = 1   // Shift key
 HOTKEYF_CONTROL = 2   // Ctrl key
@@ -283,6 +306,7 @@ HOTKEYF_ALT     = 4   // Alt key
 **Purpose:** Scans Windows desktop folders for `.lnk` shortcuts and filters to allowed apps.
 
 **Key fields:**
+
 ```csharp
 public List<ShortcutInfo> shortcuts = new List<ShortcutInfo>();
 public bool parsingComplete = false;
@@ -292,6 +316,7 @@ private static readonly HashSet<string> AllowedApps;           // Whitelist
 ```
 
 **Workflow:**
+
 ```csharp
 IEnumerator ParseShortcuts()
 {
@@ -326,6 +351,7 @@ IEnumerator ParseShortcuts()
 **Purpose:** Singleton that launches external applications and manages the current process.
 
 **Key code:**
+
 ```csharp
 public static AppLauncher Instance;
 private Process currentProcess;
@@ -407,6 +433,7 @@ void Start()
 **Purpose:** Generates the app card grid from parsed shortcuts.
 
 **Key workflow:**
+
 ```csharp
 IEnumerator Start()
 {
@@ -494,6 +521,114 @@ void GoHome()
 
 ---
 
+### Macro Button System
+
+The `Assets/Scripts/MacroButtons/` directory contains an **input-agnostic macro button system** for the overlay UI. Each button executes a configurable OS-level action (zoom, switch window, etc.) and accepts any form of "click" through a pluggable input layer.
+
+#### Directory Structure
+
+```
+Scripts/MacroButtons/
+├── Actions/
+│   ├── IMacroAction.cs          # Interface all actions implement
+│   ├── ZoomInAction.cs          # Sends Ctrl+Plus to OS
+│   ├── ZoomOutAction.cs         # Sends Ctrl+Minus to OS
+│   ├── SwitchWindowAction.cs    # Sends Alt+Tab to OS
+│   └── CalibrationAction.cs     # Placeholder for eye-tracker calibration
+├── Input/
+│   ├── IInputProvider.cs        # Interface for input detection methods
+│   └── PointerInputProvider.cs  # Default: mouse/touch/pen via PointerUpEvent
+├── MacroButton.cs               # Custom UI Toolkit element ([UxmlElement])
+├── MacroButtonBinding.cs        # Serializable button-name-to-action mapping
+├── MacroButtonController.cs     # MonoBehaviour that wires everything together
+├── MacroActionType.cs           # Enum of available action types
+└── MacroActionFactory.cs        # Creates action instances from enum values
+```
+
+#### Architecture
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                     MacroButtonController                      │
+│  (MonoBehaviour on UIDocument GameObject)                      │
+│                                                                │
+│  [SerializeField] List<MacroButtonBinding> bindings            │
+│    ┌────────────────┬──────────────────┐                      │
+│    │  buttonName     │  actionType      │                     │
+│    │  "btn-zoom-in"  │  ZoomIn          │                     │
+│    │  "btn-zoom-out" │  ZoomOut         │                     │
+│    │  "btn-switch"   │  SwitchWindow    │                     │
+│    └────────────────┴──────────────────┘                      │
+│                        │                                       │
+│    Queries UXML for <MacroButton name="...">                  │
+│    Creates IMacroAction via MacroActionFactory                 │
+│    Attaches IInputProvider to each button                     │
+└──────────────────────────────────────────────────────────────┘
+```
+
+#### Setup
+
+1. In `overlay.uxml`, use `<MacroButton>` instead of `<ui:Button>` for any button you want to be a macro:
+
+   ```xml
+   <MacroButton name="btn-zoom-in" class="circular-buttons button-look" ... />
+   ```
+
+2. On the `UIDocument` GameObject in the scene, add the `MacroButtonController` component.
+
+3. In the Inspector, expand the **Bindings** list and add entries:
+   - **Button Name** → the `name` attribute from UXML (e.g. `btn-zoom-in`)
+   - **Action Type** → pick from the dropdown (`ZoomIn`, `ZoomOut`, `SwitchWindow`, `Calibration`)
+
+4. Enter Play Mode — check Console for `[MacroButtonController] Bound 'btn-zoom-in' → Zoom In`.
+
+> **Note:** Zoom and switch-window actions send OS-level keystrokes via `keybd_event` P/Invoke. They only work in **standalone builds** (gated behind `#if !UNITY_EDITOR`), consistent with `WindowManager.cs`.
+
+#### Adding a New Action
+
+1. Create a class implementing `IMacroAction`:
+
+   ```csharp
+   public class MyNewAction : IMacroAction
+   {
+       public string ActionId => "my_action";
+       public string DisplayName => "My Action";
+       public void Execute() { /* your logic */ }
+   }
+   ```
+
+2. Add an entry to the `MacroActionType` enum in `MacroActionType.cs`.
+
+3. Add a case to `MacroActionFactory.Create()`:
+
+   ```csharp
+   MacroActionType.MyAction => new MyNewAction(),
+   ```
+
+4. In the Inspector, you can now select `MyAction` from the dropdown.
+
+#### Adding a New Input Provider
+
+To support a new input method (e.g. gaze dwell, voice command):
+
+1. Create a class implementing `IInputProvider`:
+
+   ```csharp
+   public class GazeDwellInputProvider : IInputProvider
+   {
+       public void Attach(VisualElement target, Action onActivated) { /* ... */ }
+       public void Detach(VisualElement target) { /* ... */ }
+   }
+   ```
+
+2. In `MacroButtonController.OnEnable()`, swap the provider:
+
+   ```csharp
+   inputProvider = new GazeDwellInputProvider();
+   ```
+
+---
+
 ### Utility Components
 
 #### `WinShortcut.cs`
@@ -501,6 +636,7 @@ void GoHome()
 **Purpose:** Parses Windows `.lnk` files to extract target path, hotkey, and attributes.
 
 **LNK file structure parsing:**
+
 ```csharp
 public WinShortcut(string path)
 {
@@ -668,6 +804,7 @@ public class Transparency : MonoBehaviour
 ```
 
 **How it works:**
+
 1. `GetCursorPos()` gets global mouse position from Windows (works in click-through mode!)
 2. `ScreenToClient()` converts to window-relative coordinates
 3. `EventSystem.RaycastAll()` checks if cursor is over any UI element
