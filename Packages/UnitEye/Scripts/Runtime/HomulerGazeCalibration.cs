@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using UnitEye;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// This component is responsible for providing calibration to achieve better eye tracking performance.
@@ -90,7 +91,7 @@ public class HomulerGazeCalibration : MonoBehaviour
 
         //If no crosshair is selected load the CalibrationDot Resource
         if (calibrationDot == null)
-            calibrationDot = (Texture2D)Resources.Load("CalibrationDot");
+            calibrationDot = Resources.Load<Texture2D>("CalibrationDot");
 
         //If can return after calibration append string to gui
         if (returnAfter)
@@ -145,21 +146,25 @@ public class HomulerGazeCalibration : MonoBehaviour
         if (_modelRunner == null)
             _modelRunner = GetComponent<HomulerGaze>().ModelRunner;
 
+        var mouse = Mouse.current;
+        var keyboard = Keyboard.current;
+        if (mouse == null || keyboard == null) return;
+
         //If finished and leftclick, signal Returned
-        if (Input.GetKeyDown(KeyCode.Mouse0) && returnAfter && _finished)
+        if (mouse.leftButton.wasPressedThisFrame && returnAfter && _finished)
             Returned = true;
         //If rightclick, signal Returned
-        if (Input.GetKeyDown(KeyCode.Mouse1) && returnAfter)
+        if (mouse.rightButton.wasPressedThisFrame && returnAfter)
             Returned = true;
         //Start on leftclick
-        if (Input.GetKeyDown(KeyCode.Mouse0) && !_finished)
+        if (mouse.leftButton.wasPressedThisFrame && !_finished)
         {
             _started = true;
             _showMessage = false;
             _finishedRound = false;
         }
         //Stop calibration early when clicking S
-        if (Input.GetKeyDown(KeyCode.S) && _started && !_finished)
+        if (keyboard.sKey.wasPressedThisFrame && _started && !_finished)
         {
             _earlyStop = true;
         }

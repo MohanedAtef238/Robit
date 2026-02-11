@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnitEye;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// This component is responsible for providing calibration to achieve better eye tracking performance.
@@ -87,7 +88,9 @@ public class GazeCalibration : MonoBehaviour
 
         //If no crosshair is selected load the CalibrationDot Resource
         if (calibrationDot == null)
-            throw new NullReferenceException("No calibration dot gameobject selected.");
+            calibrationDot = Resources.Load<Texture2D>("CalibrationDot");
+        if (calibrationDot == null)
+            Debug.LogWarning("No calibration dot texture found. Assign one in the Inspector or add a CalibrationDot to Resources.");
 
         //If can return after calibration append string to gui
         if (returnAfter)
@@ -120,6 +123,7 @@ public class GazeCalibration : MonoBehaviour
     /// <param name="waypoints">A list of Vector2 objects containing the local screen coordinates.</param>
     private void DrawPath(List<Vector2> waypoints)
     {
+        if (path == null) return;
         int pointCounter = 0;
         path.positionCount = waypoints.Count;
 
@@ -136,21 +140,25 @@ public class GazeCalibration : MonoBehaviour
         if (_modelRunner == null)
             _modelRunner = GetComponent<Gaze>().ModelRunner;
 
+        var mouse = Mouse.current;
+        var keyboard = Keyboard.current;
+        if (mouse == null || keyboard == null) return;
+
         //If finished and leftclick, signal Returned
-        if (Input.GetKeyDown(KeyCode.Mouse0) && returnAfter && _finished)
+        if (mouse.leftButton.wasPressedThisFrame && returnAfter && _finished)
             Returned = true;
         //If rightclick, signal Returned
-        if (Input.GetKeyDown(KeyCode.Mouse1) && returnAfter)
+        if (mouse.rightButton.wasPressedThisFrame && returnAfter)
             Returned = true;
         //Start on leftclick
-        if (Input.GetKeyDown(KeyCode.Mouse0) && !_finished)
+        if (mouse.leftButton.wasPressedThisFrame && !_finished)
         {
             _started = true;
             _showMessage = false;
             _finishedRound = false;
         }
         //Stop calibration early when clicking S
-        if (Input.GetKeyDown(KeyCode.S) && _started && !_finished)
+        if (keyboard.sKey.wasPressedThisFrame && _started && !_finished)
         {
             _earlyStop = true;
         }
@@ -269,10 +277,23 @@ public class GazeCalibration : MonoBehaviour
 
     private void CaptureNetworkOutput()
     {
-        _xData.Add(_modelRunner.GetFeatures().ToArray());
+        if (_modelRunner == null)
+        {
+            Debug.LogWarning("CaptureNetworkOutput: _modelRunner is null, skipping frame.");
+            return;
+        }
+
+        var features = _modelRunner.GetFeatures();
+        if (features == null || features.Count == 0)
+        {
+            Debug.LogWarning("CaptureNetworkOutput: GetFeatures() returned null/empty, skipping frame.");
+            return;
+        }
+
+        _xData.Add(features.ToArray());
         _yXData.Add(_crossHairPos.x / Screen.width);
         _yYData.Add(_crossHairPos.y / Screen.height);
-        _yData.Add(new Vector2(_crossHairPos.x /*/ Screen.width*/, _crossHairPos.y /*/ Screen.height*/));
+        _yData.Add(new Vector2(_crossHairPos.x, _crossHairPos.y));
     }
 
     private string ProcessDataNeural()
@@ -356,6 +377,12 @@ public class GazeCalibration : MonoBehaviour
                 bestYRMSE = yRMSE;
                 bestYModel = yModel;
             }
+        }
+
+        if (bestXModel == null || bestYModel == null)
+        {
+            Debug.LogError($"RidgeRegression training failed! _xData.Count={_xData.Count}, bestXModel={(bestXModel != null ? "OK" : "NULL")}, bestYModel={(bestYModel != null ? "OK" : "NULL")}. This usually means RMSE was NaN (face detection may not be working).");
+            return "RidgeRegression Training failed: model could not converge. Check that your webcam and face detection are working.";
         }
 
         if (save)

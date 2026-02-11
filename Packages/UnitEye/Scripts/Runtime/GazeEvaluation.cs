@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnitEye;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// This component is responsible for evaluating the UnitEye eye tracking.
@@ -68,7 +69,7 @@ public class GazeEvaluation : MonoBehaviour
 
         //If no crosshair is selected load the CalibrationDot Resource
         if (evaluationDot == null)
-            evaluationDot = (Texture2D)Resources.Load("CalibrationDot");
+            evaluationDot = Resources.Load<Texture2D>("CalibrationDot");
 
         //If can return after evaluation append string to GUI
         if (returnAfter)
@@ -91,17 +92,21 @@ public class GazeEvaluation : MonoBehaviour
 
     void Update()
     {
+        var mouse = Mouse.current;
+        var keyboard = Keyboard.current;
+        if (mouse == null || keyboard == null) return;
+
         //If finished and leftclick, signal Returned
-        if (Input.GetKeyDown(KeyCode.Mouse0) && returnAfter && _finished)
+        if (mouse.leftButton.wasPressedThisFrame && returnAfter && _finished)
             Returned = true;
         //If rightclick, signal Returned
-        if (Input.GetKeyDown(KeyCode.Mouse1) && returnAfter)
+        if (mouse.rightButton.wasPressedThisFrame && returnAfter)
             Returned = true;
         //If finished don't run through evaluation anymore
         if (_finished) return;
 
         //Start on leftclick
-        if (Input.GetKeyDown(KeyCode.Mouse0) && !_started)
+        if (mouse.leftButton.wasPressedThisFrame && !_started)
         {
             _started = true;
             _showMessage = false;
@@ -110,7 +115,7 @@ public class GazeEvaluation : MonoBehaviour
         }
 
         //Stop evaluation early when clicking S
-        if (Input.GetKeyDown(KeyCode.S) && _started)
+        if (keyboard.sKey.wasPressedThisFrame && _started)
         {
             _earlyStop = true;
         }
