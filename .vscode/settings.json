@@ -67,5 +67,5 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "Robit-main.slnx"
+    "dotnet.defaultSolution": "Robit.slnx"
 }

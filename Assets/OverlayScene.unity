@@ -535,8 +535,7 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ffb64b50cbe957c4d809a17d99479781, type: 3}
---- !u!1 &825152822
---- !u!1 &550680022
+--- !u!1 &675630886
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -544,29 +543,24 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 825152826}
-  - component: {fileID: 825152825}
-  - component: {fileID: 825152824}
-  - component: {fileID: 825152823}
-  m_Layer: 0
-  m_Name: MascotCamera
-  - component: {fileID: 550680024}
-  - component: {fileID: 550680023}
-  m_Layer: 0
-  m_Name: UdpPredictionReciever
+  - component: {fileID: 675630890}
+  - component: {fileID: 675630889}
+  - component: {fileID: 675630888}
+  - component: {fileID: 675630887}
+  m_Layer: 6
+  m_Name: MacotCamera
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &825152823
---- !u!114 &550680023
+--- !u!114 &675630887
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 825152822}
+  m_GameObject: {fileID: 675630886}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
@@ -604,25 +598,25 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
---- !u!81 &825152824
+--- !u!81 &675630888
 AudioListener:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 825152822}
+  m_GameObject: {fileID: 675630886}
   m_Enabled: 1
---- !u!20 &825152825
+--- !u!20 &675630889
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 825152822}
+  m_GameObject: {fileID: 675630886}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 2
-  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
+  m_ClearFlags: 4
+  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -647,7 +641,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 0
-  orthographic size: 218.669
+  orthographic size: 5
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
@@ -663,31 +657,16 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!4 &825152826
-  m_GameObject: {fileID: 550680022}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b774576f6d5b9354482d7a2b58583198, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UdpPredictionReceiver
-  port: 5005
-  expectedMessage: prediction:true
---- !u!4 &550680024
+--- !u!4 &675630890
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 825152822}
+  m_GameObject: {fileID: 675630886}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1359.7488, y: 76.78614, z: -96.5}
-  m_LocalScale: {x: 17.805828, y: 16.295029, z: 10.791411}
-  m_ConstrainProportionsScale: 1
-  m_GameObject: {fileID: 550680022}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 112.30105, y: 214.68584, z: 0}
+  m_LocalPosition: {x: 1355, y: 63.1, z: -116.8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1136,5 +1115,4 @@ SceneRoots:
   - {fileID: 901009600}
   - {fileID: 662774157}
   - {fileID: 84450410}
-  - {fileID: 825152826}
-  - {fileID: 550680024}
+  - {fileID: 675630890}
