@@ -67,4 +67,23 @@ public class AppLauncher : MonoBehaviour
             }
         }
     }
+
+    /// Safely transitions back to the Home scene.
+    /// Handles transparency reset and app closing on this persistent object
+    /// to avoid race conditions when the calling scene unloads.
+    public void GoHome()
+    {
+        // 1. Force window to be opaque immediately. 
+        // We do this directly via WindowManager (skipping the Transparency script's coroutine 
+        // which would die when the scene unloads).
+        WindowManager.MakeOpaque();
+
+        // 2. Close any running external app
+        CloseCurrentApp();
+
+        // 3. Load the Main Scene
+        SceneManager.LoadScene("MainScene");
+
+        UnityEngine.Debug.Log("[AppLauncher] Returning to Home.");
+    }
 }

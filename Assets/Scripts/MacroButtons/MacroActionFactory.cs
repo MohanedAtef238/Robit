@@ -9,6 +9,7 @@ public static class MacroActionFactory
             MacroActionType.ZoomOut      => new ZoomOutAction(),
             MacroActionType.SwitchWindow => new SwitchWindowAction(),
             MacroActionType.Calibration  => new CalibrationAction(),
+            MacroActionType.Home         => new HomeMacroAction(),
             _ => throw new System.ArgumentException($"Unknown MacroActionType: {type}")
         };
     }
