@@ -81,9 +81,14 @@ public class AppLauncher : MonoBehaviour
         // 2. Close any running external app
         CloseCurrentApp();
 
-        // 3. Load the Main Scene
-        SceneManager.LoadScene("MainScene");
+        // 3. Defer scene load, this prevents the UI Toolkit from freezing ( important to remember to keep implementing switching using coroutines )
+        StartCoroutine(GoHomeRoutine());
+    }
 
+    private System.Collections.IEnumerator GoHomeRoutine()
+    {   
+        yield return null; // Wait for UI Toolkit to finish discharging events
+        SceneManager.LoadScene("MainScene");
         UnityEngine.Debug.Log("[AppLauncher] Returning to Home.");
     }
 }
