@@ -1,0 +1,77 @@
+﻿.app-launcher-root {
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    padding: 24px;
+    background-color: rgb(0, 0, 0);
+}
+
+.app-launcher-header {
+    font-size: 28px;
+    color: rgb(242, 244, 248);
+    -unity-font-style: bold;
+}
+
+.app-launcher-status {
+    margin-top: 6px;
+    margin-bottom: 16px;
+    color: rgb(170, 179, 197);
+    font-size: 12px;
+}
+
+.app-launcher-grid {
+    flex-direction: column;
+    flex-wrap: wrap;
+    width: 100%;
+    height: 100%;
+}
+
+.app-launcher-grid .unity-scroll-view__content-container {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: auto;
+    margin-bottom: auto;
+    margin-right: auto;
+    margin-left: auto;
+    width: 95%;
+}
+
+.app-card {
+    width: 21%;
+    margin-right: 64px;
+    margin-bottom: 48px;
+    padding: 12px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: rgb(26, 31, 42);
+    border-radius: 12px;
+    border-width: 1px;
+    border-color: rgb(42, 48, 64);
+    aspect-ratio:1;
+}
+
+.app-card:hover {
+    background-color: rgb(35, 42, 56);
+    border-color: rgb(58, 66, 84);
+}
+
+.app-card:active {
+    background-color: rgb(21, 26, 34);
+}
+
+.app-card__icon {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 10px;
+}
+
+.app-card__icon--missing {
+    background-color: rgb(43, 49, 63);
+}
+
+.app-card__label {
+    color: rgb(230, 234, 242);
+    font-size: 13px;
+    -unity-text-align: middle-center;
+}
