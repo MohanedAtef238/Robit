@@ -5,6 +5,5 @@
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Mediapipe.Runtime.Tests.csproj" />
   <Project Path="Mediapipe.Holistic.Runtime.csproj" />
-  <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="UniUlm.UnitEye.Editor.csproj" />
 </Solution>

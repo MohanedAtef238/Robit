@@ -1,0 +1,16 @@
+:root {
+    --circle-size: 64px;
+}
+
+Button {
+    width: var(--circle-size);
+    height: var(--circle-size);
+    border-radius: 9999px;
+    padding: 0;
+    margin: 0;
+    justify-content: center;
+    align-items: center;
+    unity-text-align: middle-center;
+}
+
+
