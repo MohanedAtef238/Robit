@@ -398,15 +398,19 @@ PrefabInstance:
       objectReference: {fileID: 562178247}
     - target: {fileID: 3128903029877491951, guid: c867664103475714cac8279aaaf7f6f2, type: 3}
       propertyPath: webCamName
-      value: Iriun Webcam
+      value: USB2.0 HD UVC WebCam
+      objectReference: {fileID: 0}
+    - target: {fileID: 3128903029877491951, guid: c867664103475714cac8279aaaf7f6f2, type: 3}
+      propertyPath: targetFramerate
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 3128903029877491951, guid: c867664103475714cac8279aaaf7f6f2, type: 3}
       propertyPath: webCamResolution.x
-      value: 1920
+      value: 1280
       objectReference: {fileID: 0}
     - target: {fileID: 3128903029877491951, guid: c867664103475714cac8279aaaf7f6f2, type: 3}
       propertyPath: webCamResolution.y
-      value: 1080
+      value: 720
       objectReference: {fileID: 0}
     - target: {fileID: 3485875271603776584, guid: c867664103475714cac8279aaaf7f6f2, type: 3}
       propertyPath: m_Name
