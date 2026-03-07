@@ -22,6 +22,12 @@ public class AppLauncher : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Returns the currently running external process, or null.
+    /// Used by CaptureTextureRenderer to find the target window.
+    /// </summary>
+    public Process CurrentProcess => currentProcess;
+
     public void LaunchApplication(string path, string workingDirectory)
     {
         try
@@ -50,6 +56,9 @@ public class AppLauncher : MonoBehaviour
 
     public void CloseCurrentApp()
     {
+        // Stop any active texture capture before closing the app
+        StopCaptureIfActive();
+
         if (currentProcess != null && !currentProcess.HasExited)
         {
             try
@@ -68,20 +77,20 @@ public class AppLauncher : MonoBehaviour
         }
     }
 
+    /// <summary>
     /// Safely transitions back to the Home scene.
-    /// Handles transparency reset and app closing on this persistent object
-    /// to avoid race conditions when the calling scene unloads.
+    /// In the new architecture, this stops the capture session instead of
+    /// resetting DWM transparency / window styles.
+    /// </summary>
     public void GoHome()
     {
-        // 1. Force window to be opaque immediately. 
-        // We do this directly via WindowManager (skipping the Transparency script's coroutine 
-        // which would die when the scene unloads).
-        WindowManager.MakeOpaque();
+        // 1. Stop texture capture (replaces the legacy WindowManager.MakeOpaque())
+        StopCaptureIfActive();
 
         // 2. Close any running external app
         CloseCurrentApp();
 
-        // 3. Defer scene load, this prevents the UI Toolkit from freezing ( important to remember to keep implementing switching using coroutines )
+        // 3. Defer scene load — prevents UI Toolkit from freezing
         StartCoroutine(GoHomeRoutine());
     }
 
@@ -90,5 +99,17 @@ public class AppLauncher : MonoBehaviour
         yield return null; // Wait for UI Toolkit to finish discharging events
         SceneManager.LoadScene("MainScene");
         UnityEngine.Debug.Log("[AppLauncher] Returning to Home.");
+    }
+
+    /// <summary>
+    /// Finds and deactivates any active HolePunchController in the scene.
+    /// </summary>
+    private void StopCaptureIfActive()
+    {
+        var holePunch = FindFirstObjectByType<HolePunchController>();
+        if (holePunch != null)
+        {
+            holePunch.Deactivate();
+        }
     }
 }
