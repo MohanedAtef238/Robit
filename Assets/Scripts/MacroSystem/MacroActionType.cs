@@ -5,5 +5,8 @@ public enum MacroActionType
     ZoomOut,
     SwitchWindow,
     Calibration,
-    Home
+    Home,
+    PageUp,
+    PageDown,
+    ReturnToDesktop
 }

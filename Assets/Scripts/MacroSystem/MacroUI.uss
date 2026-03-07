@@ -1,0 +1,101 @@
+/* Circular Macro Buttons — Modern Dark Green */
+
+.macro-container {
+    position: absolute;
+    right: 24px;
+    top: 12%;
+    width: 180px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: rgba(30, 55, 40, 0.55);
+    border-radius: 16px;
+    padding: 16px 12px;
+    border-width: 1px;
+    border-color: rgba(50, 120, 70, 0.25);
+}
+
+.button-grid {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+}
+
+/* ── Circular button base ─────────────────────────── */
+
+.macro-button {
+    width: 70px;
+    height: 70px;
+    margin: 12px;
+    border-radius: 35px;
+
+    background-color: #bde0c9;
+    border-width: 1.5px;
+    border-color: #1e5c32;
+
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+
+    scale: 1;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-out;
+    transition-property: background-color, border-color, scale;
+}
+
+.macro-button:hover {
+    background-color: #3d7a50;
+    border-color: #66ff7f;
+    scale: 1.12;
+}
+
+.macro-button:active {
+    background-color: #2e7d32;
+    scale: 0.92;
+}
+
+/* ── Home button spans full width ─────────────────── */
+
+.home-button {
+    width: 100%;
+    border-radius: 35px;
+}
+
+/* ── Icon inside each button ──────────────────────── */
+
+.btn-icon {
+    width: 34px;
+    height: 34px;
+    -unity-background-image-tint-color: #1a2e22;
+    background-size: contain;
+    picking-mode: ignore;
+}
+
+.macro-button:hover .btn-icon {
+    -unity-background-image-tint-color: #ffffff;
+}
+
+/* ── Per-icon images ──────────────────────────────── */
+
+.icon-zoom-in {
+    background-image: url("Icons/zoom_in.png");
+}
+
+.icon-zoom-out {
+    background-image: url("Icons/zoom_out.png");
+}
+
+.icon-page-up {
+    background-image: url("Icons/page_up.png");
+}
+
+.icon-page-down {
+    background-image: url("Icons/page_down.png");
+}
+
+.icon-home {
+    background-image: url("Icons/home.png");
+}

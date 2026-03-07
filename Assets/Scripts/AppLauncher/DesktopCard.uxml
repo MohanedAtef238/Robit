@@ -1,0 +1,62 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement class="container" name="card-container">
+        
+        <!-- Base card -->
+        <ui:VisualElement name="card" class="card">
+            
+            <!-- Glow background effects -->
+            <ui:VisualElement class="card-glare" />
+            <ui:VisualElement class="scan-line" />
+            <ui:VisualElement class="card-glow-bg" />
+            
+            <!-- Cyber Lines -->
+            <ui:VisualElement class="cyber-lines">
+                <ui:VisualElement class="line line-1" />
+                <ui:VisualElement class="line line-2" />
+                <ui:VisualElement class="line line-3" />
+                <ui:VisualElement class="line line-4" />
+            </ui:VisualElement>
+
+            <!-- Corner elements -->
+            <ui:VisualElement class="corner-elements">
+                <ui:VisualElement class="corner corner-1" />
+                <ui:VisualElement class="corner corner-2" />
+                <ui:VisualElement class="corner corner-3" />
+                <ui:VisualElement class="corner corner-4" />
+            </ui:VisualElement>
+
+            <!-- Card Content Main -->
+            <ui:VisualElement class="card-content">
+                <!-- Particles -->
+                <ui:VisualElement class="card-particles">
+                    <ui:VisualElement class="particle p-1"/>
+                    <ui:VisualElement class="particle p-2"/>
+                    <ui:VisualElement class="particle p-3"/>
+                    <ui:VisualElement class="particle p-4"/>
+                    <ui:VisualElement class="particle p-5"/>
+                    <ui:VisualElement class="particle p-6"/>
+                </ui:VisualElement>
+
+                <!-- Glowing ambient spots -->
+                <ui:VisualElement class="glowing-elements">
+                    <ui:VisualElement class="glow glow-1"/>
+                    <ui:VisualElement class="glow glow-2"/>
+                    <ui:VisualElement class="glow glow-3"/>
+                </ui:VisualElement>
+
+                <ui:Label name="prompt" text="LAUNCH APP" />
+                
+                <ui:VisualElement name="icon-container" class="icon-container">
+                    <!-- Icon will be inserted here programmatically -->
+                </ui:VisualElement>
+
+                <ui:Label name="title" class="title" text="APP NAME" />
+                <ui:Label name="subtitle" class="subtitle" enable-rich-text="true" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Invisible Tracker for Click / Hover Events (Replaces 25 CSS grid trackers) -->
+        <ui:VisualElement name="tracker" class="tracker" />
+
+    </ui:VisualElement>
+</ui:UXML>

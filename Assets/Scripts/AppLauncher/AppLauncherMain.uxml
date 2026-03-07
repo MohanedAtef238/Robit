@@ -1,0 +1,17 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Scripts/AppLauncher/DesktopCard.uss?fileID=7433441132597879392&amp;guid=6b1a13e2bbdc3214daf9c18fca6d1f05&amp;type=3#DesktopCard" />
+    
+    <ui:VisualElement name="app-launcher-root" class="app-launcher-root">
+        
+        <!-- Status Label -->
+        <ui:Label name="status-text" class="status-text" text="Initializing Desktop..." />
+        
+        <!-- Scroll View containing the grid of items -->
+        <ui:ScrollView name="cards-scrollview" class="cards-scrollview" mode="Vertical">
+            <ui:VisualElement name="cards-container" class="cards-container">
+            </ui:VisualElement>
+        </ui:ScrollView>
+
+    </ui:VisualElement>
+
+</ui:UXML>

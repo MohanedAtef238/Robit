@@ -87,6 +87,7 @@ public static class Win32Interop
     public const int SW_SHOW            = 5;
     public const int SW_SHOWNOACTIVATE  = 4;
     public const int SW_RESTORE         = 9;
+    public const int SW_MINIMIZE        = 6;
 
     // ═══════════════════════════════════════════════════════════════════════════
     // GDI Region functions (used for cutting holes in the Unity window)

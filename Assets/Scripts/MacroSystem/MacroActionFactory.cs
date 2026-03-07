@@ -10,6 +10,9 @@ public static class MacroActionFactory
             MacroActionType.SwitchWindow => new SwitchWindowAction(),
             MacroActionType.Calibration  => new CalibrationAction(),
             MacroActionType.Home         => new HomeMacroAction(),
+            MacroActionType.PageUp       => new PageUpAction(),
+            MacroActionType.PageDown     => new PageDownAction(),
+            MacroActionType.ReturnToDesktop => new ReturnToDesktopAction(),
             _ => throw new System.ArgumentException($"Unknown MacroActionType: {type}")
         };
     }

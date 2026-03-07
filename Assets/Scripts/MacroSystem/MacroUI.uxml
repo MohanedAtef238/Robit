@@ -1,0 +1,22 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="MacroUI.uss" />
+    <ui:VisualElement name="macro-container" class="macro-container">
+        <ui:VisualElement name="button-grid" class="button-grid">
+            <MacroButton name="BtnZoomIn" class="macro-button">
+                <ui:VisualElement class="btn-icon icon-zoom-in" />
+            </MacroButton>
+            <MacroButton name="BtnZoomOut" class="macro-button">
+                <ui:VisualElement class="btn-icon icon-zoom-out" />
+            </MacroButton>
+            <MacroButton name="BtnPageUp" class="macro-button">
+                <ui:VisualElement class="btn-icon icon-page-up" />
+            </MacroButton>
+            <MacroButton name="BtnPageDown" class="macro-button">
+                <ui:VisualElement class="btn-icon icon-page-down" />
+            </MacroButton>
+            <MacroButton name="BtnReturnToDesktop" class="macro-button home-button">
+                <ui:VisualElement class="btn-icon icon-home" />
+            </MacroButton>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

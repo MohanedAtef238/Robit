@@ -9,6 +9,13 @@ public class AppLauncher : MonoBehaviour
     public static AppLauncher Instance;
     private Process currentProcess;
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void ApplyFPSCap()
+    {
+        Application.targetFrameRate = 60;
+        QualitySettings.vSyncCount = 0;
+    }
+
     private void Awake()
     {
         if (Instance == null)
@@ -17,46 +24,104 @@ public class AppLauncher : MonoBehaviour
             DontDestroyOnLoad(gameObject);
         }
         else
-        {
+        {   
             Destroy(gameObject);
         }
     }
 
-    /// <summary>
-    /// Returns the currently running external process, or null.
-    /// Used by CaptureTextureRenderer to find the target window.
-    /// </summary>
     public Process CurrentProcess => currentProcess;
 
     public void LaunchApplication(string path, string workingDirectory)
     {
         try
         {
-            if (currentProcess != null && !currentProcess.HasExited)
+            UnityEngine.Debug.Log($"[AppLauncher] Sending '{path}' to HolePunchController.");
+
+            var holePunch = FindFirstObjectByType<HolePunchController>();
+            if (holePunch != null)
             {
-                currentProcess.CloseMainWindow();
-                currentProcess.Dispose();
+                holePunch.targetProcessName = System.IO.Path.GetFileNameWithoutExtension(path);
+                holePunch.executablePath = path;
+
+                // Open the overlay panel animation
+                var captureController = FindFirstObjectByType<RobitCaptureController>();
+                if (captureController != null)
+                    captureController.OpenPanel();
+                
+                // Activate the hole punch
+                holePunch.Activate();
+            }
+            else
+            {
+                UnityEngine.Debug.LogWarning("[AppLauncher] No HolePunchController found! Launching normally.");
+                if (currentProcess != null && !currentProcess.HasExited)
+                {
+                    currentProcess.CloseMainWindow();
+                    currentProcess.Dispose();
+                }
+
+                ProcessStartInfo startInfo = new ProcessStartInfo(path);
+                if (!string.IsNullOrEmpty(workingDirectory) && Directory.Exists(workingDirectory))
+                    startInfo.WorkingDirectory = workingDirectory;
+
+                currentProcess = Process.Start(startInfo);
             }
 
-            ProcessStartInfo startInfo = new ProcessStartInfo(path);
-            if (!string.IsNullOrEmpty(workingDirectory) && Directory.Exists(workingDirectory))
+            // Hide the AppLauncher UI
+            var appUI = FindFirstObjectByType<AppLauncherUIToolkit>();
+            if (appUI != null)
             {
-                startInfo.WorkingDirectory = workingDirectory;
+                var doc = appUI.GetComponent<UnityEngine.UIElements.UIDocument>();
+                if (doc != null && doc.rootVisualElement != null)
+                    doc.rootVisualElement.style.display = UnityEngine.UIElements.DisplayStyle.None;
             }
 
-            currentProcess = Process.Start(startInfo);
-            
-            SceneManager.LoadScene("OverlayScene"); 
+            // Show macro buttons with bounce animation
+            var macroCtrl = FindFirstObjectByType<MacroButtonController>();
+            if (macroCtrl != null)
+                macroCtrl.ShowWithBounce();
         }
         catch (Exception e)
         {
-            UnityEngine.Debug.LogError($"Failed to launch application: {path}, Error: {e.Message}");
+            UnityEngine.Debug.LogError($"Failed to prepare application: {path}, Error: {e.Message}");
         }
+    }
+
+    /// <summary>
+    /// Closes the overlay, kills the app, and shows the desktop cards again.
+    /// Called by the Home macro button.
+    /// </summary>
+    public void ReturnToDesktop()
+    {
+        // Close the overlay panel animation
+        var captureController = FindFirstObjectByType<RobitCaptureController>();
+        if (captureController != null)
+            captureController.ClosePanel();
+
+        // Kill the running app
+        var holePunch = FindFirstObjectByType<HolePunchController>();
+        if (holePunch != null)
+            holePunch.CloseTargetApp();
+
+        // Show the AppLauncher UI again
+        var appUI = FindFirstObjectByType<AppLauncherUIToolkit>();
+        if (appUI != null)
+        {
+            var doc = appUI.GetComponent<UnityEngine.UIElements.UIDocument>();
+            if (doc != null && doc.rootVisualElement != null)
+                doc.rootVisualElement.style.display = UnityEngine.UIElements.DisplayStyle.Flex;
+        }
+
+        // Hide macros with shrink
+        var macroCtrl = FindFirstObjectByType<MacroButtonController>();
+        if (macroCtrl != null)
+            macroCtrl.HideWithShrink();
+
+        UnityEngine.Debug.Log("[AppLauncher] Returned to desktop.");
     }
 
     public void CloseCurrentApp()
     {
-        // Stop any active texture capture before closing the app
         StopCaptureIfActive();
 
         if (currentProcess != null && !currentProcess.HasExited)
@@ -77,39 +142,24 @@ public class AppLauncher : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Safely transitions back to the Home scene.
-    /// In the new architecture, this stops the capture session instead of
-    /// resetting DWM transparency / window styles.
-    /// </summary>
     public void GoHome()
     {
-        // 1. Stop texture capture (replaces the legacy WindowManager.MakeOpaque())
         StopCaptureIfActive();
-
-        // 2. Close any running external app
         CloseCurrentApp();
-
-        // 3. Defer scene load — prevents UI Toolkit from freezing
         StartCoroutine(GoHomeRoutine());
     }
 
     private System.Collections.IEnumerator GoHomeRoutine()
     {   
-        yield return null; // Wait for UI Toolkit to finish discharging events
+        yield return null;
         SceneManager.LoadScene("MainScene");
         UnityEngine.Debug.Log("[AppLauncher] Returning to Home.");
     }
 
-    /// <summary>
-    /// Finds and deactivates any active HolePunchController in the scene.
-    /// </summary>
     private void StopCaptureIfActive()
     {
         var holePunch = FindFirstObjectByType<HolePunchController>();
         if (holePunch != null)
-        {
             holePunch.Deactivate();
-        }
     }
 }
