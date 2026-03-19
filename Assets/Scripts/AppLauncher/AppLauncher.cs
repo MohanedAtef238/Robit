@@ -31,59 +31,85 @@ public class AppLauncher : MonoBehaviour
 
     public Process CurrentProcess => currentProcess;
 
-    public void LaunchApplication(string path, string workingDirectory)
+    // public void LaunchApplication(string path, string workingDirectory)
+    // {
+    //     try
+    //     {
+    //         UnityEngine.Debug.Log($"[AppLauncher] Sending '{path}' to HolePunchController.");
+
+    //         var holePunch = FindFirstObjectByType<HolePunchController>();
+    //         if (holePunch != null)
+    //         {
+    //             holePunch.targetProcessName = System.IO.Path.GetFileNameWithoutExtension(path);
+    //             holePunch.executablePath = path;
+
+    //             // Open the overlay panel animation
+    //             var captureController = FindFirstObjectByType<RobitCaptureController>();
+    //             if (captureController != null)
+    //                 captureController.OpenPanel();
+                
+    //             // Activate the hole punch
+    //             holePunch.Activate();
+    //         }
+    //         else
+    //         {
+    //             UnityEngine.Debug.LogWarning("[AppLauncher] No HolePunchController found! Launching normally.");
+    //             if (currentProcess != null && !currentProcess.HasExited)
+    //             {
+    //                 currentProcess.CloseMainWindow();
+    //                 currentProcess.Dispose();
+    //             }
+
+    //             ProcessStartInfo startInfo = new ProcessStartInfo(path);
+    //             if (!string.IsNullOrEmpty(workingDirectory) && Directory.Exists(workingDirectory))
+    //                 startInfo.WorkingDirectory = workingDirectory;
+
+    //             currentProcess = Process.Start(startInfo);
+    //         }
+
+    //         // Hide the AppLauncher UI
+    //         var appUI = FindFirstObjectByType<AppLauncherUIToolkit>();
+    //         if (appUI != null)
+    //         {
+    //             var doc = appUI.GetComponent<UnityEngine.UIElements.UIDocument>();
+    //             if (doc != null && doc.rootVisualElement != null)
+    //                 doc.rootVisualElement.style.display = UnityEngine.UIElements.DisplayStyle.None;
+    //         }
+
+    //         // Show macro buttons with bounce animation
+    //         var macroCtrl = FindFirstObjectByType<MacroButtonController>();
+    //         if (macroCtrl != null)
+    //             macroCtrl.ShowWithBounce();
+    //     }
+    //     catch (Exception e)
+    //     {
+    //         UnityEngine.Debug.LogError($"Failed to prepare application: {path}, Error: {e.Message}");
+    //     }
+    // }
+
+        public void LaunchApplication(string path, string workingDirectory)
     {
         try
         {
-            UnityEngine.Debug.Log($"[AppLauncher] Sending '{path}' to HolePunchController.");
-
-            var holePunch = FindFirstObjectByType<HolePunchController>();
-            if (holePunch != null)
+            if (currentProcess != null && !currentProcess.HasExited)
             {
-                holePunch.targetProcessName = System.IO.Path.GetFileNameWithoutExtension(path);
-                holePunch.executablePath = path;
-
-                // Open the overlay panel animation
-                var captureController = FindFirstObjectByType<RobitCaptureController>();
-                if (captureController != null)
-                    captureController.OpenPanel();
-                
-                // Activate the hole punch
-                holePunch.Activate();
-            }
-            else
-            {
-                UnityEngine.Debug.LogWarning("[AppLauncher] No HolePunchController found! Launching normally.");
-                if (currentProcess != null && !currentProcess.HasExited)
-                {
-                    currentProcess.CloseMainWindow();
-                    currentProcess.Dispose();
-                }
-
-                ProcessStartInfo startInfo = new ProcessStartInfo(path);
-                if (!string.IsNullOrEmpty(workingDirectory) && Directory.Exists(workingDirectory))
-                    startInfo.WorkingDirectory = workingDirectory;
-
-                currentProcess = Process.Start(startInfo);
+                currentProcess.CloseMainWindow();
+                currentProcess.Dispose();
             }
 
-            // Hide the AppLauncher UI
-            var appUI = FindFirstObjectByType<AppLauncherUIToolkit>();
-            if (appUI != null)
+            ProcessStartInfo startInfo = new ProcessStartInfo(path);
+            if (!string.IsNullOrEmpty(workingDirectory) && Directory.Exists(workingDirectory))
             {
-                var doc = appUI.GetComponent<UnityEngine.UIElements.UIDocument>();
-                if (doc != null && doc.rootVisualElement != null)
-                    doc.rootVisualElement.style.display = UnityEngine.UIElements.DisplayStyle.None;
+                startInfo.WorkingDirectory = workingDirectory;
             }
 
-            // Show macro buttons with bounce animation
-            var macroCtrl = FindFirstObjectByType<MacroButtonController>();
-            if (macroCtrl != null)
-                macroCtrl.ShowWithBounce();
+            currentProcess = Process.Start(startInfo);
+            
+            SceneManager.LoadScene("OverlayScene"); 
         }
-        catch (Exception e)
+        catch (System.Exception e)
         {
-            UnityEngine.Debug.LogError($"Failed to prepare application: {path}, Error: {e.Message}");
+            UnityEngine.Debug.LogError($"Failed to launch application: {path}, Error: {e.Message}");
         }
     }
 
