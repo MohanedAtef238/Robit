@@ -50,6 +50,7 @@ public class MacroButtonController : MonoBehaviour
 
         // Start hidden
         HideImmediate();
+        ShowWithBounce();
         Debug.Log($"[MacroButtonController] Registered {boundButtons.Count} macro buttons");
     }
 

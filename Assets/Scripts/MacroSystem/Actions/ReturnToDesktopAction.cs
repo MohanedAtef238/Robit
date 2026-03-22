@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class ReturnToDesktopAction : IMacroAction
 {
@@ -7,15 +8,17 @@ public class ReturnToDesktopAction : IMacroAction
 
     public void Execute()
     {
-        var launcher = AppLauncher.Instance;
-        if (launcher != null)
-        {
-            launcher.ReturnToDesktop();
-        }
-        else
-        {
-            Debug.LogWarning("[ReturnToDesktopAction] AppLauncher.Instance is null.");
-        }
+        // var launcher = AppLauncher.Instance;
+        // if (launcher != null)
+        // {
+        //     launcher.ReturnToDesktop();
+        // }
+        // else
+        // {
+        //     Debug.LogWarning("[ReturnToDesktopAction] AppLauncher.Instance is null.");
+        // }
+
+        SceneManager.LoadScene("DemoScene");
 
         Debug.Log("[MacroButton] Executing: return_to_desktop");
     }
