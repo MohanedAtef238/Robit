@@ -11,14 +11,14 @@
     padding: 16px 12px;
     border-width: 1px;
     border-color: rgba(50, 120, 70, 0.25);
-    opacity: 0.3;
+    opacity: 0.1;
     transition-property: opacity;
     transition-duration: 0.3s;
-    transition-delay:5s;
+    transition-delay: 2.5s;
 }
 
 .macro-container:hover {
-    transition-delay:0s;
+    transition-delay: 0s;
     opacity: 1;
 }
 
