@@ -66,45 +66,6 @@ public class DesktopParser : MonoBehaviour
         {"microsoft outlook", "https://img.icons8.com/color/96/microsoft-outlook-2019--v2.png"},
     };
     
-    private static readonly HashSet<string> AllowedApps = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-    {
-        "chrome", "google chrome", "googlechrome",
-        "firefox", "mozilla firefox",
-        "msedge", "microsoft edge", "edge",
-        "brave", "brave browser",
-        "opera", "opera gx", "opera browser",
-        "vivaldi",
-        "safari",
-        "chromium",
-        "arc", "arc browser",
-        "tor browser", "tor",
-        "waterfox",
-        "librewolf",
-        "floorp",
-        "zen browser",
-        
-        "discord",
-        "whatsapp", "whatsapp desktop",
-        "telegram", "telegram desktop",
-        "signal", "signal desktop",
-        "slack",
-        "microsoft teams", "teams", "ms teams",
-        "skype", "skype for business",
-        "zoom", "zoom workplace",
-        "messenger", "facebook messenger",
-        "viber",
-        "wechat",
-        "line",
-        "wire",
-        "element", "element desktop",
-        "guilded",
-        "mattermost",
-        "zulip",
-        "thunderbird", "mozilla thunderbird",
-        "outlook", "microsoft outlook",
-        "keybase",
-    };
-
     void Start()
     {
         StartCoroutine(ParseShortcuts());
@@ -143,20 +104,8 @@ public class DesktopParser : MonoBehaviour
                 }
                 
                 var exeName = Path.GetFileNameWithoutExtension(shortcut.TargetPath);
-                if (!IsAllowedApp(shortcutName, exeName))
-                {
-                    Debug.Log($"[DesktopParser] Skipping '{shortcutName}' (exe: {exeName}): Not in whitelist");
-                    continue;
-                }
-                
                 string iconUrl = GetIconUrl(shortcutName, exeName);
-                if (string.IsNullOrEmpty(iconUrl))
-                {
-                    Debug.LogWarning($"[DesktopParser] No icon URL found for '{shortcutName}'");
-                    continue;
-                }
-                
-                Debug.Log($"[DesktopParser] Queued allowed app: '{shortcutName}' -> {shortcut.TargetPath}");
+                Debug.Log($"[DesktopParser] Queued: '{shortcutName}' -> {shortcut.TargetPath}");
                 pendingShortcuts.Add((shortcutName, shortcut.TargetPath, iconUrl));
             }
             catch (Exception e)
@@ -178,6 +127,12 @@ public class DesktopParser : MonoBehaviour
     
     IEnumerator FetchIconAndAddShortcut(string name, string targetPath, string iconUrl)
     {
+        if (string.IsNullOrEmpty(iconUrl))
+        {
+            AddShortcut(name, targetPath, null);
+            yield break;
+        }
+
         Debug.Log($"[DesktopParser] Fetching icon from: {iconUrl}");
         
         UnityWebRequest request = UnityWebRequestTexture.GetTexture(iconUrl);
@@ -229,22 +184,4 @@ public class DesktopParser : MonoBehaviour
         return null;
     }
     
-    private bool IsAllowedApp(string shortcutName, string exeName)
-    {
-        if (AllowedApps.Contains(shortcutName))
-            return true;
-        
-        if (AllowedApps.Contains(exeName))
-            return true;
-        
-        foreach (var app in AllowedApps)
-        {
-            if (shortcutName.IndexOf(app, StringComparison.OrdinalIgnoreCase) >= 0)
-                return true;
-            if (exeName.IndexOf(app, StringComparison.OrdinalIgnoreCase) >= 0)
-                return true;
-        }
-        
-        return false;
-    }
 }

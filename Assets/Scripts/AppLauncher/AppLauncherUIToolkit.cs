@@ -74,6 +74,10 @@ public class AppLauncherUIToolkit : MonoBehaviour
         
         Debug.Log($"[AppLauncherUIToolkit] DesktopParser finished with {desktopParser.shortcuts.Count} shortcuts after {elapsed:F2}s");
 
+        // Cache on the persistent AppLauncher so AppCyclerController can read them in OverlayScene.
+        if (AppLauncher.Instance != null)
+            AppLauncher.Instance.CachedShortcuts = desktopParser.shortcuts;
+
         GenerateAppCards(desktopParser.shortcuts);
     }
 

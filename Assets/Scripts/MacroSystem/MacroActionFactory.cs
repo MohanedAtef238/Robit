@@ -13,6 +13,7 @@ public static class MacroActionFactory
             MacroActionType.PageUp       => new PageUpAction(),
             MacroActionType.PageDown     => new PageDownAction(),
             MacroActionType.ReturnToDesktop => new ReturnToDesktopAction(),
+            MacroActionType.AppCycler => new AppCyclerAction(),
             _ => throw new System.ArgumentException($"Unknown MacroActionType: {type}")
         };
     }

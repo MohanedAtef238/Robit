@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using System.Diagnostics;
+using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 using System.IO;
 
@@ -8,6 +9,10 @@ public class AppLauncher : MonoBehaviour
 {
     public static AppLauncher Instance;
     private Process currentProcess;
+
+    /// Desktop shortcuts discovered by DesktopParser in MainScene.
+    /// Populated before scene transition so AppCyclerController can read it in OverlayScene.
+    public List<ShortcutInfo> CachedShortcuts { get; set; } = new();
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void ApplyFPSCap()

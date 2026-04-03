@@ -43,7 +43,7 @@ public class Transparency : MonoBehaviour
         #if !UNITY_EDITOR
         hWnd = WindowManager.GetWindowHandle();
         mainCamera = Camera.main;
-        if (mainCamera == null) mainCamera = FindObjectOfType<Camera>();
+        if (mainCamera == null) mainCamera = FindFirstObjectByType<Camera>();
 
         if (startInTransparentMode)
         {
