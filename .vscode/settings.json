@@ -67,5 +67,5 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "Robit.slnx"
+    "dotnet.defaultSolution": "Mock_OS_Unity.slnx"
 }
