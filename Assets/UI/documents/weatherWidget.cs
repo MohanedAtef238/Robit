@@ -51,6 +51,7 @@ public class DesktopWidget : MonoBehaviour
         UpdateClockSmooth();
      
         UpdateDigitalClock();
+
     }
 
     // -----------------------------

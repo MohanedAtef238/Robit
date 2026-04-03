@@ -5,8 +5,6 @@ Slider Label {
     color: rgba(255, 153, 153, 0);
 }
 
-
-
 Slider #unity-tracker {
     background-color: rgba(125, 101, 182, 0.85);
     background-size: 100% 100%;
@@ -69,4 +67,15 @@ Toggle #unity-checkmark {
     border-bottom-color: rgba(144, 152, 211, 0.82);
     position: absolute;
     scale: 1 1;
+}
+
+TextField #unity-text-input {
+    color: rgb(88, 94, 160);
+    font-size: 43px;
+    -unity-font-style: bold;
+    background-color: rgba(255, 255, 255, 0);
+    border-left-color: rgba(144, 152, 211, 0);
+    border-right-color: rgba(144, 152, 211, 0);
+    border-top-color: rgba(144, 152, 211, 0);
+    border-bottom-color: rgba(144, 152, 211, 0);
 }
