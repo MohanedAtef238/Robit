@@ -1,0 +1,218 @@
+/* ═══════════════════════════════════════════════════════════
+   App Cycler — bottom-center dock that peeks on hover
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+    --cycler-circle-size: 64px;
+    --cycler-circle-bg: rgb(185, 160, 240);
+    --cycler-circle-bg-hover: rgb(90, 50, 195);
+    --cycler-circle-border: rgb(65, 35, 145);
+    --cycler-circle-border-hover: rgb(160, 110, 255);
+    --cycler-label-bg: rgba(20, 15, 55, 0.75);
+    --cycler-label-color: rgb(230, 220, 255);
+    --cycler-arrow-color: rgb(20, 10, 55);
+    --cycler-arrow-hover-color: rgb(255, 255, 255);
+    --cycler-transition-speed: 300ms;
+}
+
+/* ── hit area: invisible zone near bottom edge that triggers peek ── */
+.cycler-hit-area {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    translate: -50% 0;
+    width: 280px;
+    height: 80px;
+}
+
+/* ── dock: holds everything, anchored bottom-center ── */
+.cycler-dock {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    translate: -50% 0;
+    width: 280px;
+    height: 80px;
+    align-items: center;
+    justify-content: flex-end;
+    flex-direction: row;
+    overflow: visible;
+
+    /* tucked state: pushed down so only top half of circle shows */
+    transition-property: translate;
+    transition-duration: var(--cycler-transition-speed);
+    transition-timing-function: ease-out;
+}
+
+.cycler-dock--tucked {
+    translate: -50% 36px;
+}
+
+.cycler-dock--peeked {
+    translate: -50% 0;
+}
+
+/* ── idle circle (single button before split) ── */
+.cycler-idle-circle {
+    position: absolute;
+    left: 50%;
+    bottom: 8px;
+    translate: -50% 0;
+    width: var(--cycler-circle-size);
+    height: var(--cycler-circle-size);
+    border-radius: 50%;
+    background-color: var(--cycler-circle-bg);
+    border-width: 1.5px;
+    border-color: var(--cycler-circle-border);
+    align-items: center;
+    justify-content: center;
+
+    transition-property: scale, opacity;
+    transition-duration: var(--cycler-transition-speed);
+    transition-timing-function: ease-out;
+}
+
+.cycler-idle-circle:hover {
+    background-color: var(--cycler-circle-bg-hover);
+    border-color: var(--cycler-circle-border-hover);
+    scale: 1.08;
+}
+
+.cycler-idle-circle:active {
+    scale: 0.92;
+}
+
+.cycler-idle-icon {
+    width: 30px;
+    height: 30px;
+    -unity-background-image-tint-color: var(--cycler-arrow-color);
+    background-size: contain;
+}
+
+.cycler-idle-circle:hover .cycler-idle-icon {
+    -unity-background-image-tint-color: var(--cycler-arrow-hover-color);
+}
+
+/* ── expanded state: left arrow, label, right arrow ── */
+.cycler-expanded {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 8px;
+    height: var(--cycler-circle-size);
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+
+    transition-property: opacity;
+    transition-duration: 200ms;
+    transition-timing-function: ease-out;
+}
+
+/* left / right arrow circles */
+.cycler-arrow {
+    width: var(--cycler-circle-size);
+    height: var(--cycler-circle-size);
+    min-width: var(--cycler-circle-size);
+    border-radius: 50%;
+    background-color: var(--cycler-circle-bg);
+    border-width: 1.5px;
+    border-color: var(--cycler-circle-border);
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    transition-property: translate, scale, opacity, background-color, border-color;
+    transition-duration: var(--cycler-transition-speed);
+    transition-timing-function: ease-out;
+}
+
+.cycler-arrow:hover {
+    background-color: var(--cycler-circle-bg-hover);
+    border-color: var(--cycler-circle-border-hover);
+    scale: 1.08;
+}
+
+.cycler-arrow:active {
+    scale: 0.92;
+}
+
+.cycler-arrow-icon {
+    width: 26px;
+    height: 26px;
+    -unity-background-image-tint-color: var(--cycler-arrow-color);
+    background-size: contain;
+}
+
+.cycler-arrow:hover .cycler-arrow-icon {
+    -unity-background-image-tint-color: var(--cycler-arrow-hover-color);
+}
+
+.cycler-arrow--left .cycler-arrow-icon {
+    scale: -1 1;
+}
+
+/* collapsed: both arrows sit at center, invisible */
+.cycler-arrow--collapsed {
+    translate: 0 0;
+    scale: 0;
+    opacity: 0;
+}
+
+/* split: arrows move outward */
+.cycler-arrow--left.cycler-arrow--split {
+    translate: 0 0;
+    scale: 1;
+    opacity: 1;
+}
+
+.cycler-arrow--right.cycler-arrow--split {
+    translate: 0 0;
+    scale: 1;
+    opacity: 1;
+}
+
+/* ── center label (app name) ── */
+.cycler-label-container {
+    flex-grow: 1;
+    height: 40px;
+    margin-left: 8px;
+    margin-right: 8px;
+    border-radius: 20px;
+    background-color: var(--cycler-label-bg);
+    border-width: 1px;
+    border-color: rgba(100, 60, 210, 0.40);
+    align-items: center;
+    justify-content: center;
+
+    transition-property: opacity, scale;
+    transition-duration: 200ms;
+    transition-timing-function: ease-out;
+}
+
+.cycler-label-container:hover {
+    background-color: rgba(40, 25, 90, 0.85);
+    border-color: rgba(160, 110, 255, 0.6);
+}
+
+.cycler-label-container--hidden {
+    opacity: 0;
+    scale: 0.8 1;
+}
+
+.cycler-label-container--visible {
+    opacity: 1;
+    scale: 1;
+}
+
+.cycler-label {
+    color: var(--cycler-label-color);
+    font-size: 14px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+}

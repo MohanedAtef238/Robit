@@ -1,72 +1,43 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
+using UnityEngine.EventSystems;
 
 [RequireComponent(typeof(BoxCollider))]
-public class RobitInteraction : MonoBehaviour
+public class RobitInteraction : MonoBehaviour, IPointerClickHandler
 {
-    [SerializeField] private UIDocument uiDocument;
-    [SerializeField] private UIDocument appLauncherUIDocument;
-    
-    private VisualElement rootParams;
-    private VisualElement appLauncherRoot;
-    private Camera mainCamera;
-    private bool isUiVisible = true;
+    [SerializeField] private MacroButtonController macroController;
+
+    [Header("Menu Anchor (world-space offset from mascot pivot)")]
+    [Tooltip("In world units. For a 1-unit-tall mascot, Y ≈ 0.8 puts the arc above the head.")]
+    [SerializeField] private Vector3 menuAnchorOffset = new Vector3(0f, 0.1f, 0f);
+
+    [Header("Fine-tune (panel-space pixel offset applied AFTER projection)")]
+    [Tooltip("X shifts left/right, Y shifts up (negative) or down (positive) in pixels.")]
+    [SerializeField] private Vector2 panelPixelOffset = new Vector2(0f, 211f);
+
+    private bool _menuOpen;
 
     void Start()
     {
-        mainCamera = Camera.main;
-        
-        if (uiDocument == null)
-            uiDocument = FindFirstObjectByType<UIDocument>();
+        if (macroController == null)
+            macroController = Object.FindFirstObjectByType<MacroButtonController>();
+    }
 
-        if (uiDocument != null)
-            rootParams = uiDocument.rootVisualElement;
-        else
-            Debug.LogError("[RobitInteraction] No Mascot UIDocument found in the scene to toggle.");
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        if (macroController == null) return;
 
-        if (appLauncherUIDocument != null)
+        _menuOpen = !_menuOpen;
+        if (_menuOpen)
         {
-            appLauncherRoot = appLauncherUIDocument.rootVisualElement;
-            if (isUiVisible) 
-                appLauncherRoot.style.display = DisplayStyle.None;
+            macroController.ShowWithBounceAtWorldPosition(
+                transform.position + menuAnchorOffset,
+                panelPixelOffset,
+                eventData.pressEventCamera);
         }
         else
         {
-            Debug.LogWarning("[RobitInteraction] No AppLauncher UIDocument assigned to toggle.");
+            macroController.HideWithShrink();
         }
-    }
-
-    void Update()
-    {
-        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
-            CheckClickOnModel();
-    }
-
-    private void CheckClickOnModel()
-    {
-        if (mainCamera == null) return;
-
-        Vector2 mousePos = Mouse.current.position.ReadValue();
-        Ray ray = mainCamera.ScreenPointToRay(mousePos);
-
-        if (Physics.Raycast(ray, out RaycastHit hit))
-        {
-            if (hit.collider != null && hit.collider.gameObject == gameObject)
-                ToggleUI();
-        }
-    }
-
-    private void ToggleUI()
-    {
-        isUiVisible = !isUiVisible;
-
-        if (rootParams != null)
-            rootParams.style.display = isUiVisible ? DisplayStyle.Flex : DisplayStyle.None;
-
-        if (appLauncherRoot != null)
-            appLauncherRoot.style.display = !isUiVisible ? DisplayStyle.Flex : DisplayStyle.None;
-
-        Debug.Log($"[RobitInteraction] Toggled Mascot UI: {isUiVisible}, AppLauncher UI: {!isUiVisible}");
     }
 }

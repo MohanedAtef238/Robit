@@ -2,11 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using UnityEngine.InputSystem;
 
-/// <summary>
-/// Centralised Win32 P/Invoke declarations used across the overlay system.
-/// Eliminates duplicate DllImport / struct definitions scattered through
-/// CaptureTextureRenderer, SyntheticInputInjector, and macro actions.
-/// </summary>
+// Centralised Win32 P/Invoke declarations for the overlay system.
 public static class Win32Interop
 {
     // ═══════════════════════════════════════════════════════════════════════════
@@ -26,6 +22,9 @@ public static class Win32Interop
 
     [DllImport("user32.dll")]
     public static extern int GetWindowTextLength(IntPtr hWnd);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    public static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
 
     [DllImport("user32.dll")]
     public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);

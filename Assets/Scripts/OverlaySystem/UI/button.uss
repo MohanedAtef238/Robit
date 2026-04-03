@@ -2,12 +2,13 @@
     --circle-size: 64px;
 }
 
+/* Base reset for generic overlay Buttons.
+   Width, height and margin are intentionally omitted here so that
+   class-level rules (.macro-button, .wheel-arrow, .circular-buttons, etc.)
+   are the sole source of sizing — no type-selector override fights. */
 Button {
-    width: var(--circle-size);
-    height: var(--circle-size);
     border-radius: 9999px;
     padding: 0;
-    margin: 0;
     justify-content: center;
     align-items: center;
     unity-text-align: middle-center;

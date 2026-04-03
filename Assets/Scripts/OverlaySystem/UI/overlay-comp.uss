@@ -17,8 +17,8 @@
 }
 
 .circular-buttons:hover {
-    box-shadow: 0 0 12px rgba(79, 174, 166, 0.6);
-    background-color: rgb(79, 174, 166);
+    box-shadow: 0 0 12px rgba(110, 70, 220, 0.6);
+    background-color: rgb(110, 70, 220);
 }
 
 .circular-buttons.unity-button--with-icon .unity-button__image {

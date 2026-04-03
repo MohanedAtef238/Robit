@@ -1,24 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <Style src="project://database/Assets/Scripts/OverlaySystem/UI/overlay-comp.uss?fileID=7433441132597879392&amp;guid=36f64c9bfa3c27943971452bad4bfd8d&amp;type=3#overlay-comp"/>
-    <Style src="project://database/Assets/Scripts/MacroSystem/MacroUI.uss?fileID=7433441132597879392&amp;guid=7dc99aedf7699ee4e958823f46699bce&amp;type=3#MacroUI"/>
     <Style src="project://database/Assets/Scripts/OverlaySystem/UI/button.uss?fileID=7433441132597879392&amp;guid=5177c2c3aabb3894db4eb274fa7363af&amp;type=3#button"/>
-    <ui:VisualElement name="macro-container" class="macro-container" style="top: 187px; right: 23px;">
-        <ui:VisualElement name="button-grid" class="button-grid">
-            <MacroButton name="BtnZoomIn" class="macro-button">
-                <ui:VisualElement class="btn-icon icon-zoom-in"/>
-            </MacroButton>
-            <MacroButton name="BtnZoomOut" class="macro-button">
-                <ui:VisualElement class="btn-icon icon-zoom-out"/>
-            </MacroButton>
-            <MacroButton name="BtnPageUp" class="macro-button">
-                <ui:VisualElement class="btn-icon icon-page-up"/>
-            </MacroButton>
-            <MacroButton name="BtnPageDown" class="macro-button">
-                <ui:VisualElement class="btn-icon icon-page-down"/>
-            </MacroButton>
-            <MacroButton name="BtnReturnToDesktop" class="macro-button home-button">
-                <ui:VisualElement class="btn-icon icon-home"/>
-            </MacroButton>
-        </ui:VisualElement>
-    </ui:VisualElement>
+    <ui:Template src="project://database/Assets/Scripts/MacroSystem/MacroUI.uxml" name="MacroUI"/>
+    <ui:Instance template="MacroUI"/>
 </ui:UXML>

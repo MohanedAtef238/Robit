@@ -57,9 +57,9 @@
 
 .card:hover {
     transition-duration: 200ms;
-    background-color: #242424; 
+    background-color: #1e1435; 
     scale: 1.05;
-    border-color: #00ffaa;
+    border-color: #9b59f5;
 }
 
 
@@ -114,8 +114,8 @@
     width: 100%;
     top: 50%;
     translate: 0 -50%;
-    color: #00ffaa;
-    text-shadow: 0 0 10px rgba(92, 103, 255, 0.5);
+    color: #b388ff;
+    text-shadow: 0 0 10px rgba(140, 80, 255, 0.5);
     white-space: normal;
 }
 
@@ -159,7 +159,7 @@
     width: 100px;
     height: 100px;
     border-radius: 50px;
-    background-color: rgba(0, 255, 170, 0.15); /* Substituted radial gradient */
+    background-color: rgba(120, 60, 240, 0.15); /* Substituted radial gradient */
 }
 
 .glow-1 { top: -20px; left: -20px; }
@@ -187,7 +187,7 @@
     height: 150%;
     left: -25%;
     top: -25%;
-    background-color: rgba(0, 255, 170, 0.05); /* Simulated radial blur */
+    background-color: rgba(100, 50, 220, 0.05); /* Simulated radial blur */
     border-radius: 50%;
     opacity: 0;
     transition-duration: 300ms;

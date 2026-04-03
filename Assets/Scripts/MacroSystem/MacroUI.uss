@@ -1,44 +1,65 @@
+
+:root {
+    --spacing-xs: 6px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --button-size: 70px;
+    --button-icon-size: 34px;
+    --container-width: 180px;
+    --container-right: 24px;
+    --container-top: 12%;
+    --container-radius: 16px;
+    --container-bg: rgba(20, 15, 55, 0.60);
+    --container-border: rgba(100, 60, 210, 0.30);
+    --button-bg: rgb(185, 160, 240);
+    --button-bg-hover: rgb(90, 50, 195);
+    --button-bg-active: rgb(65, 30, 165);
+    --button-border: rgb(65, 35, 145);
+    --button-border-hover: rgb(160, 110, 255);
+    --icon-color: rgb(20, 10, 55);
+    --icon-hover-color: rgb(255, 255, 255);
+}
+
 .macro-container {
     position: absolute;
-    right: 24px;
-    top: 12%;
-    width: 180px;
+    right: var(--container-right);
+    top: var(--container-top);
+    width: var(--container-width);
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-color: rgba(30, 55, 40, 0.55);
-    border-radius: 16px;
-    padding: 16px 12px;
+    background-color: var(--container-bg);
+    border-radius: var(--container-radius);
+    padding: var(--spacing-lg) var(--spacing-md);
     border-width: 1px;
-    border-color: rgba(50, 120, 70, 0.25);
-    opacity: 0.1;
-    transition-property: opacity;
-    transition-duration: 0.3s;
-    transition-delay: 2.5s;
-}
-
-.macro-container:hover {
-    transition-delay: 0s;
+    border-color: var(--container-border);
     opacity: 1;
 }
 
+/* Editor-preview layout: single row so all buttons are visible.
+   At runtime MacroButtonController switches every button to
+   position:absolute and places them on the arc — this flex
+   layout is only active in UI Builder / scene view. */
 .button-grid {
     display: flex;
     flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: space-around;
+    flex-wrap: nowrap;
+    justify-content: center;
     align-items: center;
     width: 100%;
+    overflow: visible;
 }
 
+
 .macro-button {
-    width: 70px;
-    height: 70px;
-    margin: 12px;
-    border-radius: 35px;
-    background-color: rgb(189, 224, 201);
+    width: var(--button-size);
+    height: var(--button-size);
+    margin: var(--spacing-md);
+    border-radius: 50%;
+    background-color: var(--button-bg);
     border-width: 1.5px;
-    border-color: rgb(30, 92, 50);
+    border-color: var(--button-border);
     align-items: center;
     justify-content: center;
     overflow: hidden;
@@ -49,31 +70,29 @@
 }
 
 .macro-button:hover {
-    background-color: rgb(61, 122, 80);
-    border-color: rgb(102, 255, 127);
+    background-color: var(--button-bg-hover);
+    border-color: var(--button-border-hover);
     scale: 1.12;
 }
 
 .macro-button:active {
-    background-color: rgb(46, 125, 50);
+    background-color: var(--button-bg-active);
     scale: 0.92;
 }
 
-.home-button {
-    width: 100%;
-    border-radius: 35px;
-}
+/* .home-button intentionally inherits all sizing from .macro-button.
+   Add overrides here only if the home button needs a different look. */
+.home-button {}
 
 .btn-icon {
-    width: 34px;
-    height: 34px;
-    -unity-background-image-tint-color: rgb(26, 46, 34);
+    width: var(--button-icon-size);
+    height: var(--button-icon-size);
+    -unity-background-image-tint-color: var(--icon-color);
     background-size: contain;
-    picking-mode: ignore;
 }
 
 .macro-button:hover .btn-icon {
-    -unity-background-image-tint-color: rgb(255, 255, 255);
+    -unity-background-image-tint-color: var(--icon-hover-color);
 }
 
 .icon-zoom-in {
@@ -94,4 +113,42 @@
 
 .icon-home {
     background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/home.png?fileID=2800000&guid=4b28b571169ad6b41b1d22188ad26c66&type=3#home");
+}
+
+/* Wheel cycling arrows */
+.wheel-arrow {
+    position: absolute;
+    display: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 22px;
+    font-size: 18px;
+    -unity-font-style: bold;
+    color: rgba(215, 195, 255, 0.9);
+    background-color: rgba(196, 153, 252, 0.85);
+    border-width: 1px;
+    border-color: rgba(120, 80, 225, 0.50);
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition-property: background-color, border-color;
+    transition-duration: 0.2s;
+}
+
+.wheel-arrow:hover {
+    background-color: rgba(80, 50, 175, 0.95);
+    border-color: rgba(160, 110, 255, 0.85);
+}
+
+/* Arrow icon inside wheel buttons */
+.wheel-arrow .arrow-icon {
+    width: 20px;
+    height: 20px;
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.95);
+    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/curved-arrow-right.png");
+    background-size: contain;
+    background-position: center;
+    -unity-background-scale-mode: scale-to-fit;
+    margin: 0;
+    align-self: center;
 }
