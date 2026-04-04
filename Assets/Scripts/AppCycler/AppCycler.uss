@@ -39,7 +39,7 @@
     overflow: visible;
 
     /* tucked state: pushed down so only top half of circle shows */
-    transition-property: translate;
+    transition-property: translate, scale;
     transition-duration: var(--cycler-transition-speed);
     transition-timing-function: ease-out;
 }
@@ -86,6 +86,7 @@
     width: 30px;
     height: 30px;
     -unity-background-image-tint-color: var(--cycler-arrow-color);
+    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-cycle-100.png?fileID=2800000&guid=99a322d8a134b4e43a7fff5201979592&type=3#icons8-cycle-100");
     background-size: contain;
 }
 

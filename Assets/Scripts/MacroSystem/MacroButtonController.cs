@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -5,12 +6,33 @@ using UnityEngine.UIElements;
 [RequireComponent(typeof(UIDocument))]
 public class MacroButtonController : MonoBehaviour
 {
-    [SerializeField] private List<MacroButtonBinding> bindings = new();
+    // ── Group definitions ───────────────────────────────────────────
+    // Each group has a display name and exactly 3 action types.
+    [System.Serializable]
+    public struct MacroGroup
+    {
+        public string name;
+        public MacroActionType action0;
+        public MacroActionType action1;
+        public MacroActionType action2;
+    }
 
-    // Arc is symmetric around 270° (= straight UP in UITK Y-down space).
-    // 200 → 340 spans 140°, giving a wide crown above the mascot with
-    // comfortable spacing between all 5 arc slots (3 content + 2 arrows).
-    [Header("Arc  (must match scene: 200 start, 340 end, 150 radius)")]
+    private static readonly MacroGroup[] Groups = new[]
+    {
+        new MacroGroup { name = "Navigate",  action0 = MacroActionType.Back,          action1 = MacroActionType.Forward,       action2 = MacroActionType.Refresh },
+        new MacroGroup { name = "Tabs",      action0 = MacroActionType.NewTab,        action1 = MacroActionType.CloseTab,      action2 = MacroActionType.None },
+        new MacroGroup { name = "Read",      action0 = MacroActionType.ZoomIn,        action1 = MacroActionType.ZoomOut,       action2 = MacroActionType.Screenshot },
+        new MacroGroup { name = "Scroll",    action0 = MacroActionType.PageUp,        action1 = MacroActionType.PageDown,      action2 = MacroActionType.None },
+        new MacroGroup { name = "Snap",      action0 = MacroActionType.SnapLeft,      action1 = MacroActionType.SnapRight,     action2 = MacroActionType.MaximizeRestore },
+        new MacroGroup { name = "Window",    action0 = MacroActionType.Minimize,      action1 = MacroActionType.CloseWindow,   action2 = MacroActionType.Undo },
+        new MacroGroup { name = "Edit",      action0 = MacroActionType.Redo,          action1 = MacroActionType.MuteToggle,    action2 = MacroActionType.FindOnPage },
+        new MacroGroup { name = "System",    action0 = MacroActionType.HomeDashboard, action1 = MacroActionType.AppCycler,     action2 = MacroActionType.Settings },
+    };
+
+    private const int SlotsPerPage = 3;
+
+    // ── Inspector tunables ──────────────────────────────────────────
+    [Header("Arc  (200 start, 340 end)")]
     [SerializeField] private float arcStartAngle = 200f;
     [SerializeField] private float arcEndAngle   = 340f;
     [SerializeField] private float radialRadius  = 10f;
@@ -19,6 +41,19 @@ public class MacroButtonController : MonoBehaviour
     [SerializeField] private float inDurationMs  = 300f;
     [SerializeField] private float outDurationMs = 180f;
     [SerializeField] private float staggerMs     = 60f;
+
+    [Header("Group Label Animation")]
+    [SerializeField] private float labelFadeInMs    = 250f;
+    [SerializeField] private float labelHoldMs      = 900f;
+    [SerializeField] private float labelFadeOutMs   = 350f;
+    [SerializeField] private float labelOffsetY     = -55f;
+
+    [Header("Button Name Tooltip")]
+    [SerializeField] private float tooltipFadeInMs  = 200f;
+    [SerializeField] private float tooltipHoldMs    = 800f;
+    [SerializeField] private float tooltipFadeOutMs = 300f;
+    [SerializeField] private float tooltipOffsetY   = -18f;
+    [SerializeField] private float tooltipDelayMs   = 150f;
 
     [Header("Button Sizing")]
     [SerializeField] private float buttonSize   = 70f;
@@ -34,28 +69,29 @@ public class MacroButtonController : MonoBehaviour
     [SerializeField] private float containerPaddingLR    = 12f;
     [SerializeField] private float containerBorderRadius = 16f;
 
-    //    runtime references                                           
+    // ── Runtime references ──────────────────────────────────────────
     private UIDocument      uiDocument;
     private VisualElement   macroContainer;
     private VisualElement   buttonGrid;
+    private Label           groupLabel;
     private Button          prevBtn;
     private Button          nextBtn;
-    private readonly List<MacroButton> boundButtons = new();
+    private MacroButton[]   slotButtons = new MacroButton[SlotsPerPage];
     private IInputProvider  inputProvider;
 
-    //    state                                                        
-    private const int SlotsPerPage = 3;
-    private int       _pageOffset;
+    // ── State ───────────────────────────────────────────────────────
+    private int       _groupIndex;
     private Vector2   anchorPanelPos;
     private bool      _open;
-    // Maps content slot index (0=left, 1=mid, 2=right) â†’ boundButtons index
-    private readonly int[] _slotBtn = new int[SlotsPerPage];
+    private IVisualElementScheduledItem _labelFadeOutHandle;
+    private Action[] _slotIconRefreshCbs = new Action[SlotsPerPage];
+    private Label[]  _slotTooltips = new Label[SlotsPerPage];
+    private IVisualElementScheduledItem[] _tooltipFadeHandles = new IVisualElementScheduledItem[SlotsPerPage];
 
-    // Half-sizes derived from serializable size fields — keep in sync with Inspector.
     private float MacroHalfSize => buttonSize     * 0.5f;
     private float ArrowHalfSize => wheelArrowSize * 0.5f;
 
-    //    lifecycle                                                    
+    // ── Lifecycle ───────────────────────────────────────────────────
     void OnEnable()
     {
         uiDocument = GetComponent<UIDocument>();
@@ -69,14 +105,14 @@ public class MacroButtonController : MonoBehaviour
         var root = uiDocument.rootVisualElement;
         macroContainer = root.Q<VisualElement>("macro-container");
         buttonGrid     = root.Q<VisualElement>("button-grid");
+        groupLabel     = root.Q<Label>("group-name-label");
 
-        foreach (var binding in bindings)
+        // Grab the 3 reusable slot buttons
+        for (int i = 0; i < SlotsPerPage; i++)
         {
-            if (string.IsNullOrEmpty(binding.buttonName)) continue;
-            var el = root.Q<MacroButton>(binding.buttonName);
-            if (el == null) { Debug.LogWarning($"[MacroButtonController] '{binding.buttonName}' not found"); continue; }
-            el.Bind(MacroActionFactory.Create(binding.actionType), inputProvider);
-            boundButtons.Add(el);
+            slotButtons[i] = root.Q<MacroButton>($"BtnSlot{i}");
+            if (slotButtons[i] == null)
+                Debug.LogWarning($"[MacroButtonController] BtnSlot{i} not found in UXML");
         }
 
         prevBtn = root.Q<Button>("BtnWheelPrev");
@@ -84,40 +120,56 @@ public class MacroButtonController : MonoBehaviour
         if (prevBtn != null) prevBtn.clicked += OnPrevClicked;
         if (nextBtn != null) nextBtn.clicked += OnNextClicked;
 
+        // Create per-slot tooltip labels
+        for (int i = 0; i < SlotsPerPage; i++)
+        {
+            var tip = new Label();
+            tip.AddToClassList("button-tooltip");
+            tip.style.position = Position.Absolute;
+            tip.style.opacity = 0f;
+            tip.style.display = DisplayStyle.None;
+            tip.pickingMode = PickingMode.Ignore;
+            buttonGrid.Add(tip);
+            _slotTooltips[i] = tip;
+        }
+
         ApplyLayout();
         HideImmediate();
-        Debug.Log($"[MacroButtonController] Registered {boundButtons.Count} macro buttons");
+        Debug.Log($"[MacroButtonController] Ready -- {Groups.Length} groups, {Groups.Length * SlotsPerPage} total macros");
     }
 
     void OnDisable()
     {
-        foreach (var mb in boundButtons) mb.Unbind();
-        boundButtons.Clear();
+        for (int i = 0; i < SlotsPerPage; i++)
+        {
+            slotButtons[i]?.Unbind();
+            if (slotButtons[i] != null && _slotIconRefreshCbs[i] != null)
+            {
+                slotButtons[i].clicked -= _slotIconRefreshCbs[i];
+                _slotIconRefreshCbs[i] = null;
+            }
+        }
         if (prevBtn != null) prevBtn.clicked -= OnPrevClicked;
         if (nextBtn != null) nextBtn.clicked -= OnNextClicked;
     }
 
-    //    public API                                                   
+    // ── Public API ──────────────────────────────────────────────────
 
     public void ShowWithBounceAtWorldPosition(Vector3 worldPos, Vector2 panelOffset, Camera renderCamera = null)
     {
         if (uiDocument == null || uiDocument.rootVisualElement == null) return;
         _open = true;
-        _pageOffset = 0;
+        _groupIndex = 0;
 
         var panel = uiDocument.rootVisualElement.panel;
         anchorPanelPos = RuntimePanelUtils.CameraTransformWorldToPanel(
             panel, worldPos, renderCamera != null ? renderCamera : Camera.main);
-            
         anchorPanelPos += panelOffset;
 
-        // Clamp so the arc centre stays within the visible panel area.
         var panelSize = uiDocument.rootVisualElement.layout;
-        float margin = radialRadius + buttonSize; // keep buttons on-screen
+        float margin = radialRadius + buttonSize;
         anchorPanelPos.x = Mathf.Clamp(anchorPanelPos.x, margin, panelSize.width  - margin);
         anchorPanelPos.y = Mathf.Clamp(anchorPanelPos.y, margin, panelSize.height - margin);
-
-        Debug.Log($"[MacroButtonController] anchor panel pos = {anchorPanelPos}  (world input = {worldPos})");
 
         EnterRadialLayout();
         macroContainer.schedule.Execute(RevealPage).StartingIn(16);
@@ -128,38 +180,49 @@ public class MacroButtonController : MonoBehaviour
         if (!_open) return;
         _open = false;
         HideArrows();
+        CancelLabelFade();
+        HideAllTooltips();
 
-        foreach (var btn in boundButtons)
+        for (int i = 0; i < SlotsPerPage; i++)
         {
-            if (btn.style.display == DisplayStyle.None) continue;
+            var btn = slotButtons[i];
+            if (btn == null || btn.style.display == DisplayStyle.None) continue;
             ApplyTransitions(btn, 0, (long)outDurationMs);
-            btn.style.left    = -MacroHalfSize;
-            btn.style.top     = -MacroHalfSize;
             btn.style.scale   = new Scale(Vector2.zero);
             btn.style.opacity = 0f;
+            btn.style.rotate  = new Rotate(new Angle(-1080f));
         }
+
+        if (groupLabel != null) groupLabel.style.opacity = 0f;
 
         macroContainer?.schedule.Execute(() =>
         {
-            if (!_open) { macroContainer.style.display = DisplayStyle.None; }
+            if (!_open) macroContainer.style.display = DisplayStyle.None;
         }).StartingIn((long)outDurationMs + 40);
     }
 
     public void HideImmediate()
     {
         _open = false;
-        foreach (var btn in boundButtons)
+        CancelLabelFade();
+        HideAllTooltips();
+        for (int i = 0; i < SlotsPerPage; i++)
         {
+            var btn = slotButtons[i];
+            if (btn == null) continue;
+            btn.Unbind();
             ClearTransitions(btn);
+            btn.style.rotate  = new Rotate(new Angle(0f));
             btn.style.scale   = new Scale(Vector2.zero);
             btn.style.opacity = 0f;
             btn.style.display = DisplayStyle.None;
         }
         HideArrows();
+        if (groupLabel != null) groupLabel.style.opacity = 0f;
         if (macroContainer != null) macroContainer.style.display = DisplayStyle.None;
     }
 
-    // ── radial layout ───────────────────────────────────────────────
+    // ── Radial layout ───────────────────────────────────────────────
 
     private void EnterRadialLayout()
     {
@@ -191,22 +254,30 @@ public class MacroButtonController : MonoBehaviour
             buttonGrid.style.overflow = Overflow.Visible;
         }
 
-        foreach (var btn in boundButtons)
+        for (int i = 0; i < SlotsPerPage; i++)
         {
+            var btn = slotButtons[i];
+            if (btn == null) continue;
+            btn.Unbind();
             ClearTransitions(btn);
             btn.style.position = Position.Absolute;
-            btn.style.left = -MacroHalfSize; btn.style.top = -MacroHalfSize;
-            btn.style.scale = new Scale(Vector2.zero);
-            btn.style.opacity = 0f;
-            btn.style.display = DisplayStyle.None;
+            btn.style.left     = -MacroHalfSize;
+            btn.style.top      = -MacroHalfSize;
+            btn.style.rotate   = new Rotate(new Angle(0f));
+            btn.style.scale    = new Scale(Vector2.zero);
+            btn.style.opacity  = 0f;
+            btn.style.display  = DisplayStyle.None;
         }
         HideArrows();
+        if (groupLabel != null)
+        {
+            groupLabel.style.position = Position.Absolute;
+            groupLabel.style.opacity = 0f;
+        }
     }
-    //    arc geometry                                                 
 
-    // Full arc: slot 0 = Prev arrow | slots 1-3 = content | slot 4 = Next arrow.
-    // Slots are evenly spaced across the arc. `radiusOverride` shifts an element
-    // slightly outward (used for arrows so their outer edge aligns with macro edges).
+    // ── Arc geometry ────────────────────────────────────────────────
+
     private Vector2 ArcSlotOffset(int slot, float halfSize, float radiusOverride = -1f)
     {
         float r     = radiusOverride > 0f ? radiusOverride : radialRadius;
@@ -217,176 +288,380 @@ public class MacroButtonController : MonoBehaviour
             Mathf.Sin(angle) * r - halfSize);
     }
 
-    // Content slot 0-2 â†’ arc slots 1-3
     private Vector2 ContentOffset(int contentSlot) => ArcSlotOffset(contentSlot + 1, MacroHalfSize);
 
-    //    initial reveal                                               
+    // ── Bind group actions to the 3 slot buttons ────────────────────
+
+    private void BindGroup(int groupIdx)
+    {
+        if (groupIdx < 0 || groupIdx >= Groups.Length) return;
+        var group = Groups[groupIdx];
+        MacroActionType[] actions = { group.action0, group.action1, group.action2 };
+
+        for (int i = 0; i < SlotsPerPage; i++)
+        {
+            var btn = slotButtons[i];
+            if (btn == null) continue;
+
+            // Remove any mute-refresh callback left from a previous bind
+            if (_slotIconRefreshCbs[i] != null)
+            {
+                btn.clicked -= _slotIconRefreshCbs[i];
+                _slotIconRefreshCbs[i] = null;
+            }
+
+            btn.Unbind();
+
+            // None = empty placeholder slot — hide it entirely
+            if (actions[i] == MacroActionType.None)
+            {
+                btn.style.display = DisplayStyle.None;
+                continue;
+            }
+
+            btn.Bind(MacroActionFactory.Create(actions[i]), inputProvider);
+            SetButtonIcon(btn, actions[i]);
+
+            // MuteToggle: the mute state changes on click, so refresh the icon 50 ms later
+            if (actions[i] == MacroActionType.MuteToggle)
+            {
+                var capturedBtn  = btn;
+                int capturedSlot = i;
+                _slotIconRefreshCbs[capturedSlot] = () =>
+                    capturedBtn.schedule.Execute(
+                        () => SetButtonIcon(capturedBtn, MacroActionType.MuteToggle)
+                    ).StartingIn(50);
+                capturedBtn.clicked += _slotIconRefreshCbs[capturedSlot];
+            }
+        }
+    }
+
+    // ── Icon management ─────────────────────────────────────────────
+
+    private string GetIconClass(MacroActionType type)
+    {
+        switch (type)
+        {
+            case MacroActionType.Back:            return "icon-back";
+            case MacroActionType.Forward:         return "icon-forward";
+            case MacroActionType.Refresh:         return "icon-refresh";
+            case MacroActionType.NewTab:          return "icon-new-tab";
+            case MacroActionType.CloseTab:        return "icon-close-tab";
+            case MacroActionType.SwitchWindow:    return "icon-switch-window";
+            case MacroActionType.ZoomIn:          return "icon-zoom-in";
+            case MacroActionType.ZoomOut:         return "icon-zoom-out";
+            case MacroActionType.Screenshot:      return "icon-screenshot";
+            case MacroActionType.PageUp:          return "icon-page-up";
+            case MacroActionType.PageDown:        return "icon-page-down";
+            case MacroActionType.ReturnToDesktop: return "icon-home";
+            case MacroActionType.SnapLeft:        return "icon-snap-left";
+            case MacroActionType.SnapRight:       return "icon-snap-right";
+            case MacroActionType.MaximizeRestore: return "icon-maximize";
+            case MacroActionType.Minimize:        return "icon-minimize";
+            case MacroActionType.CloseWindow:     return "icon-close-window";
+            case MacroActionType.Undo:            return "icon-undo";
+            case MacroActionType.Redo:            return "icon-redo";
+            case MacroActionType.MuteToggle:      return Win32AudioInterop.GetMute() ? "icon-voice" : "icon-mute";
+            case MacroActionType.FindOnPage:      return "icon-find";
+            case MacroActionType.HomeDashboard:   return "icon-home";
+            case MacroActionType.AppCycler:       return "icon-switch-window";
+            case MacroActionType.Settings:        return "icon-settings";
+            default:                              return null;
+        }
+    }
+
+    private void SetButtonIcon(MacroButton btn, MacroActionType actionType)
+    {
+        var icon = btn.Q<VisualElement>(className: "btn-icon");
+        if (icon == null) return;
+
+        // Remove any existing icon-* classes
+        var toRemove = new List<string>();
+        foreach (var cls in icon.GetClasses())
+            if (cls.StartsWith("icon-"))
+                toRemove.Add(cls);
+        foreach (var cls in toRemove)
+            icon.RemoveFromClassList(cls);
+
+        string iconClass = GetIconClass(actionType);
+        if (string.IsNullOrEmpty(iconClass)) return;
+
+        icon.AddToClassList(iconClass);
+
+        // Flip horizontally for actions that mirror an existing icon asset
+        bool flipX = actionType == MacroActionType.Forward || actionType == MacroActionType.SnapRight;
+        icon.style.scale = new Scale(new Vector2(flipX ? -1f : 1f, 1f));
+    }
+
+    // ── Group label flash (rewritable -- cancels previous fade) ─────
+
+    private void CancelLabelFade()
+    {
+        _labelFadeOutHandle = null;
+    }
+
+    private void FlashGroupName(string groupName)
+    {
+        if (groupLabel == null) return;
+
+        // Cancel any in-progress animation (prevents text layering on fast scroll)
+        CancelLabelFade();
+
+        // Immediately rewrite text and reset opacity
+        ClearTransitions(groupLabel);
+        groupLabel.text = groupName;
+        groupLabel.style.opacity = 0f;
+
+        // Position above the arc centre
+        groupLabel.style.position = Position.Absolute;
+        groupLabel.style.left = -80f;
+        groupLabel.style.top = labelOffsetY;
+        groupLabel.style.width = 160f;
+
+        // Fade in
+        groupLabel.schedule.Execute(() =>
+        {
+            groupLabel.style.transitionProperty       = new List<StylePropertyName> { new("opacity") };
+            groupLabel.style.transitionDuration       = new List<TimeValue> { new((long)labelFadeInMs, TimeUnit.Millisecond) };
+            groupLabel.style.transitionTimingFunction = new List<EasingFunction> { new(EasingMode.EaseOut) };
+            groupLabel.style.transitionDelay          = new List<TimeValue> { new(0, TimeUnit.Millisecond) };
+            groupLabel.style.opacity = 1f;
+        }).StartingIn(16);
+
+        // Schedule fade out after hold period
+        IVisualElementScheduledItem handle = null;
+        handle = groupLabel.schedule.Execute(() =>
+        {
+            // If a newer flash replaced us, don't fade out
+            if (_labelFadeOutHandle != handle) return;
+
+            groupLabel.style.transitionDuration = new List<TimeValue> { new((long)labelFadeOutMs, TimeUnit.Millisecond) };
+            groupLabel.style.transitionTimingFunction = new List<EasingFunction> { new(EasingMode.EaseIn) };
+            groupLabel.style.opacity = 0f;
+        }).StartingIn((long)(labelFadeInMs + labelHoldMs));
+
+        _labelFadeOutHandle = handle;
+    }
+
+    // ── Reveal current group ────────────────────────────────────────
 
     private void RevealPage()
     {
-        int n = boundButtons.Count;
-        if (n == 0) return;
+        if (Groups.Length == 0) return;
 
-        foreach (var btn in boundButtons)
+        BindGroup(_groupIndex);
+
+        // Reset all slot buttons
+        for (int i = 0; i < SlotsPerPage; i++)
         {
+            var btn = slotButtons[i];
+            if (btn == null) continue;
             ClearTransitions(btn);
-            btn.style.left = -MacroHalfSize; btn.style.top = -MacroHalfSize;
-            btn.style.scale = new Scale(Vector2.zero);
+            btn.style.left    = -MacroHalfSize;
+            btn.style.top     = -MacroHalfSize;
+            btn.style.rotate  = new Rotate(new Angle(0f));
+            btn.style.scale   = new Scale(Vector2.zero);
             btn.style.opacity = 0f;
             btn.style.display = DisplayStyle.None;
         }
 
-        // Initialise slot map
-        for (int s = 0; s < SlotsPerPage; s++)
-            _slotBtn[s] = (_pageOffset + s) % n;
-
-        // Arrows always visible while wheel is open (hidden only if n <= SlotsPerPage)
-        if (n > SlotsPerPage)
+        // Show arrows if more than 1 group
+        if (Groups.Length > 1)
         {
             PlaceArrow(prevBtn, 0);
             PlaceArrow(nextBtn, SlotsPerPage + 1);
         }
 
-        // Fan content buttons in with stagger
-        for (int s = 0; s < SlotsPerPage && s < n; s++)
+        // Fan buttons in with stagger
+        var revealGroup = Groups[_groupIndex];
+        MacroActionType[] revealActions = { revealGroup.action0, revealGroup.action1, revealGroup.action2 };
+        for (int s = 0; s < SlotsPerPage; s++)
         {
-            MacroButton btn  = boundButtons[_slotBtn[s]];
-            Vector2     dest = ContentOffset(s);
-            long        dly  = (long)(staggerMs * s);
+            if (revealActions[s] == MacroActionType.None) continue;
+            var btn  = slotButtons[s];
+            if (btn == null) continue;
+            Vector2 dest = ContentOffset(s);
+            long    dly  = (long)(staggerMs * s);
 
+            btn.style.left    = dest.x;
+            btn.style.top     = dest.y;
+            btn.style.rotate  = new Rotate(new Angle(1080f));
             btn.style.display = DisplayStyle.Flex;
             btn.schedule.Execute(() =>
             {
                 ApplyTransitions(btn, dly, (long)inDurationMs);
-                btn.style.left    = dest.x;
-                btn.style.top     = dest.y;
                 btn.style.scale   = new Scale(Vector2.one);
                 btn.style.opacity = 1f;
+                btn.style.rotate  = new Rotate(new Angle(0f));
             }).StartingIn(16);
         }
+
+        // Show group name + per-button tooltips
+        FlashGroupName(Groups[_groupIndex].name);
+        FlashButtonTooltips();
     }
 
-    //    true carousel: slide individual buttons along the arc         
+    // ── Page to next/previous group ─────────────────────────────────
 
-    private void PageTo(int direction)
+    private void PageToGroup(int direction)
     {
-        int n = boundButtons.Count;
-        if (n <= SlotsPerPage || !_open) return;
+        if (Groups.Length <= 1 || !_open) return;
 
-        bool goNext   = direction > 0;
-        _pageOffset   = ((_pageOffset + direction) % n + n) % n;
+        int n = Groups.Length;
+        _groupIndex = ((_groupIndex + direction) % n + n) % n;
 
-        float btnHalf = MacroHalfSize;
+        bool goNext = direction > 0;
 
-        //    EXIT: the button leaving the visible area              
-        int exitSlot   = goNext ? 0 : SlotsPerPage - 1;
-        int exitBtnIdx = _slotBtn[exitSlot];
-        MacroButton exitBtn  = boundButtons[exitBtnIdx];
-        // Move the exiting button toward the arrow position. Use an
-        // overridden radius so the exiting macro's centre aligns with the
-        // arrow centre (arrow is placed slightly farther out to match edges).
-        Vector2     exitDest = ArcSlotOffset(
-            goNext ? 0 : SlotsPerPage + 1,
-            btnHalf,
-            radialRadius + (btnHalf - ArrowHalfSize));
+        // Hide tooltips immediately on page change
+        HideAllTooltips();
 
-        ApplyTransitions(exitBtn, 0, (long)outDurationMs);
-        exitBtn.style.left    = exitDest.x;
-        exitBtn.style.top     = exitDest.y;
-        exitBtn.style.scale   = new Scale(Vector2.zero);
-        exitBtn.style.opacity = 0f;
-
-        // Hide after transition (capture index so closure is safe)
-        int capturedExit = exitBtnIdx;
-        boundButtons[capturedExit].schedule
-            .Execute(() => boundButtons[capturedExit].style.display = DisplayStyle.None)
-            .StartingIn((long)outDurationMs + 20);
-
-        //    SHIFT: slide remaining 2 buttons to their new slots    
-        if (goNext)
+        // EXIT: spin all 3 buttons out in place
+        for (int i = 0; i < SlotsPerPage; i++)
         {
-            // slot 1 â†’ slot 0,  slot 2 â†’ slot 1
-            for (int s = 1; s < SlotsPerPage; s++)
-            {
-                MacroButton btn  = boundButtons[_slotBtn[s]];
-                Vector2     dest = ContentOffset(s - 1);
-                ApplyTransitions(btn, 0, (long)inDurationMs);
-                btn.style.left = dest.x;
-                btn.style.top  = dest.y;
-                _slotBtn[s - 1] = _slotBtn[s];
-            }
-        }
-        else
-        {
-            // slot 1 â†’ slot 2,  slot 0 â†’ slot 1
-            for (int s = SlotsPerPage - 2; s >= 0; s--)
-            {
-                MacroButton btn  = boundButtons[_slotBtn[s]];
-                Vector2     dest = ContentOffset(s + 1);
-                ApplyTransitions(btn, 0, (long)inDurationMs);
-                btn.style.left = dest.x;
-                btn.style.top  = dest.y;
-                _slotBtn[s + 1] = _slotBtn[s];
-            }
+            var btn = slotButtons[i];
+            if (btn == null) continue;
+
+            ApplyTransitions(btn, 0, (long)outDurationMs);
+            btn.style.scale   = new Scale(Vector2.zero);
+            btn.style.opacity = 0f;
+            btn.style.rotate  = new Rotate(new Angle(-1080f));
         }
 
-        //    ENTER: new button slides in from behind the arrow      
-        int enterSlot   = goNext ? SlotsPerPage - 1 : 0;
-        int enterBtnIdx = (_pageOffset + enterSlot) % n;
-        _slotBtn[enterSlot] = enterBtnIdx;
-
-        MacroButton enterBtn   = boundButtons[enterBtnIdx];
-        Vector2     entryStart = ArcSlotOffset(
-            goNext ? SlotsPerPage + 1 : 0,
-            btnHalf,
-            radialRadius + (btnHalf - ArrowHalfSize));
-        Vector2     entryDest  = ContentOffset(enterSlot);
-
-        ClearTransitions(enterBtn);
-        enterBtn.style.position = Position.Absolute;
-        enterBtn.style.left     = entryStart.x;
-        enterBtn.style.top      = entryStart.y;
-        enterBtn.style.scale    = new Scale(Vector2.zero);
-        enterBtn.style.opacity  = 0f;
-        enterBtn.style.display  = DisplayStyle.Flex;
-
-        enterBtn.schedule.Execute(() =>
+        // After exit animation, rebind and enter new group
+        macroContainer.schedule.Execute(() =>
         {
-            ApplyTransitions(enterBtn, 0, (long)inDurationMs);
-            enterBtn.style.left    = entryDest.x;
-            enterBtn.style.top     = entryDest.y;
-            enterBtn.style.scale   = new Scale(Vector2.one);
-            enterBtn.style.opacity = 1f;
-        }).StartingIn(16);
+            if (!_open) return;
+
+            BindGroup(_groupIndex);
+
+            var pageGroup = Groups[_groupIndex];
+            MacroActionType[] pageActions = { pageGroup.action0, pageGroup.action1, pageGroup.action2 };
+
+            for (int i = 0; i < SlotsPerPage; i++)
+            {
+                var btn = slotButtons[i];
+                if (btn == null || pageActions[i] == MacroActionType.None) continue;
+
+                Vector2 entryDest = ContentOffset(i);
+
+                ClearTransitions(btn);
+                btn.style.position = Position.Absolute;
+                btn.style.left     = entryDest.x;
+                btn.style.top      = entryDest.y;
+                btn.style.rotate   = new Rotate(new Angle(1080f));
+                btn.style.scale    = new Scale(Vector2.zero);
+                btn.style.opacity  = 0f;
+                btn.style.display  = DisplayStyle.Flex;
+
+                int captured = i;
+                btn.schedule.Execute(() =>
+                {
+                    long dly = (long)(staggerMs * captured);
+                    ApplyTransitions(slotButtons[captured], dly, (long)inDurationMs);
+                    slotButtons[captured].style.rotate  = new Rotate(new Angle(0f));
+                    slotButtons[captured].style.scale   = new Scale(Vector2.one);
+                    slotButtons[captured].style.opacity = 1f;
+                }).StartingIn(16);
+            }
+
+            FlashGroupName(Groups[_groupIndex].name);
+            FlashButtonTooltips();
+        }).StartingIn((long)outDurationMs + 20);
     }
 
-    //    arrows                                                       
+    // ── Button tooltips ─────────────────────────────────────────────
+
+    private void HideAllTooltips()
+    {
+        for (int i = 0; i < SlotsPerPage; i++)
+        {
+            _tooltipFadeHandles[i] = null;
+            if (_slotTooltips[i] != null)
+            {
+                ClearTransitions(_slotTooltips[i]);
+                _slotTooltips[i].style.opacity = 0f;
+                _slotTooltips[i].style.display = DisplayStyle.None;
+            }
+        }
+    }
+
+    private void FlashButtonTooltips()
+    {
+        if (Groups.Length == 0) return;
+        var group = Groups[_groupIndex];
+        MacroActionType[] actions = { group.action0, group.action1, group.action2 };
+
+        for (int s = 0; s < SlotsPerPage; s++)
+        {
+            var tip = _slotTooltips[s];
+            if (tip == null) continue;
+
+            // Cancel any running fade for this slot
+            _tooltipFadeHandles[s] = null;
+
+            // Skip placeholder slots
+            if (actions[s] == MacroActionType.None)
+            {
+                tip.style.display = DisplayStyle.None;
+                continue;
+            }
+
+            ClearTransitions(tip);
+            tip.text = MacroActionFactory.Create(actions[s]).DisplayName;
+            tip.style.opacity = 0f;
+
+            // Position above the button's arc slot
+            Vector2 btnPos = ContentOffset(s);
+            tip.style.left = btnPos.x - 20f; // wider than button for centering
+            tip.style.top  = btnPos.y + tooltipOffsetY;
+            tip.style.width = buttonSize + 40f;
+            tip.style.display = DisplayStyle.Flex;
+
+            long slotDelay = (long)(tooltipDelayMs + staggerMs * s);
+            int captured = s;
+
+            // Fade in after staggered delay
+            tip.schedule.Execute(() =>
+            {
+                var t = _slotTooltips[captured];
+                t.style.transitionProperty       = new List<StylePropertyName> { new("opacity") };
+                t.style.transitionDuration       = new List<TimeValue> { new((long)tooltipFadeInMs, TimeUnit.Millisecond) };
+                t.style.transitionTimingFunction = new List<EasingFunction> { new(EasingMode.EaseOut) };
+                t.style.transitionDelay          = new List<TimeValue> { new(0, TimeUnit.Millisecond) };
+                t.style.opacity = 1f;
+            }).StartingIn(slotDelay);
+
+            // Schedule fade out
+            IVisualElementScheduledItem fadeHandle = null;
+            fadeHandle = tip.schedule.Execute(() =>
+            {
+                if (_tooltipFadeHandles[captured] != fadeHandle) return;
+                var t = _slotTooltips[captured];
+                t.style.transitionDuration       = new List<TimeValue> { new((long)tooltipFadeOutMs, TimeUnit.Millisecond) };
+                t.style.transitionTimingFunction = new List<EasingFunction> { new(EasingMode.EaseIn) };
+                t.style.opacity = 0f;
+            }).StartingIn(slotDelay + (long)(tooltipFadeInMs + tooltipHoldMs));
+
+            _tooltipFadeHandles[s] = fadeHandle;
+        }
+    }
+
+    // ── Arrows ──────────────────────────────────────────────────────
 
     private void PlaceArrow(Button arrow, int slot)
     {
         if (arrow == null) return;
-        // Place arrows slightly outward so their outer edge aligns with
-        // the macros' outer edge, giving consistent visual spacing.
         Vector2 pos = ArcSlotOffset(slot, ArrowHalfSize, radialRadius + (MacroHalfSize - ArrowHalfSize));
         arrow.style.position = Position.Absolute;
         arrow.style.left     = pos.x;
         arrow.style.top      = pos.y;
-        // Use the same right-pointing asset for both arrows. Mirror the left arrow
-        // by flipping its X scale so the curvature stays correct.
         if (slot == 0)
-        {
-            // Prev (left) arrow — mirror horizontally
             arrow.style.scale = new Scale(new Vector2(-1f, 1f));
-        }
         else
-        {
-            // Next (right) arrow — normal scale
             arrow.style.scale = new Scale(Vector2.one);
-        }
-        // Ensure rotation is neutral; mirroring handled by scale above.
-        arrow.style.rotate = new Rotate(new Angle(0f));
-        arrow.style.opacity  = 1f;
-        arrow.style.display  = DisplayStyle.Flex;
+        arrow.style.rotate  = new Rotate(new Angle(0f));
+        arrow.style.opacity = 1f;
+        arrow.style.display = DisplayStyle.Flex;
     }
 
     private void HideArrows()
@@ -395,12 +670,12 @@ public class MacroButtonController : MonoBehaviour
         if (nextBtn != null) nextBtn.style.display = DisplayStyle.None;
     }
 
-    // ── paging callbacks ────────────────────────────────────────────
+    // ── Paging callbacks ────────────────────────────────────────────
 
-    private void OnPrevClicked() => PageTo(-1);
-    private void OnNextClicked() => PageTo(+1);
+    private void OnPrevClicked() => PageToGroup(-1);
+    private void OnNextClicked() => PageToGroup(+1);
 
-    //    layout  ─────────────────────────────────────────────────────
+    // ── Layout ──────────────────────────────────────────────────────
 
     private void ApplyLayout()
     {
@@ -423,13 +698,11 @@ public class MacroButtonController : MonoBehaviour
             container.style.borderBottomRightRadius  = containerBorderRadius;
         }
 
-        IEnumerable<MacroButton> btns = boundButtons.Count > 0
-            ? (IEnumerable<MacroButton>)boundButtons
-            : root.Query<MacroButton>(className: "macro-button").ToList();
-
         float half = MacroHalfSize;
-        foreach (var btn in btns)
+        for (int i = 0; i < SlotsPerPage; i++)
         {
+            var btn = slotButtons[i];
+            if (btn == null) continue;
             btn.style.width               = buttonSize;
             btn.style.height              = buttonSize;
             btn.style.marginTop           = buttonMargin;
@@ -462,10 +735,8 @@ public class MacroButtonController : MonoBehaviour
 #if UNITY_EDITOR
     private void OnValidate()
     {
-        // Guard: panel may not be ready during edit-mode domain reloads.
         var doc = GetComponent<UIDocument>();
         if (doc == null || doc.rootVisualElement == null) return;
-        // Temporarily stash so ApplyLayout() can resolve refs.
         var saved = uiDocument;
         uiDocument = doc;
         ApplyLayout();
@@ -473,12 +744,12 @@ public class MacroButtonController : MonoBehaviour
     }
 #endif
 
-    //    USS transitions                                               
+    // ── USS transitions ─────────────────────────────────────────────
 
     private void ApplyTransitions(VisualElement el, long delayMs, long durationMs)
     {
         el.style.transitionProperty       = new List<StylePropertyName>
-            { new("left"), new("top"), new("scale"), new("opacity") };
+            { new("left"), new("top"), new("scale"), new("opacity"), new("rotate") };
         el.style.transitionDuration       = new List<TimeValue> { new(durationMs, TimeUnit.Millisecond) };
         el.style.transitionTimingFunction = new List<EasingFunction> { new(EasingMode.EaseOutCubic) };
         el.style.transitionDelay          = new List<TimeValue> { new(delayMs, TimeUnit.Millisecond) };

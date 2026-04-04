@@ -37,6 +37,21 @@
     opacity: 1;
 }
 
+/* Group name label — floats above the radial arc */
+.group-name-label {
+    position: absolute;
+    align-self: center;
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgba(215, 195, 255, 0.95);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+    opacity: 0;
+    transition-property: opacity;
+    transition-duration: 350ms;
+    transition-timing-function: ease-in-out;
+}
+
 /* Editor-preview layout: single row so all buttons are visible.
    At runtime MacroButtonController switches every button to
    position:absolute and places them on the arc — this flex
@@ -115,12 +130,94 @@
     background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/home.png?fileID=2800000&guid=4b28b571169ad6b41b1d22188ad26c66&type=3#home");
 }
 
-.icon-home-dashboard {
-    background-image: url("project://database/Assets/home_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg?fileID=7388822144124034973&guid=dea5b8579094e934787515890995c206&type=3#home_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24");
-}
-
 .icon-settings {
     background-image: url("project://database/Assets/settings_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg?fileID=7388822144124034973&guid=d671468dc8e08a343ab4eca2623f67b6&type=3#settings_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24");
+}
+
+.icon-back {
+    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-back-100.png?fileID=2800000&guid=f96a634f1643a49409cc050b3c3e5b6e&type=3#icons8-back-100");
+}
+
+/* icon-forward reuses the back image; X-flip applied in C# */
+.icon-forward {
+    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-back-100.png?fileID=2800000&guid=f96a634f1643a49409cc050b3c3e5b6e&type=3#icons8-back-100");
+}
+
+.icon-refresh {
+    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-refresh-100.png?fileID=2800000&guid=6a1158c2acb6a1048873f512d29a9706&type=3#icons8-refresh-100");
+}
+
+.icon-new-tab {
+    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-new-tab-100.png?fileID=2800000&guid=7b5bf487b4c353246a1032c4b52dd8d3&type=3#icons8-new-tab-100");
+}
+
+.icon-close-tab {
+    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-close-tab-100.png?fileID=2800000&guid=e658da7770cf5174d8f7e7a597f2cecb&type=3#icons8-close-tab-100");
+}
+
+.icon-switch-window {
+    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-cycle-100.png?fileID=2800000&guid=99a322d8a134b4e43a7fff5201979592&type=3#icons8-cycle-100");
+}
+
+.icon-screenshot {
+    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-screenshot-100.png?fileID=2800000&guid=f1153cd999d1f9f4ea6d04f1d61de5c3&type=3#icons8-screenshot-100");
+}
+
+.icon-snap-left {
+    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-box-move-left-100.png?fileID=2800000&guid=d0633b608c2299a46babe47a18d64d20&type=3#icons8-box-move-left-100");
+}
+
+/* icon-snap-right reuses the box-move-left image; X-flip applied in C# */
+.icon-snap-right {
+    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-box-move-left-100.png?fileID=2800000&guid=d0633b608c2299a46babe47a18d64d20&type=3#icons8-box-move-left-100");
+}
+
+.icon-maximize {
+    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-maximize-100.png?fileID=2800000&guid=d0b75369014ffae43869eec0e1a69ca8&type=3#icons8-maximize-100");
+}
+
+.icon-minimize {
+    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-minimize-100.png?fileID=2800000&guid=ee6c1041bd84b7e428013d487076f62c&type=3#icons8-minimize-100");
+}
+
+.icon-close-window {
+    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-close-window-100.png?fileID=2800000&guid=ceac9c6bbc9f4e24e8addf3b98177ed9&type=3#icons8-close-window-100");
+}
+
+.icon-undo {
+    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-undo-100.png?fileID=2800000&guid=267a326c15e1a354ca839923c1d7e6e4&type=3#icons8-undo-100");
+}
+
+.icon-redo {
+    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/curved-arrow-right.png?fileID=2800000&guid=68540a7089b819a468235cb8b707beb7&type=3#curved-arrow-right");
+}
+
+/* Shown when NOT muted — clicking will mute */
+.icon-mute {
+    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-mute-100.png?fileID=2800000&guid=49773e198a09d934086f187ecbc825e4&type=3#icons8-mute-100");
+}
+
+/* Shown when muted — clicking will unmute */
+.icon-voice {
+    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-voice-100.png?fileID=2800000&guid=3868decce873d364fa608a795ed7a492&type=3#icons8-voice-100");
+}
+
+.icon-find {
+    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-find-100.png?fileID=2800000&guid=a943ddb2fea1485b8a1036d7260e0ca7&type=3#icons8-find-100");
+}
+
+/* Per-button name tooltip — floats above each button briefly */
+.button-tooltip {
+    position: absolute;
+    -unity-text-align: middle-center;
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: rgba(215, 195, 255, 0.92);
+    white-space: nowrap;
+    opacity: 0;
+    transition-property: opacity;
+    transition-duration: 300ms;
+    transition-timing-function: ease-in-out;
 }
 
 /* Wheel cycling arrows */

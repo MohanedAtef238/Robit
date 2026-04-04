@@ -4,7 +4,7 @@ using UnityEngine;
 public class HomePageAction : IMacroAction
 {
     public string ActionId => "home_dashboard";
-    public string DisplayName => "Dashboard";
+    public string DisplayName => "Home";
 
     public void Execute()
     {

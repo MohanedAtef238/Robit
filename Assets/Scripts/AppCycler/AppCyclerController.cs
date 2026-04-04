@@ -18,9 +18,10 @@ public class AppCyclerController : MonoBehaviour
              "Should be ~half the circle so only the top peeks out.")]
 
     [Header("Animation")]
-    [SerializeField] private float splitDurationMs = 300f;
+    [SerializeField] private float splitDurationMs  = 300f;
     [SerializeField] private float labelFadeDelayMs = 100f;
-    [SerializeField] private float mergeDurationMs = 250f;
+    [SerializeField] private float mergeDurationMs  = 250f;
+    [SerializeField] private float peekedScale      = 1.6f;
 
     // ── runtime refs ─────────────────────────────────────────────────
     private UIDocument    uiDoc;
@@ -164,6 +165,8 @@ public class AppCyclerController : MonoBehaviour
         state = CyclerState.Tucked;
         dock.RemoveFromClassList("cycler-dock--peeked");
         dock.AddToClassList("cycler-dock--tucked");
+        // Animate scale back to normal
+        dock.style.scale = new Scale(Vector2.one);
         // Make sure expanded is hidden and idle is visible
         CollapseExpanded();
         idleBtn.style.display = DisplayStyle.Flex;
@@ -176,6 +179,8 @@ public class AppCyclerController : MonoBehaviour
         state = CyclerState.Peeked;
         dock.RemoveFromClassList("cycler-dock--tucked");
         dock.AddToClassList("cycler-dock--peeked");
+        // Animate scale up
+        dock.style.scale = new Scale(new Vector2(peekedScale, peekedScale));
     }
 
     // ── idle → split ────────────────────────────────────────────────

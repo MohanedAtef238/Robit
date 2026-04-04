@@ -1,24 +1,20 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <Style src="MacroUI.uss" />
     <ui:VisualElement name="macro-container" class="macro-container">
+
+        <!-- Group name label that fades in/out on page change -->
+        <ui:Label name="group-name-label" class="group-name-label" text="" />
+
         <ui:VisualElement name="button-grid" class="button-grid">
-            <MacroButton name="BtnZoomIn" class="macro-button">
-                <ui:VisualElement class="btn-icon icon-zoom-in" />
+            <!-- 3 reusable macro button slots — controller swaps icons/bindings per group -->
+            <MacroButton name="BtnSlot0" class="macro-button">
+                <ui:VisualElement name="BtnSlot0Icon" class="btn-icon" />
             </MacroButton>
-            <MacroButton name="BtnZoomOut" class="macro-button">
-                <ui:VisualElement class="btn-icon icon-zoom-out" />
+            <MacroButton name="BtnSlot1" class="macro-button">
+                <ui:VisualElement name="BtnSlot1Icon" class="btn-icon" />
             </MacroButton>
-            <MacroButton name="BtnPageUp" class="macro-button">
-                <ui:VisualElement class="btn-icon icon-page-up" />
-            </MacroButton>
-            <MacroButton name="BtnPageDown" class="macro-button">
-                <ui:VisualElement class="btn-icon icon-page-down" />
-            </MacroButton>
-            <MacroButton name="BtnReturnToDesktop" class="macro-button home-button">
-                <ui:VisualElement class="btn-icon icon-home" />
-            </MacroButton>
-            <MacroButton name="BtnSettings" class="macro-button">
-                <ui:VisualElement class="btn-icon icon-settings" />
+            <MacroButton name="BtnSlot2" class="macro-button">
+                <ui:VisualElement name="BtnSlot2Icon" class="btn-icon" />
             </MacroButton>
             <ui:Button name="BtnWheelPrev" class="wheel-arrow arrow-left">
                 <ui:VisualElement class="arrow-icon" />
