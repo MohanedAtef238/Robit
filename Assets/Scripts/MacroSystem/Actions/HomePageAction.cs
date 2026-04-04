@@ -11,7 +11,10 @@ public class HomePageAction : IMacroAction
         var controller = Object.FindFirstObjectByType<HomePageController>();
         if (controller != null)
         {
-            controller.Open();
+            if (controller.IsOpen)
+                controller.Close();
+            else
+                controller.Open();
         }
         else
         {

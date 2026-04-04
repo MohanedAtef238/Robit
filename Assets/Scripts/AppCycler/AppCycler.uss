@@ -21,7 +21,7 @@
     bottom: 0;
     left: 50%;
     translate: -50% 0;
-    width: 280px;
+    width: 440px;
     height: 80px;
 }
 
@@ -31,7 +31,7 @@
     bottom: 0;
     left: 50%;
     translate: -50% 0;
-    width: 280px;
+    width: 440px;
     height: 80px;
     align-items: center;
     justify-content: flex-end;
@@ -100,9 +100,6 @@
     right: 0;
     bottom: 8px;
     height: var(--cycler-circle-size);
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
     overflow: visible;
 
     transition-property: opacity;
@@ -112,6 +109,8 @@
 
 /* left / right arrow circles */
 .cycler-arrow {
+    position: absolute;
+    top: 0;
     width: var(--cycler-circle-size);
     height: var(--cycler-circle-size);
     min-width: var(--cycler-circle-size);
@@ -149,6 +148,14 @@
     -unity-background-image-tint-color: var(--cycler-arrow-hover-color);
 }
 
+.cycler-arrow--left {
+    left: 0;
+}
+
+.cycler-arrow--right {
+    right: 0;
+}
+
 .cycler-arrow--left .cycler-arrow-icon {
     scale: -1 1;
 }
@@ -175,10 +182,11 @@
 
 /* ── center label (app name) ── */
 .cycler-label-container {
-    flex-grow: 1;
+    position: absolute;
+    left: 80px;
+    right: 80px;
+    top: 12px;
     height: 40px;
-    margin-left: 8px;
-    margin-right: 8px;
     border-radius: 20px;
     background-color: var(--cycler-label-bg);
     border-width: 1px;
