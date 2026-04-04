@@ -1,0 +1,330 @@
+/* ═══════════════════════════════════════════════════════════
+   Home Page — full-screen opaque dashboard
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+    --home-bg: rgb(22, 18, 48);
+    --home-accent: rgb(125, 101, 182);
+    --home-text: rgb(230, 220, 255);
+    --home-text-muted: rgb(150, 140, 185);
+    --home-card-bg: rgba(60, 50, 100, 0.6);
+    --home-card-radius: 24px;
+    --home-transition-speed: 400ms;
+}
+
+/* ── full-screen panel ── */
+.home-panel {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: var(--home-bg);
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    transition-property: translate, opacity;
+    transition-duration: var(--home-transition-speed);
+    transition-timing-function: ease-out;
+}
+
+.home-panel--hidden {
+    translate: 0 100%;
+    opacity: 0;
+    display: none;
+}
+
+.home-panel--visible {
+    translate: 0 0;
+    opacity: 1;
+    display: flex;
+}
+
+/* ── close button (top-right) ── */
+.home-close-btn {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    width: 48px;
+    height: 48px;
+    font-size: 28px;
+    color: var(--home-text-muted);
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+    border-width: 0;
+    -unity-text-align: middle-center;
+    transition-property: background-color, color;
+    transition-duration: 200ms;
+}
+
+.home-close-btn:hover {
+    background-color: rgba(255, 80, 80, 0.25);
+    color: rgb(255, 120, 120);
+}
+
+/* ── left column: clock + weather ── */
+.home-left-column {
+    width: 45%;
+    height: 80%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-left: 40px;
+    padding-right: 20px;
+}
+
+/* ── clock card ── */
+.clock-card {
+    width: 100%;
+    max-width: 600px;
+    height: 400px;
+    background-color: var(--home-card-bg);
+    border-radius: var(--home-card-radius);
+    padding-top: 20px;
+    padding-bottom: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+}
+
+/* analog clock area */
+.clock-face-container {
+    width: 260px;
+    height: 260px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.clock-face {
+    width: 240px;
+    height: 240px;
+    -unity-background-scale-mode: scale-to-fit;
+    align-items: center;
+    justify-content: center;
+}
+
+.clock-hand-minute {
+    width: 6px;
+    height: 90px;
+    position: absolute;
+    -unity-background-scale-mode: scale-to-fit;
+    transform-origin: bottom;
+    bottom: 50%;
+    left: 50%;
+    translate: -50% 0;
+}
+
+.clock-hand-hour {
+    width: 8px;
+    height: 65px;
+    position: absolute;
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(84, 255, 116);
+    transform-origin: bottom;
+    bottom: 50%;
+    left: 50%;
+    translate: -50% 0;
+}
+
+.clock-center-dot {
+    width: 14px;
+    height: 14px;
+    position: absolute;
+    -unity-background-scale-mode: scale-to-fit;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+}
+
+/* digital clock side */
+.clock-info-column {
+    flex-direction: column;
+    justify-content: center;
+    padding-left: 24px;
+    flex-grow: 1;
+}
+
+.digital-clock-time {
+    font-size: 56px;
+    color: var(--home-text);
+    -unity-font-style: bold;
+}
+
+.digital-clock-ampm {
+    font-size: 24px;
+    color: var(--home-text-muted);
+    -unity-font-style: italic;
+    margin-top: -8px;
+}
+
+/* ── weather card ── */
+.weather-card {
+    width: 100%;
+    max-width: 600px;
+    height: 160px;
+    background-color: var(--home-card-bg);
+    border-radius: var(--home-card-radius);
+    padding-top: 16px;
+    padding-bottom: 16px;
+    padding-left: 24px;
+    padding-right: 24px;
+    margin-top: 20px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.weather-icon {
+    width: 100px;
+    height: 100px;
+    -unity-background-scale-mode: scale-to-fit;
+    flex-shrink: 0;
+}
+
+.weather-info-column {
+    flex-direction: column;
+    justify-content: center;
+    padding-left: 20px;
+    flex-grow: 1;
+}
+
+.weather-temp-row {
+    flex-direction: row;
+    align-items: flex-end;
+}
+
+.weather-degree {
+    font-size: 64px;
+    color: var(--home-text);
+    -unity-font-style: bold;
+}
+
+.weather-celsius {
+    font-size: 28px;
+    color: var(--home-text-muted);
+    margin-bottom: 10px;
+    margin-left: 2px;
+}
+
+.weather-location {
+    font-size: 22px;
+    color: var(--home-text-muted);
+    -unity-font-style: bold;
+    margin-top: 4px;
+}
+
+.weather-status {
+    font-size: 18px;
+    color: var(--home-text-muted);
+    -unity-font-style: italic;
+}
+
+/* ── right column: sliders ── */
+.home-right-column {
+    width: 45%;
+    height: 80%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-left: 20px;
+    padding-right: 40px;
+}
+
+/* ── slider card ── */
+.slider-card {
+    width: 100%;
+    max-width: 500px;
+    background-color: var(--home-card-bg);
+    border-radius: var(--home-card-radius);
+    padding-top: 28px;
+    padding-bottom: 28px;
+    padding-left: 28px;
+    padding-right: 28px;
+    flex-direction: column;
+}
+
+.slider-row {
+    flex-direction: row;
+    align-items: center;
+    height: 96px;
+    margin-bottom: 16px;
+}
+
+.slider-icon {
+    width: 80px;
+    height: 80px;
+    -unity-background-scale-mode: scale-to-fit;
+    flex-shrink: 0;
+    margin-right: 16px;
+}
+
+/* background-images for slider icons are set in UXML via inline url() */
+
+.slider-label {
+    font-size: 16px;
+    color: var(--home-text-muted);
+    margin-bottom: 4px;
+}
+
+.slider-value-label {
+    font-size: 14px;
+    color: var(--home-text-muted);
+    -unity-text-align: middle-right;
+    width: 48px;
+    flex-shrink: 0;
+    margin-left: 12px;
+}
+
+.slider-track-container {
+    flex-grow: 1;
+    flex-direction: column;
+}
+
+/* slider overrides inside the home page */
+.home-slider Slider #unity-tracker {
+    background-color: rgba(125, 101, 182, 0.85);
+    background-size: 100% 100%;
+    -unity-background-scale-mode: stretch-to-fill;
+    position: absolute;
+    scale: 0.95 15;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    border-bottom-right-radius: 15px;
+    border-bottom-left-radius: 15px;
+    border-left-color: rgba(0, 0, 0, 0);
+    border-right-color: rgba(0, 0, 0, 0);
+    border-top-color: rgba(0, 0, 0, 0);
+    border-bottom-color: rgba(0, 0, 0, 0);
+}
+
+.home-slider Slider #unity-drag-container {
+    background-color: rgba(162, 224, 242, 0.6);
+    background-image: url("project://database/Assets/UI/assets/wiggler/frame.svg?fileID=7388822144124034973&guid=0ee3a7bc9c52595499d6befcb813335c&type=3#frame");
+    -unity-background-scale-mode: stretch-to-fill;
+    scale: 1.2 0.3;
+    border-top-left-radius: 48px;
+    border-top-right-radius: 48px;
+    border-bottom-right-radius: 48px;
+    border-bottom-left-radius: 48px;
+    transform-origin: center;
+}
+
+.home-slider Slider #unity-dragger {
+    background-color: rgba(255, 255, 255, 0.6);
+    position: absolute;
+    scale: 4 10;
+    border-left-color: rgba(0, 0, 0, 0);
+    border-right-color: rgba(0, 0, 0, 0);
+    border-top-color: rgba(0, 0, 0, 0);
+    border-bottom-color: rgba(0, 0, 0, 0);
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+}
+
+.home-slider Slider Label {
+    color: rgba(255, 255, 255, 0);
+    width: 0;
+}

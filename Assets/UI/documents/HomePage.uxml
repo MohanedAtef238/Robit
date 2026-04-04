@@ -1,0 +1,78 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+         xsi="http://www.w3.org/2001/XMLSchema-instance"
+         editor="UnityEditor.UIElements"
+         noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd">
+
+    <Style src="project://database/Assets/UI/documents/HomePage.uss" />
+
+    <!-- Full-screen home panel — starts hidden -->
+    <ui:VisualElement name="home-panel" class="home-panel home-panel--hidden">
+
+        <!-- Close button -->
+        <ui:Button name="homeCloseBtn" text="✕" class="home-close-btn" />
+
+        <!-- ═══ LEFT COLUMN: Clock + Weather ═══ -->
+        <ui:VisualElement class="home-left-column">
+
+            <!-- Clock card -->
+            <ui:VisualElement class="clock-card">
+                <!-- Analog face -->
+                <ui:VisualElement class="clock-face-container">
+                    <ui:VisualElement class="clock-face" style="background-image: url(&quot;project://database/Assets/UI/assets/clock/clock.svg?fileID=7388822144124034973&amp;guid=46321f6703c1cfa45b15c419b491b747&amp;type=3#clock&quot;);">
+                        <ui:VisualElement name="minuteHand" class="clock-hand-minute" style="background-image: url(&quot;project://database/Assets/UI/assets/clock/seconds.svg?fileID=7388822144124034973&amp;guid=d8aa672018aaa5748aededd641d6d41d&amp;type=3#seconds&quot;);" />
+                        <ui:VisualElement name="hourHand" class="clock-hand-hour" style="background-image: url(&quot;project://database/Assets/UI/assets/clock/seconds.svg?fileID=7388822144124034973&amp;guid=d8aa672018aaa5748aededd641d6d41d&amp;type=3#seconds&quot;);" />
+                        <ui:VisualElement class="clock-center-dot" style="background-image: url(&quot;project://database/Assets/UI/assets/switcher/circle.svg?fileID=7388822144124034973&amp;guid=25e5084bc6e82f943b73e2dff5685a3f&amp;type=3#circle&quot;);" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <!-- Digital side -->
+                <ui:VisualElement class="clock-info-column">
+                    <ui:Label name="digitalClockLabel" text="12:00" class="digital-clock-time" />
+                    <ui:Label name="digitalClockM" text="AM" class="digital-clock-ampm" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- Weather card -->
+            <ui:VisualElement class="weather-card">
+                <ui:VisualElement class="weather-icon" style="background-image: url(&quot;project://database/Assets/UI/assets/clock/weather.svg?fileID=7388822144124034973&amp;guid=1ba991b9373b8f3458ab66cd7f1c1fea&amp;type=3#weather&quot;);" />
+                <ui:VisualElement class="weather-info-column">
+                    <ui:VisualElement class="weather-temp-row">
+                        <ui:Label name="degreeLabel" text="--" class="weather-degree" />
+                        <ui:Label name="celsiusLabel" text="°C" class="weather-celsius" />
+                    </ui:VisualElement>
+                    <ui:Label name="locationLabel" text="Loading..." class="weather-location" />
+                    <ui:Label name="statusLabel" text="" class="weather-status" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+        </ui:VisualElement>
+
+        <!-- ═══ RIGHT COLUMN: Sliders ═══ -->
+        <ui:VisualElement class="home-right-column">
+            <ui:VisualElement class="slider-card home-slider">
+
+                <!-- Volume -->
+                <ui:VisualElement class="slider-row">
+                    <ui:VisualElement class="slider-icon slider-icon--sound" style="background-image: url(&quot;project://database/Assets/UI/assets/wiggler/sound%20icon.svg?fileID=7388822144124034973&amp;guid=1efdf2b2476b912499433c1f3223179d&amp;type=3#sound icon&quot;);" />
+                    <ui:VisualElement class="slider-track-container">
+                        <ui:Label text="Volume" class="slider-label" />
+                        <ui:Slider name="soundSlider" low-value="0" high-value="100" value="50" />
+                    </ui:VisualElement>
+                    <ui:Label name="soundValueLabel" text="50%" class="slider-value-label" />
+                </ui:VisualElement>
+
+                <!-- Brightness -->
+                <ui:VisualElement class="slider-row">
+                    <ui:VisualElement class="slider-icon slider-icon--brightness" style="background-image: url(&quot;project://database/Assets/UI/assets/wiggler/sun%20icon.svg?fileID=7388822144124034973&amp;guid=31c1d12f141238247bc12de10ddeb0d6&amp;type=3#sun icon&quot;);" />
+                    <ui:VisualElement class="slider-track-container">
+                        <ui:Label text="Brightness" class="slider-label" />
+                        <ui:Slider name="brightnessSlider" low-value="0" high-value="100" value="50" />
+                    </ui:VisualElement>
+                    <ui:Label name="brightnessValueLabel" text="50%" class="slider-value-label" />
+                </ui:VisualElement>
+
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>

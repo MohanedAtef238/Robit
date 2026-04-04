@@ -1,0 +1,25 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+         xsi="http://www.w3.org/2001/XMLSchema-instance"
+         editor="UnityEditor.UIElements"
+         noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd">
+
+    <Style src="project://database/Assets/UI/documents/SettingsOverlay.uss" />
+
+    <!-- Dark backdrop — clicking it dismisses the overlay -->
+    <ui:VisualElement name="settings-backdrop" class="settings-backdrop settings-backdrop--hidden">
+
+        <!-- Centered card -->
+        <ui:VisualElement name="settings-card" class="settings-card settings-card--enter">
+
+            <ui:Label text="Settings" class="settings-title" />
+
+            <!-- Exit button — quits the application cleanly -->
+            <ui:Button name="exitBtn" text="Exit" class="settings-btn settings-btn--exit" />
+
+            <!-- Close / dismiss button -->
+            <ui:Button name="settingsCloseBtn" text="Close" class="settings-btn settings-btn--close" />
+
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>

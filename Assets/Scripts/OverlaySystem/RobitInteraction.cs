@@ -6,6 +6,7 @@ using UnityEngine.EventSystems;
 public class RobitInteraction : MonoBehaviour, IPointerClickHandler
 {
     [SerializeField] private MacroButtonController macroController;
+    [SerializeField] private HomePageController homePageController;
 
     [Header("Menu Anchor (world-space offset from mascot pivot)")]
     [Tooltip("In world units. For a 1-unit-tall mascot, Y ≈ 0.8 puts the arc above the head.")]
@@ -21,10 +22,20 @@ public class RobitInteraction : MonoBehaviour, IPointerClickHandler
     {
         if (macroController == null)
             macroController = Object.FindFirstObjectByType<MacroButtonController>();
+        if (homePageController == null)
+            homePageController = Object.FindFirstObjectByType<HomePageController>();
     }
 
     public void OnPointerClick(PointerEventData eventData)
     {
+        // When the HomePage is open, clicking robit toggles the dialogue bubble
+        if (homePageController != null && homePageController.IsOpen)
+        {
+            homePageController.ToggleDialogue();
+            return;
+        }
+
+        // Default behavior: toggle the macro menu
         if (macroController == null) return;
 
         _menuOpen = !_menuOpen;

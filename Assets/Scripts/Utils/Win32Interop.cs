@@ -29,6 +29,9 @@ public static class Win32Interop
     [DllImport("user32.dll")]
     public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
 
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    public static extern uint RealGetWindowClass(IntPtr hwnd, System.Text.StringBuilder pszType, uint cchType);
+
     // ═══════════════════════════════════════════════════════════════════════════
     // Window focus & Z-order (used by WindowManager)
     // ═══════════════════════════════════════════════════════════════════════════

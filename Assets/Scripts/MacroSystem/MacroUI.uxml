@@ -17,6 +17,9 @@
             <MacroButton name="BtnReturnToDesktop" class="macro-button home-button">
                 <ui:VisualElement class="btn-icon icon-home" />
             </MacroButton>
+            <MacroButton name="BtnSettings" class="macro-button">
+                <ui:VisualElement class="btn-icon icon-settings" />
+            </MacroButton>
             <ui:Button name="BtnWheelPrev" class="wheel-arrow arrow-left">
                 <ui:VisualElement class="arrow-icon" />
             </ui:Button>

@@ -115,6 +115,14 @@
     background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/home.png?fileID=2800000&guid=4b28b571169ad6b41b1d22188ad26c66&type=3#home");
 }
 
+.icon-home-dashboard {
+    background-image: url("project://database/Assets/home_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg?fileID=7388822144124034973&guid=dea5b8579094e934787515890995c206&type=3#home_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24");
+}
+
+.icon-settings {
+    background-image: url("project://database/Assets/settings_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg?fileID=7388822144124034973&guid=d671468dc8e08a343ab4eca2623f67b6&type=3#settings_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24");
+}
+
 /* Wheel cycling arrows */
 .wheel-arrow {
     position: absolute;

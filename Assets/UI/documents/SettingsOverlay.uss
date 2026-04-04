@@ -1,0 +1,114 @@
+/* ═══════════════════════════════════════════════════════════
+   Settings Overlay — dark tinted backdrop + centered card
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+    --settings-backdrop: rgba(0, 0, 0, 0.70);
+    --settings-card-bg: rgb(35, 30, 65);
+    --settings-card-radius: 20px;
+    --settings-text: rgb(230, 220, 255);
+    --settings-text-muted: rgb(150, 140, 185);
+    --settings-accent: rgb(125, 101, 182);
+    --settings-danger: rgb(220, 70, 70);
+    --settings-transition-speed: 300ms;
+}
+
+/* ── backdrop ── */
+.settings-backdrop {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: var(--settings-backdrop);
+    align-items: center;
+    justify-content: center;
+    transition-property: opacity;
+    transition-duration: var(--settings-transition-speed);
+    transition-timing-function: ease-out;
+}
+
+.settings-backdrop--hidden {
+    opacity: 0;
+    display: none;
+}
+
+.settings-backdrop--visible {
+    opacity: 1;
+    display: flex;
+}
+
+/* ── card ── */
+.settings-card {
+    width: 360px;
+    background-color: var(--settings-card-bg);
+    border-radius: var(--settings-card-radius);
+    padding-top: 32px;
+    padding-bottom: 32px;
+    padding-left: 32px;
+    padding-right: 32px;
+    flex-direction: column;
+    align-items: center;
+    transition-property: scale, opacity;
+    transition-duration: var(--settings-transition-speed);
+    transition-timing-function: ease-out;
+}
+
+.settings-card--enter {
+    scale: 0.92;
+    opacity: 0;
+}
+
+.settings-card--ready {
+    scale: 1;
+    opacity: 1;
+}
+
+/* ── title ── */
+.settings-title {
+    font-size: 28px;
+    color: var(--settings-text);
+    -unity-font-style: bold;
+    margin-bottom: 28px;
+}
+
+/* ── generic button base ── */
+.settings-btn {
+    width: 100%;
+    height: 52px;
+    border-radius: 12px;
+    font-size: 18px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    border-width: 0;
+    margin-bottom: 12px;
+    transition-property: background-color, scale;
+    transition-duration: 150ms;
+}
+
+.settings-btn:hover {
+    scale: 1.03;
+}
+
+.settings-btn:active {
+    scale: 0.97;
+}
+
+/* ── exit button ── */
+.settings-btn--exit {
+    background-color: var(--settings-danger);
+    color: rgb(255, 255, 255);
+}
+
+.settings-btn--exit:hover {
+    background-color: rgb(240, 90, 90);
+}
+
+/* ── close / dismiss button ── */
+.settings-btn--close {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: var(--settings-text-muted);
+}
+
+.settings-btn--close:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: var(--settings-text);
+}

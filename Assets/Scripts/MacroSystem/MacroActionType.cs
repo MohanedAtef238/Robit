@@ -9,5 +9,7 @@ public enum MacroActionType
     PageUp,
     PageDown,
     ReturnToDesktop,
-    AppCycler
+    AppCycler,
+    HomeDashboard,
+    Settings
 }

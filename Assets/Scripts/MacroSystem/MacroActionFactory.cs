@@ -14,6 +14,8 @@ public static class MacroActionFactory
             MacroActionType.PageDown     => new PageDownAction(),
             MacroActionType.ReturnToDesktop => new ReturnToDesktopAction(),
             MacroActionType.AppCycler => new AppCyclerAction(),
+            MacroActionType.HomeDashboard => new HomePageAction(),
+            MacroActionType.Settings => new SettingsAction(),
             _ => throw new System.ArgumentException($"Unknown MacroActionType: {type}")
         };
     }

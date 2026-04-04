@@ -1506,8 +1506,20 @@ MonoBehaviour:
     actionType: 6
   - buttonName: BtnReturnToDesktop
     actionType: 7
-  staggerDelay: 0.08
-  bounceDuration: 0.5
+  arcStartAngle: 200
+  arcEndAngle: 340
+  radialRadius: 10
+  inDurationMs: 300
+  outDurationMs: 180
+  staggerMs: 60
+  buttonSize: 70
+  buttonMargin: 12
+  iconSize: 34
+  wheelArrowSize: 44
+  containerWidth: 180
+  containerPaddingTB: 16
+  containerPaddingLR: 12
+  containerBorderRadius: 16
 --- !u!114 &394963220
 MonoBehaviour:
   m_ObjectHideFlags: 0
