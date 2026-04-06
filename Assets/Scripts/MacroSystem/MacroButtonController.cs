@@ -24,8 +24,9 @@ public class MacroButtonController : MonoBehaviour
         new MacroGroup { name = "Read",      action0 = MacroActionType.ZoomIn,        action1 = MacroActionType.ZoomOut,       action2 = MacroActionType.Screenshot },
         new MacroGroup { name = "Scroll",    action0 = MacroActionType.PageUp,        action1 = MacroActionType.PageDown,      action2 = MacroActionType.None },
         new MacroGroup { name = "Snap",      action0 = MacroActionType.SnapLeft,      action1 = MacroActionType.SnapRight,     action2 = MacroActionType.MaximizeRestore },
-        new MacroGroup { name = "Window",    action0 = MacroActionType.Minimize,      action1 = MacroActionType.CloseWindow,   action2 = MacroActionType.Undo },
-        new MacroGroup { name = "Edit",      action0 = MacroActionType.Redo,          action1 = MacroActionType.MuteToggle,    action2 = MacroActionType.FindOnPage },
+        new MacroGroup { name = "Window",    action0 = MacroActionType.Minimize,      action1 = MacroActionType.CloseWindow,   action2 = MacroActionType.None },
+        new MacroGroup { name = "Edit",      action0 = MacroActionType.Undo,          action1 = MacroActionType.Redo,          action2 = MacroActionType.None },
+        new MacroGroup { name = "Tools",     action0 = MacroActionType.MuteToggle,    action1 = MacroActionType.FindOnPage,    action2 = MacroActionType.None },
         new MacroGroup { name = "System",    action0 = MacroActionType.HomeDashboard, action1 = MacroActionType.AppCycler,     action2 = MacroActionType.Settings },
     };
 

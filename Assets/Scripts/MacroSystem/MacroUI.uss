@@ -209,7 +209,7 @@
 }
 
 .icon-redo {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/curved-arrow-right.png?fileID=2800000&guid=68540a7089b819a468235cb8b707beb7&type=3#curved-arrow-right");
+    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-redo-100.png?fileID=2800000&guid=efe77e6124614264697b049b6c9876d8&type=3#icons8-redo-100");
 }
 
 /* Shown when NOT muted — clicking will mute */
