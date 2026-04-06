@@ -4,14 +4,14 @@
 
 :root {
     --cycler-circle-size: 64px;
-    --cycler-circle-bg: rgb(185, 160, 240);
-    --cycler-circle-bg-hover: rgb(90, 50, 195);
-    --cycler-circle-border: rgb(65, 35, 145);
-    --cycler-circle-border-hover: rgb(160, 110, 255);
-    --cycler-label-bg: rgba(20, 15, 55, 0.75);
-    --cycler-label-color: rgb(230, 220, 255);
-    --cycler-arrow-color: rgb(20, 10, 55);
-    --cycler-arrow-hover-color: rgb(255, 255, 255);
+    --cycler-circle-bg: rgb(80, 110, 160);
+    --cycler-circle-bg-hover: rgb(55, 95, 155);
+    --cycler-circle-border: rgb(50, 85, 140);
+    --cycler-circle-border-hover: rgb(110, 165, 240);
+    --cycler-label-bg: rgba(18, 28, 48, 0.75);
+    --cycler-label-color: rgba(180, 200, 240, 0.95);
+    --cycler-arrow-color: rgba(255, 255, 255, 0.95);
+    --cycler-arrow-hover-color: rgba(255, 255, 255, 0.95);
     --cycler-transition-speed: 300ms;
 }
 

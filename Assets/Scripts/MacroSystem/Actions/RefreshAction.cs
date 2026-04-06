@@ -1,7 +1,9 @@
+using LnkParser.Constants;
+
 public class RefreshAction : KeyComboMacroAction
 {
     public override string ActionId => "refresh";
     public override string DisplayName => "Refresh";
-    protected override byte[] Modifiers => new byte[] { VK_CONTROL };
-    protected override byte MainKey => 0x52; // R
+    protected override VirtualKeys[] Modifiers => new[] { VirtualKeys.Control };
+    protected override VirtualKeys MainKey => VirtualKeys.R;
 }
