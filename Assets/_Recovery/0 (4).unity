@@ -695,10 +695,10 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b8cc62b34d76209418f80a34462fc4f3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EyeSocketLockYZ
-  horizontalLimit: 5
-  verticalLimit: 10
-  smoothing: 15
+  m_EditorClassIdentifier: Assembly-CSharp::EyeFollowMouse
+  horizontalLimit: 35
+  verticalLimit: 30
+  smoothing: 10
 --- !u!1 &489148194
 GameObject:
   m_ObjectHideFlags: 0
@@ -835,8 +835,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2073e6e2b70c4084caea81f0a6c21bac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RelativeEyelid
-  closedXOffset: 35
-  blinkSpeed: 30
+  closedXOffset: 45
+  blinkSpeed: 40
 --- !u!1 &748051258
 GameObject:
   m_ObjectHideFlags: 0
@@ -2062,10 +2062,10 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b8cc62b34d76209418f80a34462fc4f3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EyeSocketLockYZ
-  horizontalLimit: 5
-  verticalLimit: 10
-  smoothing: 15
+  m_EditorClassIdentifier: Assembly-CSharp::EyeFollowMouse
+  horizontalLimit: 10
+  verticalLimit: 30
+  smoothing: 10
 --- !u!1 &1605402830
 GameObject:
   m_ObjectHideFlags: 0
