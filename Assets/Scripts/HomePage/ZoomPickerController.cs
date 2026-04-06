@@ -6,9 +6,8 @@ using UnityEngine.UIElements;
 /// Attach this to the same GameObject as HomePageController.
 public class ZoomPickerController : MonoBehaviour
 {
-    // Visual style for the currently selected button
-    private static readonly Color ColActive   = new Color(0.62f, 0.25f, 1.00f, 0.95f); // vivid purple
-    private static readonly Color ColInactive = new Color(0.49f, 0.40f, 0.71f, 0.65f); // muted purple
+    // CSS class used to mark the currently selected zoom button.
+    private const string SelectedClass = "zoom-selected";
 
     private static readonly int[] Steps = { 100, 125, 150, 200 };
     private static readonly string[] BtnNames = { "zoom100Btn", "zoom125Btn", "zoom150Btn", "zoom200Btn" };
@@ -31,6 +30,8 @@ public class ZoomPickerController : MonoBehaviour
                 continue;
             }
             _buttons[i] = btn;
+            // Ensure USS controls the button background (clear any inline color).
+            btn.style.backgroundColor = StyleKeyword.Null;
             foundCount++;
 
             int captured = i;
@@ -61,11 +62,10 @@ public class ZoomPickerController : MonoBehaviour
         {
             if (_buttons[i] == null) continue;
             bool active = Steps[i] == _currentPercent;
-            _buttons[i].style.backgroundColor = active ? ColActive : ColInactive;
-            // Slightly enlarge the active pill
-            _buttons[i].style.scale = active
-                ? new Scale(new Vector2(1.08f, 1.08f))
-                : new Scale(Vector2.one);
+            if (active)
+                _buttons[i].AddToClassList(SelectedClass);
+            else
+                _buttons[i].RemoveFromClassList(SelectedClass);
         }
     }
 }
