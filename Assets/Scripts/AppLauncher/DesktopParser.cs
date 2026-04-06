@@ -21,6 +21,19 @@ public struct ShortcutInfo
 
 public class DesktopParser : MonoBehaviour
 {
+    public static DesktopParser Instance;
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
     public List<ShortcutInfo> shortcuts = new List<ShortcutInfo>();
     public bool parsingComplete = false;
 
@@ -85,17 +98,37 @@ public class DesktopParser : MonoBehaviour
 
 private Texture2D ExtractHighQualityIcon(string filePath)
 {
-    // Extract and save ICOs to Icons folder
-    List<string> icoPaths = IconExtractor.ExtractAndSaveAllIcos(filePath);
-    if (icoPaths == null || icoPaths.Count == 0) return null;
+    string iconsFolder = Path.Combine(Application.dataPath, "Icons");
+    string exeName = Path.GetFileNameWithoutExtension(filePath);
+    string pngCachePath = Path.Combine(iconsFolder, $"{exeName}_icon.png");
 
-    // Use the first ICO file (highest-res typically comes first)
-    string icoPath = icoPaths[0];
+    // Check for cached PNG first (much faster than ICO processing)
+    if (File.Exists(pngCachePath))
+    {
+        Debug.Log($"[DesktopParser] Using cached PNG icon: {pngCachePath}");
+        byte[] pngData = File.ReadAllBytes(pngCachePath);
+        Texture2D tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        if (tex.LoadImage(pngData))
+        {
+            return tex;
+        }
+        else
+        {
+            Debug.LogWarning($"[DesktopParser] Failed to load cached PNG, falling back to extraction");
+        }
+    }
+
+    // Extract ICO data directly to memory (no disk I/O for ICO files)
+    List<byte[]> icoDatas = IconExtractor.ExtractAllIcos(filePath);
+    if (icoDatas == null || icoDatas.Count == 0) return null;
+
+    // Use the first ICO data (highest-res typically comes first)
+    byte[] icoData = icoDatas[0];
 
     try
     {
-        // Load the saved ICO file with Doji.Ico
-        var iconFile = IcoConversion.LoadIcon(icoPath);
+        // Load the ICO from memory with Doji.Ico
+        var iconFile = IcoConversion.LoadIcon(icoData);
         int largestIndex = 0;
         int maxSize = 0;
 
@@ -110,11 +143,25 @@ private Texture2D ExtractHighQualityIcon(string filePath)
         }
 
         Texture2D tex = iconFile.ExtractTexture2D(largestIndex);
+
+        // Cache the highest resolution texture as PNG for future use
+        try
+        {
+            Directory.CreateDirectory(iconsFolder);
+            byte[] pngData = tex.EncodeToPNG();
+            File.WriteAllBytes(pngCachePath, pngData);
+            Debug.Log($"[DesktopParser] Cached PNG icon: {pngCachePath}");
+        }
+        catch (Exception cacheEx)
+        {
+            Debug.LogWarning($"[DesktopParser] Failed to cache PNG: {cacheEx.Message}");
+        }
+
         return tex;
     }
     catch (Exception e)
     {
-        Debug.LogWarning($"[DesktopParser] Failed to load ICO: {icoPath} | {e.Message}");
+        Debug.LogWarning($"[DesktopParser] Failed to process ICO data from {filePath} | {e.Message}");
         return null;
     }
 }
