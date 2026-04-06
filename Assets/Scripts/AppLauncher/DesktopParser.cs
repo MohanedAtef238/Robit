@@ -83,7 +83,6 @@ public class DesktopParser : MonoBehaviour
         Debug.Log($"[DesktopParser] Done. Total: {shortcuts.Count}");
     }
 
-    // 🔥 BEST ICON EXTRACTION METHOD
 private Texture2D ExtractHighQualityIcon(string filePath)
 {
     // Extract and save ICOs to Icons folder
@@ -97,7 +96,20 @@ private Texture2D ExtractHighQualityIcon(string filePath)
     {
         // Load the saved ICO file with Doji.Ico
         var iconFile = IcoConversion.LoadIcon(icoPath);
-        Texture2D tex = iconFile.ExtractTexture2D(iconFile.NumImages-1); 
+        int largestIndex = 0;
+        int maxSize = 0;
+
+        for (int i = 0; i < iconFile.NumImages; i++)
+        {
+            int size = iconFile.Images[i].Width * iconFile.Images[i].Height;
+            if (size > maxSize)
+            {
+                maxSize = size;
+                largestIndex = i;
+            }
+        }
+
+        Texture2D tex = iconFile.ExtractTexture2D(largestIndex);
         return tex;
     }
     catch (Exception e)
