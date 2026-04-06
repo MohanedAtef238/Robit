@@ -50,6 +50,37 @@ Mock_OS uses a **two-scene architecture**:
 
 ---
 
+## Robot Animation System
+
+The project includes components for animating the robot's physical appearance and interactions:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                   Robot Animation Components                     │
+│  ┌─────────────┐    ┌──────────────┐    ┌─────────────────┐     │
+│  │bobAnimation │───►│EyeBlinkAnim │───►│   eyesAnimation  │     │
+│  │ (bouncy     │    │ (blinking)   │    │ (eye movements)  │     │
+│  │  lifecycle) │    │              │    │                 │     │
+│  └─────────────┘    └──────────────┘    └─────────────────┘     │
+│                                                                 │
+│  ┌─────────────┐    ┌──────────────┐                            │
+│  │ HoverGrow   │    │ ToggleTODO   │                            │
+│  │ (UI hover   │    │ (task toggle)│                            │
+│  │  effects)   │    │              │                            │
+│  └─────────────┘    └──────────────┘                            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Animation Flow:**
+
+1. `bobAnimation` handles bouncy entrance and scaling animations on start
+2. `EyeBlinkAnimation` manages periodic blinking of robot eyes
+3. `eyesAnimation` controls eye movements and tracking
+4. `HoverGrow` provides visual feedback on UI hover
+5. `ToggleTODO` manages task completion toggles
+
+---
+
 ## Windows API Integration
 
 The overlay system relies on Windows-specific APIs via P/Invoke. Here's a breakdown of every constant and function used:
