@@ -6,7 +6,7 @@ using System.Collections.Generic;
 [RequireComponent(typeof(UIDocument))]
 public class AppLauncherUIToolkit : MonoBehaviour
 {
-    private const int ItemsPerPage = 8;
+    private const int ItemsPerPage = 12;
     private const float ExitStepDelay = 0.03f;
     private const float ExitDuration = 0.18f;
     private const float EnterStepDelay = 0.045f;
