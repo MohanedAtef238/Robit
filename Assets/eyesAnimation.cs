@@ -3,8 +3,8 @@ using UnityEngine;
 public class EyeSocketLockYZ : MonoBehaviour
 {
     [Header("Rotation Limits")]
-    public float horizontalLimit = 30f;
-    public float verticalLimit = 20f;
+    public float horizontalLimit = 5f;
+    public float verticalLimit = 10f;
     public float smoothing = 15f;
 
     private Vector3 socketRelativePos;

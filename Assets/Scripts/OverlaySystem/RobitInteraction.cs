@@ -35,9 +35,17 @@ public class RobitInteraction : MonoBehaviour, IPointerClickHandler
             return;
         }
 
-        // Default behavior: toggle the macro menu
-        if (macroController == null) return;
+        // In HomeScene (no MacroButtonController): always navigate back to OverlayScene.
+        // Note: the UI Toolkit PanelRaycaster normally intercepts pointer events before
+        // they reach 3D colliders, so the dedicated back button in AppLauncherMain.uxml
+        // is the primary return path. This branch fires only if the panel is hidden.
+        if (macroController == null)
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene("OverlayScene");
+            return;
+        }
 
+        // Default behavior: toggle the macro menu
         _menuOpen = !_menuOpen;
         if (_menuOpen)
         {

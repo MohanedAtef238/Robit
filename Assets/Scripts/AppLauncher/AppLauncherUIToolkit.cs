@@ -21,14 +21,47 @@ public class AppLauncherUIToolkit : MonoBehaviour
     private Label pageIndicator;
     private Button navLeft;
     private Button navRight;
+    private Button backBtn;
 
     private List<ShortcutInfo> allShortcuts = new List<ShortcutInfo>();
     private int currentPage;
     private bool isTransitioning;
+    private bool panelVisible;
+    private Coroutine spinnerCoroutine;
+
+    private static readonly string[] SpinnerFrames =
+        { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" };
+
+    // ── Public panel control ───────────────────────────────────────────────────
+
+    public bool IsPanelVisible => panelVisible;
+
+    public void Show()
+    {
+        if (rootParams == null) return;
+        rootParams.style.display = DisplayStyle.Flex;
+        panelVisible = true;
+    }
+
+    public void Hide()
+    {
+        if (rootParams == null) return;
+        rootParams.style.display = DisplayStyle.None;
+        panelVisible = false;
+    }
+
+    public void Toggle()
+    {
+        if (panelVisible) Hide(); else Show();
+    }
 
     IEnumerator Start()
     {
         WindowManager.Initialize();
+
+        // HomeScene needs an interactive (non-transparent) window
+        // OverlayScene leaves it in click-through mode before loading us.
+        WindowManager.MakeOpaque();
 
         uiDocument = GetComponent<UIDocument>();
         if (uiDocument == null || uiDocument.rootVisualElement == null)
@@ -54,9 +87,16 @@ public class AppLauncherUIToolkit : MonoBehaviour
         navRight.clicked += () => TryChangePage(1);
         navLeft.SetEnabled(false);
         navRight.SetEnabled(false);
+
+        backBtn = rootParams.Q<Button>("back-btn");
+        if (backBtn != null)
+            backBtn.clicked += () => UnityEngine.SceneManagement.SceneManager.LoadScene("OverlayScene");
         pageIndicator.style.display = DisplayStyle.None;
 
-        statusText.text = "Scanning desktops for shortcuts...";
+        // Show the panel immediately so the user sees it loading
+        Show();
+        statusText.text = "⠋  Scanning shortcuts...";
+        spinnerCoroutine = StartCoroutine(AnimateSpinner());
 
         if (desktopParser == null)
         {
@@ -92,7 +132,23 @@ public class AppLauncherUIToolkit : MonoBehaviour
 
         Debug.Log($"[AppLauncherUIToolkit] DesktopParser finished with {desktopParser.shortcuts.Count} shortcuts after {elapsed:F2}s");
         allShortcuts = new List<ShortcutInfo>(desktopParser.shortcuts);
+
+        if (spinnerCoroutine != null) { StopCoroutine(spinnerCoroutine); spinnerCoroutine = null; }
+
+        // Populate the carousel — panel already visible, stays visible.
         yield return StartCoroutine(InitializeCarousel());
+    }
+
+    private IEnumerator AnimateSpinner()
+    {
+        int frame = 0;
+        while (true)
+        {
+            if (statusText != null)
+                statusText.text = $"{SpinnerFrames[frame]}  Scanning shortcuts...";
+            frame = (frame + 1) % SpinnerFrames.Length;
+            yield return new WaitForSeconds(0.1f);
+        }
     }
 
     private IEnumerator InitializeCarousel()

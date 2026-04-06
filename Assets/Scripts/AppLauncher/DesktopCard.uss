@@ -8,9 +8,12 @@
 }
 
 .status-text {
-    font-size: 24px;
-    color: rgba(255, 255, 255, 0.7);
+    font-size: 28px;
+    color: rgba(180, 160, 255, 0.9);
     margin-bottom: 20px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    letter-spacing: 3px;
 }
 
 .carousel-shell {
@@ -19,14 +22,22 @@
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: 20px;
+}
+
+.carousel-shell > * {
+    margin-left: 10px;
+    margin-right: 10px;
 }
 
 .carousel-center {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 16px;
+}
+
+.carousel-center > * {
+    margin-top: 8px;
+    margin-bottom: 8px;
 }
 
 .cards-container {

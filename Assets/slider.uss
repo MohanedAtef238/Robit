@@ -1,6 +1,33 @@
 :root {
 }
 
+/* View All Apps button — Classic (purple) theme */
+#viewAppsBtn {
+    background-color: rgba(22, 18, 48, 0.85);
+    border-left-color: rgba(125, 101, 182, 0.8);
+    border-right-color: rgba(125, 101, 182, 0.8);
+    border-top-color: rgba(125, 101, 182, 0.8);
+    border-bottom-color: rgba(125, 101, 182, 0.8);
+    color: rgb(200, 180, 255);
+    transition-property: background-color, scale, border-color;
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
+}
+
+#viewAppsBtn:hover {
+    background-color: rgba(125, 101, 182, 0.7);
+    scale: 1.04;
+    border-left-color: rgba(200, 180, 255, 0.9);
+    border-right-color: rgba(200, 180, 255, 0.9);
+    border-top-color: rgba(200, 180, 255, 0.9);
+    border-bottom-color: rgba(200, 180, 255, 0.9);
+}
+
+#viewAppsBtn:active {
+    background-color: rgba(125, 101, 182, 1.0);
+    scale: 0.97;
+}
+
 Slider Label {
     color: rgba(255, 153, 153, 0);
     display: none;

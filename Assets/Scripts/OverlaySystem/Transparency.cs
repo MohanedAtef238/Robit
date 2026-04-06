@@ -2,6 +2,7 @@ using UnityEngine;
 using System;
 using System.Runtime.InteropServices;
 using UnityEngine.EventSystems;
+using UnityEngine.UIElements;
 using System.Collections.Generic;
 using System.Collections;
 
@@ -189,7 +190,7 @@ public class Transparency : MonoBehaviour
         #endif
     }
     
-    // Raycasts UI elements first, then 3D colliders
+    // Raycasts UI elements first, then UI Toolkit panels, then 3D colliders
     private bool IsPointerOverUI(Vector2 screenPosition, out string hitInfo)
     {
         hitInfo = "none";
@@ -211,6 +212,23 @@ public class Transparency : MonoBehaviour
         else
         {
             hitInfo = "NO_EVENTSYSTEM";
+        }
+
+        // Check UI Toolkit panels (not detected by EventSystem.RaycastAll)
+        var uiDocuments = FindObjectsByType<UIDocument>(FindObjectsSortMode.None);
+        foreach (var doc in uiDocuments)
+        {
+            if (doc == null || doc.rootVisualElement == null) continue;
+            var panel = doc.rootVisualElement.panel;
+            if (panel == null) continue;
+
+            Vector2 panelPos = RuntimePanelUtils.ScreenToPanel(panel, screenPosition);
+            VisualElement picked = panel.Pick(panelPos);
+            if (picked != null)
+            {
+                hitInfo = $"UIToolkit:{picked.name}";
+                return true;
+            }
         }
 
         if (mainCamera != null)

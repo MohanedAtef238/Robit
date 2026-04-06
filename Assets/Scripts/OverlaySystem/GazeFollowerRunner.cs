@@ -63,13 +63,13 @@ public class GazeFollowerRunner : MonoBehaviour
 
         if (!TryResolvePath(workingDirectoryConfig, expectFile: false, out string workingDirectory, out string workingDetails))
         {
-            UnityEngine.Debug.LogError("[GazeFollowerRunner] Working directory could not be resolved.\n" + workingDetails);
+            UnityEngine.Debug.LogWarning("[GazeFollowerRunner] Working directory could not be resolved (gaze tracking unavailable).\n" + workingDetails);
             return;
         }
 
         if (!TryResolvePath(pythonPathConfig, expectFile: true, out string pythonExe, out string pythonDetails))
         {
-            UnityEngine.Debug.LogError("[GazeFollowerRunner] Python executable could not be resolved.\n" + pythonDetails);
+            UnityEngine.Debug.LogWarning("[GazeFollowerRunner] Python executable could not be resolved (gaze tracking unavailable).\n" + pythonDetails);
             return;
         }
 
@@ -79,7 +79,7 @@ public class GazeFollowerRunner : MonoBehaviour
             string fallbackRelative = Path.Combine(workingDirectoryConfig, "game_test.py");
             if (!TryResolvePath(fallbackRelative, expectFile: true, out scriptPath, out string fallbackDetails))
             {
-                UnityEngine.Debug.LogError("[GazeFollowerRunner] Gaze script could not be resolved.\n" + scriptDetails + "\n" + fallbackDetails);
+                UnityEngine.Debug.LogWarning("[GazeFollowerRunner] Gaze script could not be resolved (gaze tracking unavailable).\n" + scriptDetails + "\n" + fallbackDetails);
                 return;
             }
         }

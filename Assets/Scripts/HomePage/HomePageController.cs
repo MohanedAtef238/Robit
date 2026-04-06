@@ -1,8 +1,11 @@
 using UnityEngine;
 using UnityEngine.UIElements;
+using System.Collections;
+using System.Collections.Generic;
 
 /// Main controller for the Home Page dashboard panel.
-/// Manages open/close lifecycle, wires sub-controllers, and controls the popup suppressor.
+/// Manages open/close lifecycle, wires sub-controllers, controls the popup suppressor,
+/// and handles the View Apps / Back toggle between settings and the app-launcher carousel.
 public class HomePageController : MonoBehaviour
 {
     [SerializeField] private UIDocument uiDocument;
@@ -20,6 +23,10 @@ public class HomePageController : MonoBehaviour
     private HomeBackgroundBlurController _homeBlur;
     private HomeThemeController _theme;
     private WindowsPopupSuppressor _suppressor;
+
+    // View-switching state
+    private VisualElement _settingsView;
+    private Button _viewAppsBtn;
 
     private bool _isOpen;
     private bool _initialized;
@@ -87,6 +94,12 @@ public class HomePageController : MonoBehaviour
         SetContainerIgnore(root, "signal");
         SetContainerIgnore(root, "brightness");
         SetContainerIgnore(root, "clockWidget");
+        SetContainerIgnore(root, "settingsView");
+
+        // Restore interactivity on all buttons/sliders inside settingsView
+        // (they were silenced when we set pickingMode=Ignore on the container).
+        var settingsViewEl = root.Q("settingsView");
+        if (settingsViewEl != null) RestoreInteractivePickingInside(settingsViewEl);
 
         // --- Semi-transparent tint overlay (replaces MakeOpaque) ---
         _tintOverlay = new VisualElement();
@@ -126,6 +139,22 @@ public class HomePageController : MonoBehaviour
         // Ensure panel starts hidden
         homePanel.style.display = DisplayStyle.None;
 
+        // --- View Apps toggle ---
+        _settingsView = root.Q("settingsView");
+        _viewAppsBtn  = root.Q<Button>("viewAppsBtn");
+
+        // Root has pickingMode=Ignore for click-through; restore Position on the button
+        // so hover and clicks actually register.
+        if (_viewAppsBtn != null)
+        {
+            _viewAppsBtn.pickingMode = PickingMode.Position;
+            _viewAppsBtn.clicked += () =>
+            {
+                Debug.Log("[HomePageController] View Apps clicked — loading HomeScene.");
+                ToggleAppView();
+            };
+        }
+
         _initialized = true;
     }
 
@@ -133,6 +162,18 @@ public class HomePageController : MonoBehaviour
     {
         var el = root.Q(name);
         if (el != null) el.pickingMode = PickingMode.Ignore;
+    }
+
+    /// Recursively restores PickingMode.Position on all Button and Slider elements
+    /// that were silenced by an ancestor having PickingMode.Ignore.
+    private static void RestoreInteractivePickingInside(VisualElement container)
+    {
+        foreach (var child in container.Children())
+        {
+            if (child is Button || child is Slider || child is Toggle || child is TextField)
+                child.pickingMode = PickingMode.Position;
+            RestoreInteractivePickingInside(child);
+        }
     }
 
     /// Opens the home page dashboard.
@@ -184,6 +225,9 @@ public class HomePageController : MonoBehaviour
         // Also hide the dialogue bubble
         HideDialogue();
 
+        // Reset to settings view if app view was open
+        ResetToSettingsView();
+
         // Collapse reminder if expanded
         CollapseReminder();
 
@@ -234,4 +278,20 @@ public class HomePageController : MonoBehaviour
         if (_reminderIcon != null)
             _reminderIcon.style.display = DisplayStyle.Flex;
     }
+
+    // ── View Apps ────────────────────────────────────────────────
+
+    private void ToggleAppView()
+    {
+        // Close the home page (restores window state) then load the app launcher scene.
+        Close();
+        UnityEngine.SceneManagement.SceneManager.LoadScene("HomeScene");
+    }
+
+    private void ResetToSettingsView()
+    {
+        if (_settingsView != null) _settingsView.style.display = DisplayStyle.Flex;
+        if (_viewAppsBtn != null)  _viewAppsBtn.text           = "View Apps";
+    }
+
 }
