@@ -28,6 +28,8 @@ namespace LnkParser
 
         // The real path of target this shortcut refers to.
         public string TargetPath { get; private set; }
+        public string IconLocation { get; private set; }
+        public string WorkingDirectory { get; private set; }
 
         public bool IsDirectory { get; private set; }
 
@@ -48,6 +50,8 @@ namespace LnkParser
             {
                 this.ParseLinkInfo(istream);
             }
+
+            this.ParseStringData(istream, linkFlags);
         }
 
         // Reads flags and file attributes from header.
@@ -118,6 +122,47 @@ namespace LnkParser
                     TargetPath = Encoding.Default.GetString(ms.ToArray());
                 }
             }
+        }
+
+        private void ParseStringData(Stream stream, int linkFlags)
+        {
+            bool isUnicode = (linkFlags & Constants.LinkFlags.IsUnicode) == Constants.LinkFlags.IsUnicode;
+
+            if ((linkFlags & Constants.LinkFlags.HasName) == Constants.LinkFlags.HasName)
+                ReadStringData(stream, isUnicode);
+
+            if ((linkFlags & Constants.LinkFlags.HasRelativePath) == Constants.LinkFlags.HasRelativePath)
+                ReadStringData(stream, isUnicode);
+
+            if ((linkFlags & Constants.LinkFlags.HasWorkingDir) == Constants.LinkFlags.HasWorkingDir)
+                WorkingDirectory = ReadStringData(stream, isUnicode);
+
+            if ((linkFlags & Constants.LinkFlags.HasArguments) == Constants.LinkFlags.HasArguments)
+                ReadStringData(stream, isUnicode);
+
+            if ((linkFlags & Constants.LinkFlags.HasIconLocation) == Constants.LinkFlags.HasIconLocation)
+                IconLocation = ReadStringData(stream, isUnicode);
+        }
+
+        private string ReadStringData(Stream stream, bool isUnicode)
+        {
+            var sizeBuffer = new byte[2];
+            if (stream.Read(sizeBuffer, 0, sizeBuffer.Length) != sizeBuffer.Length)
+                return null;
+
+            ushort charCount = BitConverter.ToUInt16(sizeBuffer, 0);
+            if (charCount == 0)
+                return string.Empty;
+
+            int byteCount = isUnicode ? charCount * 2 : charCount;
+            var dataBuffer = new byte[byteCount];
+
+            if (stream.Read(dataBuffer, 0, dataBuffer.Length) != dataBuffer.Length)
+                return null;
+
+            return isUnicode
+                ? Encoding.Unicode.GetString(dataBuffer)
+                : Encoding.Default.GetString(dataBuffer);
         }
     }
 }

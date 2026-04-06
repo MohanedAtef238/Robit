@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 84aec910f2f464f4e8ceb6e3c7e727e7
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 235389
+  packageName: Iconic (.ico Utilities)
+  packageVersion: 1.0.0
+  assetPath: Assets/ico Utilities/Runtime/Scripts/IconUnityExtensions.cs
+  uploadId: 537943
