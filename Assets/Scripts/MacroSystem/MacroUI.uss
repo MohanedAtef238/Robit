@@ -64,6 +64,12 @@
     transition-property: opacity;
     transition-duration: 350ms;
     transition-timing-function: ease-in-out;
+    background-color: var(--container-bg);
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--container-border);
+    border-radius: 8px;
+    padding: 6px 10px;
 }
 
 /* Editor-preview layout: single row so all buttons are visible.
@@ -232,6 +238,12 @@
     transition-property: opacity;
     transition-duration: 300ms;
     transition-timing-function: ease-in-out;
+    background-color: var(--container-bg);
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--container-border);
+    border-radius: 6px;
+    padding: 6px 8px;
 }
 
 /* Wheel cycling arrows — follow modern button palette */

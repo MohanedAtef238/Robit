@@ -1,7 +1,9 @@
+using LnkParser.Constants;
+
 public class FindOnPageAction : KeyComboMacroAction
 {
     public override string ActionId => "find_on_page";
     public override string DisplayName => "Find";
-    protected override byte[] Modifiers => new byte[] { VK_CONTROL };
-    protected override byte MainKey => 0x46; // F
+    protected override VirtualKeys[] Modifiers => new[] { VirtualKeys.Control };
+    protected override VirtualKeys MainKey => VirtualKeys.F;
 }

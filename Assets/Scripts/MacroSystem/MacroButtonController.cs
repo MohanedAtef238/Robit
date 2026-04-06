@@ -52,7 +52,6 @@ public class MacroButtonController : MonoBehaviour
     [SerializeField] private float tooltipFadeInMs  = 200f;
     [SerializeField] private float tooltipHoldMs    = 800f;
     [SerializeField] private float tooltipFadeOutMs = 300f;
-    [SerializeField] private float tooltipOffsetY   = -42f;
     [SerializeField] private float tooltipDelayMs   = 150f;
 
     [Header("Button Sizing")]
@@ -619,9 +618,10 @@ public class MacroButtonController : MonoBehaviour
             tip.style.opacity = 0f;
 
             // Position above the button's arc slot
+            // tooltipOffsetY = -(tipHeight + gap); negative = upward in UI coords
             Vector2 btnPos = ContentOffset(s);
             tip.style.left = btnPos.x - 20f; // wider than button for centering
-            tip.style.top  = btnPos.y + tooltipOffsetY;
+            tip.style.top  = btnPos.y - (22f + 20f);  // 22px tip + 20px gap above button top
             tip.style.width = buttonSize + 40f;
             tip.style.display = DisplayStyle.Flex;
 
@@ -671,7 +671,7 @@ public class MacroButtonController : MonoBehaviour
         tip.text = MacroActionFactory.Create(actions[slot]).DisplayName;
         Vector2 btnPos = ContentOffset(slot);
         tip.style.left  = btnPos.x - 20f;
-        tip.style.top   = btnPos.y + tooltipOffsetY;
+        tip.style.top   = btnPos.y - (22f + 20f);  // 22px tip + 20px gap above button top
         tip.style.width = buttonSize + 40f;
         tip.style.display = DisplayStyle.Flex;
 

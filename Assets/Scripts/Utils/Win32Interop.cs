@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using UnityEngine.InputSystem;
+using LnkParser.Constants;
 
 // Centralised Win32 P/Invoke declarations for the overlay system.
 public static class Win32Interop
@@ -254,11 +255,11 @@ public static class Win32Interop
     public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
 
     // ── Common virtual-key codes used by macros ────────────────────────────────
-    public const byte VK_TAB      = 0x09;
-    public const byte VK_CONTROL  = 0x11;
-    public const byte VK_MENU     = 0x12; // Alt
-    public const byte VK_OEM_PLUS = 0xBB;
-    public const byte VK_OEM_MINUS = 0xBD;
+    public const byte VK_TAB       = (byte)VirtualKeys.Tab;
+    public const byte VK_CONTROL    = (byte)VirtualKeys.Control;
+    public const byte VK_MENU       = (byte)VirtualKeys.Menu;      // Alt
+    public const byte VK_OEM_PLUS   = (byte)VirtualKeys.OEMPlus;
+    public const byte VK_OEM_MINUS  = (byte)VirtualKeys.OEMMinus;
 
     // ═══════════════════════════════════════════════════════════════════════════
     // Unity Key → Win32 VK mapping (used by SyntheticInputInjector)
