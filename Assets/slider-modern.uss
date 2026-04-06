@@ -186,3 +186,30 @@ TextField #unity-text-input {
 #zoom-picker > Label {
     color: rgba(180, 200, 230, 0.85);
 }
+
+/* ── View All Apps button — Modern (blue/grey) theme ── */
+#viewAppsBtn {
+    background-color: rgba(70, 90, 120, 0.65);
+    border-left-color: rgba(100, 140, 200, 0.8);
+    border-right-color: rgba(100, 140, 200, 0.8);
+    border-top-color: rgba(100, 140, 200, 0.8);
+    border-bottom-color: rgba(100, 140, 200, 0.8);
+    color: rgb(180, 200, 230);
+    transition-property: background-color, scale, border-color;
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
+}
+
+#viewAppsBtn:hover {
+    background-color: rgba(90, 130, 180, 0.9);
+    scale: 1.04;
+    border-left-color: rgba(200, 220, 255, 0.9);
+    border-right-color: rgba(200, 220, 255, 0.9);
+    border-top-color: rgba(200, 220, 255, 0.9);
+    border-bottom-color: rgba(200, 220, 255, 0.9);
+}
+
+#viewAppsBtn:active {
+    background-color: rgba(50, 75, 115, 1.0);
+    scale: 0.97;
+}

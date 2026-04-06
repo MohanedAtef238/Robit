@@ -32,7 +32,7 @@
     </ui:VisualElement>
 
     <!-- ═══ SECTION: View Apps / Back Button (toggles between settings and app views) ═══ -->
-    <ui:Button name="viewAppsBtn" text="View Apps" style="position: absolute; top: 130px; left: 50%; translate: -160px 0; width: 320px; height: 76px; border-top-left-radius: 38px; border-top-right-radius: 38px; border-bottom-right-radius: 38px; border-bottom-left-radius: 38px; background-color: rgba(22, 18, 48, 0.85); border-left-color: rgba(125, 101, 182, 0.8); border-right-color: rgba(125, 101, 182, 0.8); border-top-color: rgba(125, 101, 182, 0.8); border-bottom-color: rgba(125, 101, 182, 0.8); border-left-width: 2px; border-right-width: 2px; border-top-width: 2px; border-bottom-width: 2px; color: rgb(200, 180, 255); font-size: 28px; -unity-font-style: bold; -unity-text-align: middle-center; letter-spacing: 2px;"/>
+    <ui:Button name="viewAppsBtn" text="View All Apps" style="position: absolute; top: 130px; left: 50%; translate: -160px 0; width: 320px; height: 76px; border-top-left-radius: 38px; border-top-right-radius: 38px; border-bottom-right-radius: 38px; border-bottom-left-radius: 38px; border-left-width: 2px; border-right-width: 2px; border-top-width: 2px; border-bottom-width: 2px; font-size: 28px; -unity-font-style: bold; -unity-text-align: middle-center; letter-spacing: 2px;"/>
 
     <!-- ═══ SECTION: Settings View (zoom, sliders — visible by default) ═══ -->
     <ui:VisualElement name="settingsView" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0;" picking-mode="Ignore">
