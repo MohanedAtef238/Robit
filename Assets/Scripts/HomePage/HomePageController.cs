@@ -16,6 +16,7 @@ public class HomePageController : MonoBehaviour
 
     private DesktopWidget _clock;
     private SlidersWidgetController _sliders;
+    private ZoomPickerController _zoomPicker;
     private WindowsPopupSuppressor _suppressor;
 
     private bool _isOpen;
@@ -27,6 +28,7 @@ public class HomePageController : MonoBehaviour
     {
         _clock = GetComponent<DesktopWidget>();
         _sliders = GetComponent<SlidersWidgetController>();
+        _zoomPicker = GetComponent<ZoomPickerController>();
         _suppressor = GetComponent<WindowsPopupSuppressor>();
         if (_suppressor == null)
             _suppressor = gameObject.AddComponent<WindowsPopupSuppressor>();
@@ -52,6 +54,7 @@ public class HomePageController : MonoBehaviour
 
         // Initialize sub-controllers
         _sliders?.Initialize(root);
+        _zoomPicker?.Initialize(root);
 
         // Hide dialogue bubble by default — shown via robit interaction
         dialogueElement = root.Q("dialogue");

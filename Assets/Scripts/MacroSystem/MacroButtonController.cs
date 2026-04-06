@@ -52,7 +52,7 @@ public class MacroButtonController : MonoBehaviour
     [SerializeField] private float tooltipFadeInMs  = 200f;
     [SerializeField] private float tooltipHoldMs    = 800f;
     [SerializeField] private float tooltipFadeOutMs = 300f;
-    [SerializeField] private float tooltipOffsetY   = -18f;
+    [SerializeField] private float tooltipOffsetY   = -42f;
     [SerializeField] private float tooltipDelayMs   = 150f;
 
     [Header("Button Sizing")]
@@ -131,6 +131,14 @@ public class MacroButtonController : MonoBehaviour
             tip.pickingMode = PickingMode.Ignore;
             buttonGrid.Add(tip);
             _slotTooltips[i] = tip;
+        }
+
+        // Register hover callbacks so tooltips re-appear on mouse-over
+        for (int i = 0; i < SlotsPerPage; i++)
+        {
+            int captured = i;
+            slotButtons[i]?.RegisterCallback<PointerEnterEvent>(_ => OnSlotHoverEnter(captured));
+            slotButtons[i]?.RegisterCallback<PointerLeaveEvent>(_ => OnSlotHoverLeave(captured));
         }
 
         ApplyLayout();
@@ -644,6 +652,54 @@ public class MacroButtonController : MonoBehaviour
 
             _tooltipFadeHandles[s] = fadeHandle;
         }
+    }
+
+    private void OnSlotHoverEnter(int slot)
+    {
+        var tip = _slotTooltips[slot];
+        if (tip == null || !_open) return;
+
+        var group = Groups[_groupIndex];
+        MacroActionType[] actions = { group.action0, group.action1, group.action2 };
+        if (actions[slot] == MacroActionType.None) return;
+
+        // Cancel any running fade-out for this slot to make sure animations dont conflict
+        _tooltipFadeHandles[slot] = null;
+        ClearTransitions(tip);
+
+        // Refresh text and position (in case auto-dismiss already cleared it)
+        tip.text = MacroActionFactory.Create(actions[slot]).DisplayName;
+        Vector2 btnPos = ContentOffset(slot);
+        tip.style.left  = btnPos.x - 20f;
+        tip.style.top   = btnPos.y + tooltipOffsetY;
+        tip.style.width = buttonSize + 40f;
+        tip.style.display = DisplayStyle.Flex;
+
+        tip.schedule.Execute(() =>
+        {
+            tip.style.transitionProperty       = new List<StylePropertyName> { new("opacity") };
+            tip.style.transitionDuration       = new List<TimeValue> { new((long)tooltipFadeInMs, TimeUnit.Millisecond) };
+            tip.style.transitionTimingFunction = new List<EasingFunction> { new(EasingMode.EaseOut) };
+            tip.style.transitionDelay          = new List<TimeValue> { new(0, TimeUnit.Millisecond) };
+            tip.style.opacity = 1f;
+        }).StartingIn(16);
+    }
+
+    private void OnSlotHoverLeave(int slot)
+    {
+        var tip = _slotTooltips[slot];
+        if (tip == null) return;
+
+        IVisualElementScheduledItem handle = null;
+        handle = tip.schedule.Execute(() =>
+        {
+            if (_tooltipFadeHandles[slot] != handle) return;
+            tip.style.transitionDuration       = new List<TimeValue> { new((long)tooltipFadeOutMs, TimeUnit.Millisecond) };
+            tip.style.transitionTimingFunction = new List<EasingFunction> { new(EasingMode.EaseIn) };
+            tip.style.opacity = 0f;
+        }).StartingIn(50);
+
+        _tooltipFadeHandles[slot] = handle;
     }
 
     // ── Arrows ──────────────────────────────────────────────────────
