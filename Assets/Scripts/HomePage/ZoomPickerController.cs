@@ -19,6 +19,9 @@ public class ZoomPickerController : MonoBehaviour
 
     public void Initialize(VisualElement root)
     {
+        if (_initialized) return;
+
+        int foundCount = 0;
         for (int i = 0; i < Steps.Length; i++)
         {
             var btn = root.Q<Button>(BtnNames[i]);
@@ -28,10 +31,14 @@ public class ZoomPickerController : MonoBehaviour
                 continue;
             }
             _buttons[i] = btn;
+            foundCount++;
 
             int captured = i;
             btn.clicked += () => OnZoomSelected(captured);
         }
+
+        if (foundCount == 0)
+            Debug.LogError("[ZoomPickerController] No zoom buttons were found in the active UI document.");
 
         _currentPercent = Win32DisplayScaleInterop.GetScalePercent();
         RefreshHighlight();
@@ -43,9 +50,9 @@ public class ZoomPickerController : MonoBehaviour
         int percent = Steps[idx];
         if (percent == _currentPercent) return;
 
-        _currentPercent = percent;
+        bool applied = Win32DisplayScaleInterop.SetScalePercent(percent);
+        _currentPercent = applied ? percent : Win32DisplayScaleInterop.GetScalePercent();
         RefreshHighlight();
-        Win32DisplayScaleInterop.SetScalePercent(percent);
     }
 
     private void RefreshHighlight()

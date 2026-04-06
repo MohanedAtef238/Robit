@@ -28,18 +28,25 @@ public static class Win32DisplayScaleInterop
     private static readonly int[] Percentages = { 100, 125, 150, 200 };
     private static readonly int[] DpiValues   = {  96, 120, 144, 192 };
 
-    private const string RegPath = @"Control Panel\Desktop";
-    private const string RegKey  = "LogPixels";
+    private const string RegPathDesktop = @"Control Panel\Desktop";
+    private const string RegPathWindowMetrics = @"Control Panel\Desktop\WindowMetrics";
+    private const string RegKeyLogPixels = "LogPixels";
+    private const string RegKeyWin8DpiScaling = "Win8DpiScaling";
+    private const string RegKeyDesktopDpiOverride = "DesktopDPIOverride";
 
     /// Returns the currently configured scale percentage (100/125/150/200).
     /// Returns 100 if the registry key is absent or unrecognised.
     public static int GetScalePercent()
     {
+#if !(UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN)
+        Debug.LogWarning("[Win32DisplayScaleInterop] GetScalePercent is only supported on Windows.");
+        return 100;
+#else
         try
         {
-            using var key = Registry.CurrentUser.OpenSubKey(RegPath, writable: false);
+            using var key = Registry.CurrentUser.OpenSubKey(RegPathDesktop, writable: false);
             if (key == null) return 100;
-            var value = key.GetValue(RegKey);
+            var value = key.GetValue(RegKeyLogPixels);
             if (value == null) return 100;
             int dpi = Convert.ToInt32(value);
             for (int i = 0; i < DpiValues.Length; i++)
@@ -50,12 +57,17 @@ public static class Win32DisplayScaleInterop
             Debug.LogWarning($"[Win32DisplayScaleInterop] GetScalePercent failed: {ex.Message}");
         }
         return 100;
+#endif
     }
 
     /// Sets the system DPI scaling to the given percentage (100/125/150/200).
     /// Returns true if the registry was written successfully.
     public static bool SetScalePercent(int percent)
     {
+#if !(UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN)
+        Debug.LogWarning("[Win32DisplayScaleInterop] SetScalePercent is only supported on Windows.");
+        return false;
+#else
         int dpi = PercentToDpi(percent);
         if (dpi < 0)
         {
@@ -63,14 +75,22 @@ public static class Win32DisplayScaleInterop
             return false;
         }
 
+        int desktopOverride = PercentToDesktopOverride(percent);
+
         try
         {
-            using (var key = Registry.CurrentUser.OpenSubKey(RegPath, writable: true)
-                             ?? Registry.CurrentUser.CreateSubKey(RegPath))
+            using (var key = Registry.CurrentUser.OpenSubKey(RegPathDesktop, writable: true)
+                             ?? Registry.CurrentUser.CreateSubKey(RegPathDesktop))
             {
-                key.SetValue(RegKey, dpi, RegistryValueKind.DWord);
-                // Win10/11 also uses "Win8DpiScaling" + "DesktopDPIOverride" for per-monitor DPI;
-                // writing LogPixels is sufficient for the primary display default.
+                key.SetValue(RegKeyLogPixels, dpi, RegistryValueKind.DWord);
+                key.SetValue(RegKeyWin8DpiScaling, percent == 100 ? 0 : 1, RegistryValueKind.DWord);
+                key.SetValue(RegKeyDesktopDpiOverride, desktopOverride, RegistryValueKind.DWord);
+            }
+
+            using (var metricsKey = Registry.CurrentUser.OpenSubKey(RegPathWindowMetrics, writable: true)
+                                    ?? Registry.CurrentUser.CreateSubKey(RegPathWindowMetrics))
+            {
+                metricsKey.SetValue(RegKeyAppliedDpi, dpi, RegistryValueKind.DWord);
             }
 
             // Broadcast WM_SETTINGCHANGE so Explorer and the taskbar pick it up
@@ -84,7 +104,7 @@ public static class Win32DisplayScaleInterop
                 out _);
 
             Debug.Log($"[Win32DisplayScaleInterop] DPI set to {dpi} ({percent}%). " +
-                      "Sign out and back in for all running apps to adopt the change.");
+                      "Some apps require sign out/in or restart to fully apply scale changes.");
             return true;
         }
         catch (Exception ex)
@@ -92,6 +112,7 @@ public static class Win32DisplayScaleInterop
             Debug.LogError($"[Win32DisplayScaleInterop] SetScalePercent failed: {ex.Message}");
             return false;
         }
+#endif
     }
 
     private static int PercentToDpi(int percent)
@@ -99,5 +120,19 @@ public static class Win32DisplayScaleInterop
         for (int i = 0; i < Percentages.Length; i++)
             if (Percentages[i] == percent) return DpiValues[i];
         return -1;
+    }
+
+    private const string RegKeyAppliedDpi = "AppliedDPI";
+
+    private static int PercentToDesktopOverride(int percent)
+    {
+        return percent switch
+        {
+            100 => 0,
+            125 => -1,
+            150 => -2,
+            200 => -4,
+            _ => 0
+        };
     }
 }

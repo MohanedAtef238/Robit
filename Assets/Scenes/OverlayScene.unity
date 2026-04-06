@@ -1110,6 +1110,7 @@ MonoBehaviour:
   splitDurationMs: 300
   labelFadeDelayMs: 100
   mergeDurationMs: 250
+  peekedScale: 1.6
 --- !u!114 &1219345031
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1535,6 +1536,7 @@ GameObject:
   - component: {fileID: 1748671725}
   - component: {fileID: 1748671731}
   - component: {fileID: 1748671730}
+  - component: {fileID: 1748671732}
   m_Layer: 0
   m_Name: HomePageUI
   m_TagString: Untagged
@@ -1554,6 +1556,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5ed74e84559855b4bbe5e3cefbbb6e08, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SlidersWidgetController
+  sunLowIcon: {fileID: 2800000, guid: 29f0031f9cfbb264daab93d58f1da01a, type: 3}
+  sunMedIcon: {fileID: 2800000, guid: d878f47cdeda48146ba75423cf257402, type: 3}
+  sunHighIcon: {fileID: 2800000, guid: 7f4d932e231444944889ceea74429f15, type: 3}
 --- !u!114 &1748671727
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1632,6 +1637,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DesktopWidget
   uiDocument: {fileID: 1748671728}
   fallbackCity: Cairo
+--- !u!114 &1748671732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1748671724}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f228314e1e95ae042a3cd43aa41237f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HomeThemeController
+  activeTheme: 1
+  classicSheet: {fileID: 7433441132597879392, guid: ce99409ae47d3874d97a32649df04956, type: 3}
+  modernSheet: {fileID: 7433441132597879392, guid: 5eb675e47ed7a554e8d9d84ffe6dc36c, type: 3}
 --- !u!1 &1898056943
 GameObject:
   m_ObjectHideFlags: 0
@@ -1700,25 +1720,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e111237940690f40a2a6411856d8787, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MacroButtonController
-  bindings:
-  - buttonName: BtnZoomIn
-    actionType: 0
-  - buttonName: BtnZoomOut
-    actionType: 1
-  - buttonName: BtnPageUp
-    actionType: 5
-  - buttonName: BtnPageDown
-    actionType: 6
-  - buttonName: BtnReturnToDesktop
-    actionType: 9
-  - buttonName: BtnSettings
-    actionType: 10
   arcStartAngle: 200
   arcEndAngle: 340
   radialRadius: 150
   inDurationMs: 280
   outDurationMs: 160
   staggerMs: 50
+  labelFadeInMs: 250
+  labelHoldMs: 900
+  labelFadeOutMs: 350
+  labelOffsetY: -55
+  tooltipFadeInMs: 200
+  tooltipHoldMs: 800
+  tooltipFadeOutMs: 300
+  tooltipOffsetY: -18
+  tooltipDelayMs: 150
   buttonSize: 70
   buttonMargin: 2
   iconSize: 33
