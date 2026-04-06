@@ -1,0 +1,188 @@
+/* ── Modern Blue / Grey theme ─────────────────────────────── */
+/* Drop-in replacement for slider.uss. Applied at runtime by   */
+/* HomeThemeController when the "modern" palette is active.     */
+
+:root {
+}
+
+Slider Label {
+    color: rgba(255, 153, 153, 0);
+    display: none;
+}
+
+/* ── Slider row pill background (spans icon → slider end) ── */
+#Sound,
+#brightness {
+    background-color: rgba(55, 75, 105, 0.35);
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px;
+    border-bottom-left-radius: 20px;
+    padding-left: 14px;
+    padding-right: 14px;
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(100, 140, 200, 0.20);
+    border-right-color: rgba(100, 140, 200, 0.20);
+    border-top-color: rgba(100, 140, 200, 0.20);
+    border-bottom-color: rgba(100, 140, 200, 0.20);
+}
+
+/* ── Icon tinting so they read against the pill background ── */
+#soundIcon,
+#sunIcon {
+    -unity-background-image-tint-color: rgb(180, 210, 255);
+}
+
+/* ── +/- Buttons: cool slate-blue instead of purple ── */
+#soundDecBtn,
+#soundIncBtn,
+#brightnessDecBtn,
+#brightnessIncBtn {
+    background-color: rgba(70, 90, 120, 0.65);
+    -unity-background-image-tint-color: rgb(200, 220, 255);
+    transition-property: background-color, scale;
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
+    scale: 1;
+}
+
+#soundDecBtn:hover,
+#soundIncBtn:hover,
+#brightnessDecBtn:hover,
+#brightnessIncBtn:hover {
+    background-color: rgba(90, 130, 180, 0.9);
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+    scale: 1.12;
+}
+
+#soundDecBtn:active,
+#soundIncBtn:active,
+#brightnessDecBtn:active,
+#brightnessIncBtn:active {
+    background-color: rgba(50, 75, 115, 1.0);
+    scale: 0.92;
+}
+
+/* ── Zoom picker buttons ── */
+#zoom100Btn,
+#zoom125Btn,
+#zoom150Btn,
+#zoom200Btn {
+    background-color: rgba(70, 90, 120, 0.65);
+    transition-property: background-color, scale;
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
+    scale: 1;
+}
+
+#zoom100Btn:hover,
+#zoom125Btn:hover,
+#zoom150Btn:hover,
+#zoom200Btn:hover {
+    background-color: rgba(90, 130, 180, 0.9);
+    scale: 1.1;
+}
+
+#zoom100Btn:active,
+#zoom125Btn:active,
+#zoom150Btn:active,
+#zoom200Btn:active {
+    background-color: rgba(50, 75, 115, 1.0);
+    scale: 0.94;
+}
+
+/* Selected state (theme-aware) for the zoom picker — toggled via class */
+#zoom100Btn.zoom-selected,
+#zoom125Btn.zoom-selected,
+#zoom150Btn.zoom-selected,
+#zoom200Btn.zoom-selected {
+    background-color: rgba(90, 130, 180, 1.0);
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+    scale: 1.08;
+}
+
+/* ── Slider track: muted steel-blue ── */
+Slider #unity-tracker {
+    background-color: rgba(70, 90, 120, 0.85);
+    background-size: 100% 100%;
+    -unity-background-scale-mode: stretch-to-fill;
+    position: absolute;
+    scale: 0.88 15;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    border-bottom-right-radius: 15px;
+    border-bottom-left-radius: 15px;
+    border-left-color: rgba(0, 0, 0, 0);
+    border-right-color: rgba(0, 0, 0, 0);
+    border-top-color: rgba(0, 0, 0, 0);
+    border-bottom-color: rgba(0, 0, 0, 0);
+}
+
+/* ── Slider drag area: light blue-grey ── */
+Slider #unity-drag-container {
+    background-color: rgba(140, 170, 210, 0.55);
+    scale: 0.9 0.3;
+    border-top-left-radius: 48px;
+    border-top-right-radius: 48px;
+    border-bottom-right-radius: 48px;
+    border-bottom-left-radius: 48px;
+    transform-origin: center;
+}
+
+/* ── Slider thumb ── */
+Slider #unity-dragger {
+    background-color: rgba(220, 230, 245, 0.75);
+    position: absolute;
+    scale: 4 10;
+    border-left-color: rgba(0, 0, 0, 0);
+    border-right-color: rgba(0, 0, 0, 0);
+    border-top-color: rgba(0, 0, 0, 0);
+    border-bottom-color: rgba(0, 0, 0, 0);
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+}
+
+Toggle Label {
+    color: rgba(27, 27, 27, 0);
+    opacity: 0;
+}
+
+Toggle #unity-checkmark {
+    background-image: none;
+    background-color: rgb(220, 230, 245);
+    border-top-left-radius: 7px;
+    border-top-right-radius: 7px;
+    border-bottom-right-radius: 7px;
+    border-bottom-left-radius: 7px;
+    border-top-width: 2px;
+    border-right-width: 2px;
+    border-bottom-width: 2px;
+    border-left-width: 2px;
+    border-left-color: rgba(100, 130, 175, 0.82);
+    border-right-color: rgba(100, 130, 175, 0.82);
+    border-top-color: rgba(100, 130, 175, 0.82);
+    border-bottom-color: rgba(100, 130, 175, 0.82);
+    position: absolute;
+    scale: 1 1;
+}
+
+TextField #unity-text-input {
+    color: rgb(70, 100, 145);
+    font-size: 43px;
+    -unity-font-style: bold;
+    background-color: rgba(255, 255, 255, 0);
+    border-left-color: rgba(100, 130, 175, 0);
+    border-right-color: rgba(100, 130, 175, 0);
+    border-top-color: rgba(100, 130, 175, 0);
+    border-bottom-color: rgba(100, 130, 175, 0);
+}
+
+/* ── Display Scale label ── */
+#zoom-picker > Label {
+    color: rgba(180, 200, 230, 0.85);
+}

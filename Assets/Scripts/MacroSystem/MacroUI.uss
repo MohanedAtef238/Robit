@@ -10,15 +10,28 @@
     --container-right: 24px;
     --container-top: 12%;
     --container-radius: 16px;
-    --container-bg: rgba(20, 15, 55, 0.60);
-    --container-border: rgba(100, 60, 210, 0.30);
-    --button-bg: rgb(185, 160, 240);
-    --button-bg-hover: rgb(90, 50, 195);
-    --button-bg-active: rgb(65, 30, 165);
-    --button-border: rgb(65, 35, 145);
-    --button-border-hover: rgb(160, 110, 255);
-    --icon-color: rgb(20, 10, 55);
-    --icon-hover-color: rgb(255, 255, 255);
+
+    /* ── MODERN blue/grey palette (2026) ─────────────────────── */
+    --container-bg: rgba(18, 28, 48, 0.65);
+    --container-border: rgba(80, 120, 200, 0.28);
+    --button-bg: rgb(80, 110, 160);
+    --button-bg-hover: rgb(55, 95, 155);
+    --button-bg-active: rgb(35, 65, 115);
+    --button-border: rgb(50, 85, 140);
+    --button-border-hover: rgb(110, 165, 240);
+    --icon-color: rgb(15, 20, 40);
+    --icon-hover-color: rgb(15, 20, 40);
+
+    /* ── CLASSIC purple palette — swap these back to restore ── */
+    /* --container-bg: rgba(20, 15, 55, 0.60); */
+    /* --container-border: rgba(100, 60, 210, 0.30); */
+    /* --button-bg: rgb(185, 160, 240); */
+    /* --button-bg-hover: rgb(90, 50, 195); */
+    /* --button-bg-active: rgb(65, 30, 165); */
+    /* --button-border: rgb(65, 35, 145); */
+    /* --button-border-hover: rgb(160, 110, 255); */
+    /* --icon-color: rgb(20, 10, 55); */
+    /* --icon-hover-color: rgb(255, 255, 255); */
 }
 
 .macro-container {
@@ -43,13 +56,20 @@
     align-self: center;
     font-size: 14px;
     -unity-font-style: bold;
-    color: rgba(215, 195, 255, 0.95);
+    /* MODERN: steel-blue — classic was: rgba(215, 195, 255, 0.95) */
+    color: rgba(170, 200, 245, 0.95);
     -unity-text-align: middle-center;
     white-space: nowrap;
     opacity: 0;
     transition-property: opacity;
     transition-duration: 350ms;
     transition-timing-function: ease-in-out;
+    background-color: var(--container-bg);
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--container-border);
+    border-radius: 8px;
+    padding: 6px 10px;
 }
 
 /* Editor-preview layout: single row so all buttons are visible.
@@ -189,7 +209,7 @@
 }
 
 .icon-redo {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/curved-arrow-right.png?fileID=2800000&guid=68540a7089b819a468235cb8b707beb7&type=3#curved-arrow-right");
+    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-redo-100.png?fileID=2800000&guid=efe77e6124614264697b049b6c9876d8&type=3#icons8-redo-100");
 }
 
 /* Shown when NOT muted — clicking will mute */
@@ -210,17 +230,23 @@
 .button-tooltip {
     position: absolute;
     -unity-text-align: middle-center;
-    font-size: 11px;
+    font-size: 15px;
     -unity-font-style: bold;
-    color: rgba(215, 195, 255, 0.92);
+    color: rgba(170, 200, 245, 0.95);
     white-space: nowrap;
     opacity: 0;
     transition-property: opacity;
     transition-duration: 300ms;
     transition-timing-function: ease-in-out;
+    background-color: var(--container-bg);
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--container-border);
+    border-radius: 6px;
+    padding: 6px 8px;
 }
 
-/* Wheel cycling arrows */
+/* Wheel cycling arrows — follow modern button palette */
 .wheel-arrow {
     position: absolute;
     display: none;
@@ -229,10 +255,10 @@
     border-radius: 22px;
     font-size: 18px;
     -unity-font-style: bold;
-    color: rgba(215, 195, 255, 0.9);
-    background-color: rgba(196, 153, 252, 0.85);
+    color: rgba(255, 255, 255, 0.95);
+    background-color: var(--button-bg);
     border-width: 1px;
-    border-color: rgba(120, 80, 225, 0.50);
+    border-color: var(--button-border);
     align-items: center;
     justify-content: center;
     padding: 0;
@@ -241,8 +267,8 @@
 }
 
 .wheel-arrow:hover {
-    background-color: rgba(80, 50, 175, 0.95);
-    border-color: rgba(160, 110, 255, 0.85);
+    background-color: var(--button-bg-hover);
+    border-color: var(--button-border-hover);
 }
 
 /* Arrow icon inside wheel buttons */

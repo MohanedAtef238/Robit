@@ -16,6 +16,9 @@ public class HomePageController : MonoBehaviour
 
     private DesktopWidget _clock;
     private SlidersWidgetController _sliders;
+    private ZoomPickerController _zoomPicker;
+    private HomeBackgroundBlurController _homeBlur;
+    private HomeThemeController _theme;
     private WindowsPopupSuppressor _suppressor;
 
     private bool _isOpen;
@@ -27,9 +30,25 @@ public class HomePageController : MonoBehaviour
     {
         _clock = GetComponent<DesktopWidget>();
         _sliders = GetComponent<SlidersWidgetController>();
+        _zoomPicker = GetComponent<ZoomPickerController>();
+        _homeBlur = GetComponent<HomeBackgroundBlurController>();
+        _theme = GetComponent<HomeThemeController>();
         _suppressor = GetComponent<WindowsPopupSuppressor>();
+
+        if (_zoomPicker == null)
+        {
+            _zoomPicker = gameObject.AddComponent<ZoomPickerController>();
+            Debug.LogWarning("[HomePageController] ZoomPickerController was missing on HomePageUI and was added at runtime.");
+        }
+
+        if (_homeBlur == null)
+            _homeBlur = gameObject.AddComponent<HomeBackgroundBlurController>();
+
         if (_suppressor == null)
             _suppressor = gameObject.AddComponent<WindowsPopupSuppressor>();
+
+        if (_theme == null)
+            _theme = gameObject.AddComponent<HomeThemeController>();
     }
 
     void Start()
@@ -52,6 +71,8 @@ public class HomePageController : MonoBehaviour
 
         // Initialize sub-controllers
         _sliders?.Initialize(root);
+        _zoomPicker?.Initialize(root);
+        _theme?.Initialize(root);
 
         // Hide dialogue bubble by default — shown via robit interaction
         dialogueElement = root.Q("dialogue");
@@ -120,6 +141,9 @@ public class HomePageController : MonoBehaviour
         if (!_initialized || _isOpen) return;
         _isOpen = true;
 
+        // Blur the background scene while Home is open.
+        _homeBlur?.SetBlurActive(true);
+
         // Refresh slider values from system each time we open
         _sliders?.RefreshFromSystem();
 
@@ -133,6 +157,9 @@ public class HomePageController : MonoBehaviour
         // Keep layered transparency but capture mouse clicks
         WindowManager.SetClickThrough(false);
 
+        // Enable DWM Acrylic blur behind the window
+        WindowManager.SetAcrylicBlur(true);
+
         // Start suppressing Windows popups
         _suppressor.StartSuppressing();
 
@@ -144,6 +171,8 @@ public class HomePageController : MonoBehaviour
     {
         if (!_initialized || !_isOpen) return;
         _isOpen = false;
+
+        _homeBlur?.SetBlurActive(false);
 
         // Hide panel
         homePanel.style.display = DisplayStyle.None;
@@ -160,6 +189,9 @@ public class HomePageController : MonoBehaviour
 
         // Stop suppressor — restores any hidden windows
         _suppressor.StopSuppressing();
+
+        // Disable DWM Acrylic blur (before restoring layered style)
+        WindowManager.SetAcrylicBlur(false);
 
         // Restore transparent overlay
         WindowManager.MakeTransparent();

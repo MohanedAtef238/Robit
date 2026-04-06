@@ -1,33 +1,54 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
-public class MouseRotateSphere : MonoBehaviour
+public class EyeSocketLockYZ : MonoBehaviour
 {
-    public float maxRotation = 60f;   // Maximum rotation angle
-    public float smoothSpeed = 5f;    // How smooth the movement feels
+    [Header("Rotation Limits")]
+    public float horizontalLimit = 30f;
+    public float verticalLimit = 20f;
+    public float smoothing = 15f;
 
-    private float currentYRotation = 0f;
+    private Vector3 socketRelativePos;
+    private Quaternion initialLocalRot;
 
-    void Update()
+    void Start()
     {
-        if (Mouse.current == null) return;
+        socketRelativePos = transform.localPosition;
+        initialLocalRot = transform.localRotation;
+    }
 
-        // Get mouse position
-        Vector2 mousePos = Mouse.current.position.ReadValue();
+    void LateUpdate()
+    {
+        // HARD LOCK to the socket
+        transform.localPosition = socketRelativePos;
 
-        // Normalize Y position (0 to 1)
-        float normalizedY = mousePos.y / Screen.height;
+        ApplyLookRotation();
+    }
 
-        // Convert to range (-1 to 1)
-        float centeredY = (normalizedY - 0.5f) * 2f;
+    void ApplyLookRotation()
+    {
+        // 1. Get Mouse relative to screen center
+        Vector2 mousePos = new Vector2(
+            (Input.mousePosition.x / Screen.width) - 0.5f,
+            (Input.mousePosition.y / Screen.height) - 0.5f
+        );
 
-        // Target rotation based on mouse height
-        float targetYRotation = centeredY * maxRotation;
+        // 2. Map Mouse X to Target Z and Mouse Y to Target Y
+        // (Adjust the negative signs if the eye moves opposite to the mouse)
+        float targetZ = mousePos.x * horizontalLimit * 2f;
+        float targetY = -mousePos.y * verticalLimit * 2f;
 
-        // Smooth transition
-        currentYRotation = Mathf.Lerp(currentYRotation, targetYRotation, Time.deltaTime * smoothSpeed);
+        // 3. Construct the rotations for Y and Z only
+        Quaternion yRot = Quaternion.AngleAxis(targetY, Vector3.forward);
+        Quaternion zRot = Quaternion.AngleAxis(targetZ, -Vector3.up);
 
-        // Apply rotation (only Y axis)
-        transform.rotation = Quaternion.Euler(0f, currentYRotation, 0f);
+        // 4. Combine with initial rotation (X remains locked to the Editor value)
+        Quaternion targetRotation = initialLocalRot * yRot * zRot;
+
+        // 5. Smoothly apply
+        transform.localRotation = Quaternion.Slerp(
+            transform.localRotation,
+            targetRotation,
+            Time.deltaTime * smoothing
+        );
     }
 }

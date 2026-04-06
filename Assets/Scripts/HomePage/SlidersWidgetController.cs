@@ -5,12 +5,17 @@ using UnityEngine.UIElements;
 /// Uses Win32 COM interop for system volume and Dxva2 for monitor brightness.
 public class SlidersWidgetController : MonoBehaviour
 {
+    [SerializeField] private Texture2D sunLowIcon;
+    [SerializeField] private Texture2D sunMedIcon;
+    [SerializeField] private Texture2D sunHighIcon;
+
     private Slider soundSlider;
     private Slider brightnessSlider;
     private Label soundValueLabel;
     private Label brightnessValueLabel;
     private Button soundDecBtn, soundIncBtn;
     private Button brightnessDecBtn, brightnessIncBtn;
+    private VisualElement _sunIconEl;
 
     private bool _initialized;
     private bool _brightnessSupported = true;
@@ -21,6 +26,7 @@ public class SlidersWidgetController : MonoBehaviour
         brightnessSlider = root.Q<Slider>("brightnessSlider");
         soundValueLabel = root.Q<Label>("soundValueLabel");
         brightnessValueLabel = root.Q<Label>("brightnessValueLabel");
+        _sunIconEl = root.Q<VisualElement>("sunIcon");
 
         // Seed sliders with current system values
         float sysVolume = Win32AudioInterop.GetVolume();
@@ -40,6 +46,7 @@ public class SlidersWidgetController : MonoBehaviour
         {
             brightnessSlider.value = sysBrightness;
             UpdateValueLabel(brightnessValueLabel, sysBrightness);
+            UpdateSunIcon(sysBrightness);
         }
 
         // Wire arrow buttons (±5 per click)
@@ -73,6 +80,7 @@ public class SlidersWidgetController : MonoBehaviour
             if (!_brightnessSupported) return;
             Win32BrightnessInterop.SetBrightness(Mathf.RoundToInt(evt.newValue));
             UpdateValueLabel(brightnessValueLabel, evt.newValue);
+            UpdateSunIcon(evt.newValue);
         });
 
         _initialized = true;
@@ -95,6 +103,7 @@ public class SlidersWidgetController : MonoBehaviour
             {
                 brightnessSlider.SetValueWithoutNotify(br);
                 UpdateValueLabel(brightnessValueLabel, br);
+                UpdateSunIcon(br);
             }
         }
     }
@@ -102,5 +111,13 @@ public class SlidersWidgetController : MonoBehaviour
     private static void UpdateValueLabel(Label label, float value)
     {
         if (label != null) label.text = $"{Mathf.RoundToInt(value)}%";
+    }
+
+    private void UpdateSunIcon(float value)
+    {
+        if (_sunIconEl == null) return;
+        Texture2D tex = value <= 33f ? sunLowIcon : (value <= 66f ? sunMedIcon : sunHighIcon);
+        if (tex != null)
+            _sunIconEl.style.backgroundImage = new StyleBackground(tex);
     }
 }

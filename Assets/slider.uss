@@ -22,6 +22,16 @@ Slider Label {
     background-color: rgba(175, 150, 230, 0.9);
 }
 
+/* Selected state (classic theme) for the zoom picker — toggled via class */
+#zoom100Btn.zoom-selected,
+#zoom125Btn.zoom-selected,
+#zoom150Btn.zoom-selected,
+#zoom200Btn.zoom-selected {
+    background-color: rgba(175, 150, 230, 1.0);
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+    scale: 1.08;
+}
+
 Slider #unity-tracker {
     background-color: rgba(125, 101, 182, 0.85);
     background-size: 100% 100%;

@@ -1,7 +1,9 @@
+using LnkParser.Constants;
+
 public class MaximizeRestoreAction : KeyComboMacroAction
 {
     public override string ActionId => "maximize_restore";
     public override string DisplayName => "Maximize";
-    protected override byte[] Modifiers => new byte[] { VK_LWIN };
-    protected override byte MainKey => 0x26; // Up
+    protected override VirtualKeys[] Modifiers => new[] { VirtualKeys.LeftWindows };
+    protected override VirtualKeys MainKey => VirtualKeys.Up;
 }

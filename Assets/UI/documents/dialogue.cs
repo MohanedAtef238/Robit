@@ -12,7 +12,7 @@ public class GeminiChatWidget : MonoBehaviour
     private Label outputDialogueLabel;
     private Button inputButton;
 
-    private const string API_KEY = "AIzaSyDkgCkH1eXhfO0nMMJa7AAqnjKctND4Tjw";
+    private const string API_KEY = "AIzaSyAy7qQunp79ix0ZeidTrqPrcCR4JZ3oE8I";
     private const string GEMINI_MODEL = "models/gemini-2.5-flash-lite";
 
     void Start()

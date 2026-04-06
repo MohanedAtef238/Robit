@@ -24,6 +24,35 @@ public static class WindowManager
         public int cyBottomHeight;
     }
 
+    private enum AccentState
+    {
+        ACCENT_DISABLED                   = 0,
+        ACCENT_ENABLE_GRADIENT            = 1,
+        ACCENT_ENABLE_TRANSPARENTGRADIENT = 2,
+        ACCENT_ENABLE_BLURBEHIND          = 3,
+        ACCENT_ENABLE_ACRYLICBLURBEHIND   = 4,
+        ACCENT_INVALID_STATE              = 5
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct AccentPolicy
+    {
+        public AccentState AccentState;
+        public int         AccentFlags;
+        public uint        GradientColor;  // AABBGGRR
+        public int         AnimationId;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct WindowCompositionAttributeData
+    {
+        public int    Attribute;
+        public IntPtr Data;
+        public int    SizeOfData;
+    }
+
+    private const int WCA_ACCENT_POLICY = 19;
+
     [DllImport("user32.dll")]
     private static extern IntPtr GetActiveWindow();
     [DllImport("user32.dll")]
@@ -35,6 +64,8 @@ public static class WindowManager
     [DllImport("Dwmapi.dll")]
     private static extern uint DwmExtendFrameIntoClientArea(IntPtr hWnd, ref MARGINS margins);
     [DllImport("user32.dll")]
+    private static extern int SetWindowCompositionAttribute(IntPtr hWnd, ref WindowCompositionAttributeData data);
+    [DllImport("user32.dll")]
     private static extern bool SetForegroundWindow(IntPtr hWnd);
     [DllImport("user32.dll")]
     private static extern IntPtr SetActiveWindow(IntPtr hWnd);
@@ -44,6 +75,10 @@ public static class WindowManager
     private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
     private static IntPtr unityHwnd = IntPtr.Zero;
+    private static bool _acrylicActive;
+
+    /// True while the DWM Acrylic blur-behind effect is active.
+    public static bool IsAcrylicActive => _acrylicActive;
 
     public static void Initialize()
     {
@@ -89,6 +124,63 @@ public static class WindowManager
         SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED);
         
         Debug.Log("[WindowManager] Transparent");
+        #endif
+    }
+
+    /// <summary>
+    /// Enables or disables Windows DWM Acrylic blur-behind the window.
+    /// When enabled, WS_EX_LAYERED is stripped so the accent policy composites
+    /// over the DWM extended frame (black pixels = glass). MakeTransparent()
+    /// restores the layered style after the accent is disabled.
+    /// </summary>
+    /// <param name="enabled">True to enable acrylic blur, false to disable.</param>
+    /// <param name="tintColor">AABBGGRR tint blended into the blur
+    /// (default 0x08000000 ≈ 3 % opaque black for a light frosted-glass look).</param>
+    public static void SetAcrylicBlur(bool enabled, uint tintColor = 0x08000000)
+    {
+        #if !UNITY_EDITOR
+        IntPtr hWnd = GetWindowHandle();
+        if (hWnd == IntPtr.Zero) return;
+
+        _acrylicActive = enabled;
+
+        if (enabled)
+        {
+            // Strip WS_EX_LAYERED so the accent policy composites correctly
+            // over the DWM extended frame. MakeTransparent() restores it later.
+            uint style = GetExtendedStyle(hWnd);
+            SetExtendedStyle(hWnd, style & ~WS_EX_LAYERED & ~WS_EX_TRANSPARENT);
+            SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0,
+                         SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+        }
+
+        var accent = new AccentPolicy
+        {
+            AccentState   = enabled ? AccentState.ACCENT_ENABLE_ACRYLICBLURBEHIND
+                                    : AccentState.ACCENT_DISABLED,
+            AccentFlags   = 2,           // draw full-window acrylic
+            GradientColor = enabled ? tintColor : 0,
+            AnimationId   = 0
+        };
+
+        int accentSize = Marshal.SizeOf(accent);
+        IntPtr accentPtr = Marshal.AllocHGlobal(accentSize);
+        try
+        {
+            Marshal.StructureToPtr(accent, accentPtr, false);
+            var data = new WindowCompositionAttributeData
+            {
+                Attribute  = WCA_ACCENT_POLICY,
+                Data       = accentPtr,
+                SizeOfData = accentSize
+            };
+            SetWindowCompositionAttribute(hWnd, ref data);
+            Debug.Log($"[WindowManager] Acrylic blur {(enabled ? "enabled" : "disabled")}");
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(accentPtr);
+        }
         #endif
     }
 
@@ -138,6 +230,9 @@ public static class WindowManager
         #if !UNITY_EDITOR
         IntPtr hWnd = GetWindowHandle();
         if (hWnd == IntPtr.Zero) return;
+
+        // While acrylic blur is active, WS_EX_LAYERED is intentionally stripped so the accent policy composites correctly over the DWM extended frame.
+        if (_acrylicActive) return;
         
         uint currentStyle = GetExtendedStyle(hWnd);
         uint newStyle = currentStyle | WS_EX_LAYERED;
