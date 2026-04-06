@@ -1,21 +1,11 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <ui:Template name="DesktopCard" src="project://database/Assets/Scripts/AppLauncher/DesktopCard.uxml?fileID=9197481963319205126&amp;guid=a29c8b15c2732e24cac4fce176550fea&amp;type=3#DesktopCard"/>
     <Style src="project://database/Assets/Scripts/AppLauncher/DesktopCard.uss?fileID=7433441132597879392&amp;guid=3ca87a7b6b0882a40ab01b8b56b03ad6&amp;type=3#DesktopCard"/>
     <ui:VisualElement name="app-launcher-root" class="app-launcher-root">
         <ui:Label name="status-text" text="Initializing Desktop..." class="status-text"/>
         <ui:VisualElement name="carousel-shell" class="carousel-shell">
             <ui:Button name="nav-left" text="‹" class="nav-button nav-left"/>
             <ui:VisualElement name="carousel-center" class="carousel-center">
-                <ui:VisualElement name="cards-container" class="cards-container" style="flex-wrap: wrap; flex-direction: row; justify-content: center;">
-                    <ui:Instance template="DesktopCard" name="TemplateContainer"/>
-                    <ui:Instance template="DesktopCard"/>
-                    <ui:Instance template="DesktopCard" name="TemplateContainer"/>
-                    <ui:Instance template="DesktopCard" name="TemplateContainer"/>
-                    <ui:Instance template="DesktopCard" name="TemplateContainer"/>
-                    <ui:Instance template="DesktopCard" name="TemplateContainer"/>
-                    <ui:Instance template="DesktopCard" name="TemplateContainer"/>
-                    <ui:Instance template="DesktopCard" name="TemplateContainer"/>
-                </ui:VisualElement>
+                <ui:VisualElement name="cards-container" class="cards-container" style="flex-wrap: wrap; flex-direction: row; justify-content: center;"/>
                 <ui:Label name="page-indicator" text="1 / 1" class="page-indicator"/>
             </ui:VisualElement>
             <ui:Button name="nav-right" text="›" class="nav-button nav-right"/>
