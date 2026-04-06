@@ -4,6 +4,7 @@
     background-color: transparent; /* Removed blackout effect */
     padding: 40px;
     align-items: center;
+    justify-content: center;
 }
 
 .status-text {
@@ -12,16 +13,72 @@
     margin-bottom: 20px;
 }
 
-.cards-scrollview {
+.carousel-shell {
     flex-grow: 1;
     width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.carousel-shell > * {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.carousel-center {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.carousel-center > * {
+    margin-top: 8px;
+    margin-bottom: 8px;
 }
 
 .cards-container {
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: center;
-    align-items: flex-start;
+    align-content: center;
+    align-items: center;
+    
+}
+
+.page-indicator {
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 18px;
+    letter-spacing: 3px;
+    -unity-font-style: bold;
+}
+
+.nav-button {
+    width: 72px;
+    height: 72px;
+    border-radius: 36px;
+    border-width: 2px;
+    border-color: rgba(0, 255, 170, 0.45);
+    background-color: rgba(10, 18, 28, 0.9);
+    color: #d8fff2;
+    font-size: 34px;
+    -unity-font-style: bold;
+    transition-duration: 180ms;
+}
+
+.nav-button:hover {
+    background-color: rgba(0, 255, 170, 0.18);
+    border-color: rgba(0, 255, 170, 0.95);
+    color: white;
+    scale: 1.08;
+}
+
+.nav-button:active {
+    scale: 0.92;
+}
+
+.nav-button:disabled {
+    opacity: 0.25;
 }
 
 /* --- CARD COMPONENT --- */
@@ -33,6 +90,18 @@
     height: 254px;
     margin: 30px; 
     transition-duration: 200ms;
+    opacity: 1;
+    scale: 1;
+}
+
+.container.card-hidden {
+    opacity: 0;
+    scale: 0.7;
+}
+
+.container.card-visible {
+    opacity: 1;
+    scale: 1;
 }
 
 /* Active shrink effect. Since USS pseudo-classes are basic, we'll apply this to .container:active */
