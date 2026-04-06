@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 386bd2d4be50009499ede09fc943cfde
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 235389
+  packageName: Iconic (.ico Utilities)
+  packageVersion: 1.0.0
+  assetPath: Assets/ico Utilities/Samples/Scripts/LoadIconSample.cs
+  uploadId: 537943

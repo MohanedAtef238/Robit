@@ -1,10 +1,15 @@
 using UnityEngine;
-using UnityEngine.Networking;
 using System.IO;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using LnkParser;
+using System.Linq;
+using System.Drawing;
+using System.Runtime.InteropServices;
+using System.Drawing.Imaging;
+using Doji.Ico;
+using UnityEngine.UI;
 
 public struct ShortcutInfo
 {
@@ -16,143 +21,151 @@ public struct ShortcutInfo
 
 public class DesktopParser : MonoBehaviour
 {
+    public static DesktopParser Instance;
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
     public List<ShortcutInfo> shortcuts = new List<ShortcutInfo>();
     public bool parsingComplete = false;
-    
-    private static readonly Dictionary<string, string> IconUrls = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-    {
-        {"chrome", "https://img.icons8.com/color/96/chrome--v1.png"},
-        {"google chrome", "https://img.icons8.com/color/96/chrome--v1.png"},
-        {"googlechrome", "https://img.icons8.com/color/96/chrome--v1.png"},
-        {"firefox", "https://img.icons8.com/color/96/firefox--v1.png"},
-        {"mozilla firefox", "https://img.icons8.com/color/96/firefox--v1.png"},
-        {"msedge", "https://img.icons8.com/color/96/ms-edge-new.png"},
-        {"microsoft edge", "https://img.icons8.com/color/96/ms-edge-new.png"},
-        {"edge", "https://img.icons8.com/color/96/ms-edge-new.png"},
-        {"brave", "https://img.icons8.com/color/96/brave-web-browser.png"},
-        {"brave browser", "https://img.icons8.com/color/96/brave-web-browser.png"},
-        {"opera", "https://img.icons8.com/color/96/opera--v1.png"},
-        {"opera gx", "https://img.icons8.com/color/96/opera-gx.png"},
-        {"opera browser", "https://img.icons8.com/color/96/opera--v1.png"},
-        {"vivaldi", "https://img.icons8.com/color/96/vivaldi-web-browser.png"},
-        {"safari", "https://img.icons8.com/color/96/safari--v1.png"},
-        {"chromium", "https://img.icons8.com/color/96/chrome--v1.png"},
-        {"tor browser", "https://img.icons8.com/color/96/tor-browser.png"},
-        {"tor", "https://img.icons8.com/color/96/tor-browser.png"},
 
-        {"discord", "https://img.icons8.com/color/96/discord-logo.png"},
-        {"whatsapp", "https://img.icons8.com/color/96/whatsapp--v1.png"},
-        {"whatsapp desktop", "https://img.icons8.com/color/96/whatsapp--v1.png"},
-        {"telegram", "https://img.icons8.com/color/96/telegram-app--v1.png"},
-        {"telegram desktop", "https://img.icons8.com/color/96/telegram-app--v1.png"},
-        {"signal", "https://img.icons8.com/color/96/signal-app.png"},
-        {"signal desktop", "https://img.icons8.com/color/96/signal-app.png"},
-        {"slack", "https://img.icons8.com/color/96/slack-new.png"},
-        {"microsoft teams", "https://img.icons8.com/color/96/microsoft-teams-2019.png"},
-        {"teams", "https://img.icons8.com/color/96/microsoft-teams-2019.png"},
-        {"ms teams", "https://img.icons8.com/color/96/microsoft-teams-2019.png"},
-        {"skype", "https://img.icons8.com/color/96/skype--v1.png"},
-        {"skype for business", "https://img.icons8.com/color/96/skype--v1.png"},
-        {"zoom", "https://img.icons8.com/color/96/zoom.png"},
-        {"zoom workplace", "https://img.icons8.com/color/96/zoom.png"},
-        {"messenger", "https://img.icons8.com/color/96/facebook-messenger--v1.png"},
-        {"facebook messenger", "https://img.icons8.com/color/96/facebook-messenger--v1.png"},
-        {"viber", "https://img.icons8.com/color/96/viber.png"},
-        {"wechat", "https://img.icons8.com/color/96/weixing.png"},
-        {"line", "https://img.icons8.com/color/96/line-me.png"},
-        {"thunderbird", "https://img.icons8.com/color/96/mozilla-thunderbird.png"},
-        {"mozilla thunderbird", "https://img.icons8.com/color/96/mozilla-thunderbird.png"},
-        {"outlook", "https://img.icons8.com/color/96/microsoft-outlook-2019--v2.png"},
-        {"microsoft outlook", "https://img.icons8.com/color/96/microsoft-outlook-2019--v2.png"},
-    };
-    
     void Start()
     {
         StartCoroutine(ParseShortcuts());
     }
-    
+
     IEnumerator ParseShortcuts()
     {
-        var desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-        var publicDesktopPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory);
+        string[] startMenuPaths = new string[]
+        {
+            Environment.GetFolderPath(Environment.SpecialFolder.StartMenu),
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu)
+        };
 
-        var shortcutFiles = new List<string>();
-        shortcutFiles.AddRange(Directory.GetFiles(desktopPath, "*.lnk"));
-        shortcutFiles.AddRange(Directory.GetFiles(publicDesktopPath, "*.lnk"));
+        var shortcutFiles = startMenuPaths
+            .Where(Directory.Exists)
+            .SelectMany(path => Directory.EnumerateFiles(path, "*.lnk", SearchOption.AllDirectories))
+            .ToList();
 
-        Debug.Log($"[DesktopParser] Found {shortcutFiles.Count} total shortcuts on desktop");
+        Debug.Log($"[DesktopParser] Found {shortcutFiles.Count} shortcuts");
 
-        var pendingShortcuts = new List<(string name, string targetPath, string iconUrl)>();
-        
         foreach (var file in shortcutFiles)
         {
             try
             {
-                var shortcutName = Path.GetFileNameWithoutExtension(file);
                 var shortcut = new WinShortcut(file);
-                
+
                 if (string.IsNullOrEmpty(shortcut.TargetPath))
-                {
-                    Debug.LogWarning($"[DesktopParser] Skipping '{shortcutName}': No target path");
                     continue;
-                }
-                
+
+                // 🔥 Optional filter (recommended)
+                if (!shortcut.TargetPath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
                 if (!File.Exists(shortcut.TargetPath))
-                {
-                    Debug.LogWarning($"[DesktopParser] Skipping '{shortcutName}': Target does not exist: {shortcut.TargetPath}");
                     continue;
+
+                string name = Path.GetFileNameWithoutExtension(file);
+
+                Texture2D icon = ExtractHighQualityIcon(shortcut.TargetPath);
+
+                if (icon == null)
+                {
+                    Debug.LogWarning($"[DesktopParser] Icon failed: {name}");
                 }
-                
-                var exeName = Path.GetFileNameWithoutExtension(shortcut.TargetPath);
-                string iconUrl = GetIconUrl(shortcutName, exeName);
-                Debug.Log($"[DesktopParser] Queued: '{shortcutName}' -> {shortcut.TargetPath}");
-                pendingShortcuts.Add((shortcutName, shortcut.TargetPath, iconUrl));
+
+                AddShortcut(name, shortcut.TargetPath, icon);
             }
             catch (Exception e)
             {
-                Debug.LogError($"[DesktopParser] Failed to parse shortcut: {file}, Error: {e.Message}");
+                Debug.LogWarning($"[DesktopParser] Failed: {file} | {e.Message}");
             }
-        }
-        
-        Debug.Log($"[DesktopParser] Found {pendingShortcuts.Count} valid shortcuts, fetching icons...");
-        
-        foreach (var (name, targetPath, iconUrl) in pendingShortcuts)
-        {
-            yield return StartCoroutine(FetchIconAndAddShortcut(name, targetPath, iconUrl));
-        }
-        
-        Debug.Log($"[DesktopParser] Finished parsing. Total shortcuts: {shortcuts.Count}");
-        parsingComplete = true;
-    }
-    
-    IEnumerator FetchIconAndAddShortcut(string name, string targetPath, string iconUrl)
-    {
-        if (string.IsNullOrEmpty(iconUrl))
-        {
-            AddShortcut(name, targetPath, null);
-            yield break;
+
+            yield return null;
         }
 
-        Debug.Log($"[DesktopParser] Fetching icon from: {iconUrl}");
-        
-        UnityWebRequest request = UnityWebRequestTexture.GetTexture(iconUrl);
-        yield return request.SendWebRequest();
-        
-        if (request.result == UnityWebRequest.Result.Success)
+        parsingComplete = true;
+        Debug.Log($"[DesktopParser] Done. Total: {shortcuts.Count}");
+    }
+
+private Texture2D ExtractHighQualityIcon(string filePath)
+{
+    string iconsFolder = Path.Combine(Application.dataPath, "Icons");
+    string exeName = Path.GetFileNameWithoutExtension(filePath);
+    string pngCachePath = Path.Combine(iconsFolder, $"{exeName}_icon.png");
+
+    // Check for cached PNG first (much faster than ICO processing)
+    if (File.Exists(pngCachePath))
+    {
+        Debug.Log($"[DesktopParser] Using cached PNG icon: {pngCachePath}");
+        byte[] pngData = File.ReadAllBytes(pngCachePath);
+        Texture2D tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        if (tex.LoadImage(pngData))
         {
-            Texture2D texture = DownloadHandlerTexture.GetContent(request);
-            Debug.Log($"[DesktopParser] Downloaded icon for '{name}': {texture.width}x{texture.height}");
-            AddShortcut(name, targetPath, texture);
+            return tex;
         }
         else
         {
-            Debug.LogError($"[DesktopParser] Failed to fetch icon for '{name}': {request.error}");
-            AddShortcut(name, targetPath, null);
+            Debug.LogWarning($"[DesktopParser] Failed to load cached PNG, falling back to extraction");
         }
-        
-        request.Dispose();
     }
-    
+
+    // Extract ICO data directly to memory (no disk I/O for ICO files)
+    List<byte[]> icoDatas = IconExtractor.ExtractAllIcos(filePath);
+    if (icoDatas == null || icoDatas.Count == 0) return null;
+
+    // Use the first ICO data (highest-res typically comes first)
+    byte[] icoData = icoDatas[0];
+
+    try
+    {
+        // Load the ICO from memory with Doji.Ico
+        var iconFile = IcoConversion.LoadIcon(icoData);
+        int largestIndex = 0;
+        int maxSize = 0;
+
+        for (int i = 0; i < iconFile.NumImages; i++)
+        {
+            int size = iconFile.Images[i].Width * iconFile.Images[i].Height;
+            if (size > maxSize)
+            {
+                maxSize = size;
+                largestIndex = i;
+            }
+        }
+
+        Texture2D tex = iconFile.ExtractTexture2D(largestIndex);
+
+        // Cache the highest resolution texture as PNG for future use
+        try
+        {
+            Directory.CreateDirectory(iconsFolder);
+            byte[] pngData = tex.EncodeToPNG();
+            File.WriteAllBytes(pngCachePath, pngData);
+            Debug.Log($"[DesktopParser] Cached PNG icon: {pngCachePath}");
+        }
+        catch (Exception cacheEx)
+        {
+            Debug.LogWarning($"[DesktopParser] Failed to cache PNG: {cacheEx.Message}");
+        }
+
+        return tex;
+    }
+    catch (Exception e)
+    {
+        Debug.LogWarning($"[DesktopParser] Failed to process ICO data from {filePath} | {e.Message}");
+        return null;
+    }
+}
+
     private void AddShortcut(string name, string targetPath, Texture2D icon)
     {
         shortcuts.Add(new ShortcutInfo
@@ -162,26 +175,7 @@ public class DesktopParser : MonoBehaviour
             WorkingDirectory = "",
             Icon = icon
         });
-        Debug.Log($"[DesktopParser] SUCCESS: Added shortcut '{name}'");
+
+        Debug.Log($"[DesktopParser] Added: {name}");
     }
-    
-    private string GetIconUrl(string shortcutName, string exeName)
-    {
-        if (IconUrls.TryGetValue(shortcutName, out string url))
-            return url;
-        
-        if (IconUrls.TryGetValue(exeName, out url))
-            return url;
-        
-        foreach (var kvp in IconUrls)
-        {
-            if (shortcutName.IndexOf(kvp.Key, StringComparison.OrdinalIgnoreCase) >= 0)
-                return kvp.Value;
-            if (exeName.IndexOf(kvp.Key, StringComparison.OrdinalIgnoreCase) >= 0)
-                return kvp.Value;
-        }
-        
-        return null;
-    }
-    
 }

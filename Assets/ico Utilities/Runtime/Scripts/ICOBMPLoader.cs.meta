@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 3954136b424c5524f8ac865645dfa41e
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 235389
+  packageName: Iconic (.ico Utilities)
+  packageVersion: 1.0.0
+  assetPath: Assets/ico Utilities/Runtime/Scripts/ICOBMPLoader.cs
+  uploadId: 537943
