@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Color0020
-  m_Shader: {fileID: -6465566751694194690, guid: d2f91465ec99a41cca1de94d4dce60e0, type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 860444d4db87f874fb7c5ae644f8f5f1, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -112,14 +112,20 @@ Material:
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
+    - _Glow_Size: 0.3
+    - _Highlight_Intensity: 0.14
+    - _Highlight_Size: 0.45
     - _Metalic: 0
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1
+    - _Outline_Size: 0.13
     - _Parallax: 0.02
     - _QueueControl: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
+    - _Shadows_Contrast: 0.68
+    - _Shadows_Size: 1.68
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
@@ -138,8 +144,12 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _Base_Color: {r: 0.8944019, g: 0.9476944, b: 0.9528302, a: 0}
     - _Color: {r: 1, g: 0.97713643, b: 0.80566037, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _Highlight_Color: {r: 1, g: 1, b: 1, a: 0}
+    - _Outline_Color: {r: 0, g: 0.4811321, b: 0.04246377, a: 1}
+    - _Shadows_Color: {r: 0.8160377, g: 0.89914757, b: 1, a: 0}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _VariationColorA: {r: 0.7754717, g: 1, b: 1, a: 0}
     - _VariationColorB: {r: 1, g: 1, b: 0.65882355, a: 0}
