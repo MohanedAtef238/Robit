@@ -10,6 +10,9 @@ public class Transparency : MonoBehaviour
 {
     #if !UNITY_EDITOR
     private IntPtr hWnd;
+    #endif
+
+    // Debug fields — used by the editor OnGUI overlay
     private bool isClickThrough = true;
     private bool isTransparencyEnabled = true;
     private string debugHitInfo = "none";
@@ -18,7 +21,6 @@ public class Transparency : MonoBehaviour
     
     private const float TOGGLE_COOLDOWN = 0.1f;
     private float lastToggleTime = 0f;
-    #endif
     
     private Camera mainCamera;
     
@@ -165,7 +167,7 @@ public class Transparency : MonoBehaviour
     
     void OnGUI()
     {
-        #if !UNITY_EDITOR
+        #if UNITY_EDITOR
         GUIStyle style = new GUIStyle(GUI.skin.box);
         style.fontSize = 14;
         style.normal.textColor = Color.white;

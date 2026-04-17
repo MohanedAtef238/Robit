@@ -114,6 +114,8 @@ private Texture2D ExtractHighQualityIcon(string filePath)
         }
         else
         {
+            // tex was created but LoadImage failed — must Destroy to free the GPU resource
+            UnityEngine.Object.Destroy(tex);
             Debug.LogWarning($"[DesktopParser] Failed to load cached PNG, falling back to extraction");
         }
     }

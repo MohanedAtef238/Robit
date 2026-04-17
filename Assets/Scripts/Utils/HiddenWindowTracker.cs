@@ -7,7 +7,7 @@ using UnityEngine;
 /// as a safety net — even if the app is killed, the hook fires first.
 public static class HiddenWindowTracker
 {
-    private static readonly List<IntPtr> _hiddenByUs = new();
+    private static readonly HashSet<IntPtr> _hiddenByUs = new();
     private static bool _hooked;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -30,22 +30,23 @@ public static class HiddenWindowTracker
     }
 
     /// Restores every window we hid back to visible and clears the list.
-    public static void RestoreAll()
+public static void RestoreAll()
     {
-        for (int i = _hiddenByUs.Count - 1; i >= 0; i--)
+        int count = _hiddenByUs.Count;
+        foreach (IntPtr hwnd in _hiddenByUs)
         {
             try
             {
-                Win32Interop.ShowWindow(_hiddenByUs[i], Win32Interop.SW_SHOW);
+                Win32Interop.ShowWindow(hwnd, Win32Interop.SW_SHOW);
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"[HiddenWindowTracker] Failed to restore 0x{_hiddenByUs[i]:X}: {e.Message}");
+                Debug.LogWarning($"[HiddenWindowTracker] Failed to restore 0x{hwnd:X}: {e.Message}");
             }
         }
 
-        if (_hiddenByUs.Count > 0)
-            Debug.Log($"[HiddenWindowTracker] Restored {_hiddenByUs.Count} hidden window(s).");
+        if (count > 0)
+            Debug.Log($"[HiddenWindowTracker] Restored {count} hidden window(s).");
 
         _hiddenByUs.Clear();
     }

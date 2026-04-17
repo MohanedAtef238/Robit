@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using UnityEngine;
@@ -142,34 +142,40 @@ public static class IconExtractor
             entries[i] = ByteArrayToStructure<GRPICONDIRENTRY>(groupData, ref offset);
         }
 
+        // Pre-fetch all image data, skipping entries whose resource IDs are missing
+        var validEntries = new List<(GRPICONDIRENTRY entry, byte[] data)>();
+        for (int i = 0; i < entries.Length; i++)
+        {
+            byte[] imgData = GetIconData(hModule, entries[i].nID);
+            if (imgData != null)
+                validEntries.Add((entries[i], imgData));
+        }
+
+        if (validEntries.Count == 0) return null;
+
         using (MemoryStream ms = new MemoryStream())
         using (BinaryWriter writer = new BinaryWriter(ms))
         {
             writer.Write((ushort)0); // reserved
             writer.Write((ushort)1); // type = icon
-            writer.Write((ushort)entries.Length);
+            writer.Write((ushort)validEntries.Count);
 
-            int imageOffset = 6 + (16 * entries.Length);
-            var imageDatas = new byte[entries.Length][];
-
-            for (int i = 0; i < entries.Length; i++)
+            int imageOffset = 6 + (16 * validEntries.Count);
+            foreach (var (entry, data) in validEntries)
             {
-                imageDatas[i] = GetIconData(hModule, entries[i].nID);
-
-                writer.Write(entries[i].bWidth);
-                writer.Write(entries[i].bHeight);
-                writer.Write(entries[i].bColorCount);
-                writer.Write(entries[i].bReserved);
-                writer.Write(entries[i].wPlanes);
-                writer.Write(entries[i].wBitCount);
-                writer.Write((uint)imageDatas[i].Length);
+                writer.Write(entry.bWidth);
+                writer.Write(entry.bHeight);
+                writer.Write(entry.bColorCount);
+                writer.Write(entry.bReserved);
+                writer.Write(entry.wPlanes);
+                writer.Write(entry.wBitCount);
+                writer.Write((uint)data.Length);
                 writer.Write((uint)imageOffset);
-
-                imageOffset += imageDatas[i].Length;
+                imageOffset += data.Length;
             }
 
-            foreach (var img in imageDatas)
-                writer.Write(img);
+            foreach (var (_, data) in validEntries)
+                writer.Write(data);
 
             return ms.ToArray();
         }
@@ -178,9 +184,16 @@ public static class IconExtractor
     static byte[] GetIconData(IntPtr hModule, ushort resourceId)
     {
         IntPtr hRes = FindResource(hModule, (IntPtr)resourceId, RT_ICON);
+        if (hRes == IntPtr.Zero) return null;
+
         IntPtr hData = LoadResource(hModule, hRes);
+        if (hData == IntPtr.Zero) return null;
+
         IntPtr pData = LockResource(hData);
+        if (pData == IntPtr.Zero) return null;
+
         uint size = SizeofResource(hModule, hRes);
+        if (size == 0) return null;
 
         byte[] data = new byte[size];
         Marshal.Copy(pData, data, 0, (int)size);
@@ -191,12 +204,17 @@ public static class IconExtractor
     {
         int size = Marshal.SizeOf(typeof(T));
         IntPtr ptr = Marshal.AllocHGlobal(size);
-
-        Marshal.Copy(bytes, offset, ptr, size);
-        T obj = (T)Marshal.PtrToStructure(ptr, typeof(T));
-        Marshal.FreeHGlobal(ptr);
-
-        offset += size;
-        return obj;
+        try
+        {
+            Marshal.Copy(bytes, offset, ptr, size);
+            T obj = (T)Marshal.PtrToStructure(ptr, typeof(T));
+            offset += size;
+            return obj;
+        }
+        finally
+        {
+            // Always release, even if Marshal.Copy throws (e.g. offset out of bounds)
+            Marshal.FreeHGlobal(ptr);
+        }
     }
 }
