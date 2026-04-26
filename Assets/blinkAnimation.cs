@@ -24,13 +24,17 @@ public class EyeBlinker : MonoBehaviour
     public Vector2 blinkIntervalRange = new Vector2(2f, 5f);
 
     private List<Quaternion> initialRotations = new List<Quaternion>();
+    private List<Vector3> initialPositions = new List<Vector3>(); // Added to keep lids attached
 
     void Start()
     {
         foreach (var lid in eyelids)
         {
             if (lid.eyelidTransform != null)
+            {
                 initialRotations.Add(lid.eyelidTransform.localRotation);
+                initialPositions.Add(lid.eyelidTransform.localPosition); // Store local anchor
+            }
         }
         StartCoroutine(BlinkRoutine());
     }
@@ -42,24 +46,21 @@ public class EyeBlinker : MonoBehaviour
             float waitTime = Random.Range(blinkIntervalRange.x, blinkIntervalRange.y);
             yield return new WaitForSeconds(waitTime);
 
-            // Calculate the delay for the "midway" effect.
-            // Since Lerp takes 1/blinkSpeed seconds to close, 
-            // the second eye starts right as the first one finishes closing.
             float staggeredDelay = 1f / blinkSpeed;
 
             for (int i = 0; i < eyelids.Count; i++)
             {
                 if (eyelids[i].eyelidTransform != null)
                 {
-                    // Delay is based on the blinkOrder (0 * delay = instant, 1 * delay = midway)
                     float finalDelay = eyelids[i].blinkOrder * staggeredDelay;
-                    StartCoroutine(PerformBlink(eyelids[i], initialRotations[i], finalDelay));
+                    // Pass the initial position into the blink
+                    StartCoroutine(PerformBlink(eyelids[i], initialRotations[i], initialPositions[i], finalDelay));
                 }
             }
         }
     }
 
-    IEnumerator PerformBlink(EyelidData lid, Quaternion openRotation, float delay)
+    IEnumerator PerformBlink(EyelidData lid, Quaternion openRotation, Vector3 localAnchor, float delay)
     {
         yield return new WaitForSeconds(delay);
 
@@ -71,6 +72,9 @@ public class EyeBlinker : MonoBehaviour
         {
             t += Time.deltaTime * blinkSpeed;
             lid.eyelidTransform.localRotation = Quaternion.Lerp(openRotation, closedRotation, t);
+
+            // Re-enforce local position every frame to prevent "drifting" during bobs
+            lid.eyelidTransform.localPosition = localAnchor;
             yield return null;
         }
 
@@ -80,7 +84,16 @@ public class EyeBlinker : MonoBehaviour
         {
             t += Time.deltaTime * blinkSpeed;
             lid.eyelidTransform.localRotation = Quaternion.Lerp(closedRotation, openRotation, t);
+
+            // Re-enforce local position
+            lid.eyelidTransform.localPosition = localAnchor;
             yield return null;
         }
+
+        // Final safety snap
+        lid.eyelidTransform.localPosition = localAnchor;
+        lid.eyelidTransform.localRotation = openRotation;
     }
+
+
 }

@@ -1,5 +1,5 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <ui:VisualElement style="flex-grow: 1; position: absolute;">
+    <ui:VisualElement picking-mode="Ignore" style="flex-grow: 1; position: absolute;">
         <ui:VisualElement style="flex-grow: 1; position: absolute; height: 53px; width: 57px; top: 1130px; left: 2396px; background-color: rgba(255, 203, 219, 0.37); border-top-left-radius: 30px; border-top-right-radius: 30px; border-bottom-right-radius: 30px; border-bottom-left-radius: 30px;"/>
         <ui:VisualElement style="flex-grow: 1; position: absolute; height: 13px; width: 13px; top: 1147px; left: 2397px; background-color: rgba(255, 252, 203, 0.69); border-top-left-radius: 30px; border-top-right-radius: 30px; border-bottom-right-radius: 30px; border-bottom-left-radius: 30px;"/>
         <ui:VisualElement style="flex-grow: 1; position: absolute; height: 13px; width: 13px; top: 1125px; left: 2414px; background-color: rgba(255, 252, 203, 0.69); border-top-left-radius: 30px; border-top-right-radius: 30px; border-bottom-right-radius: 30px; border-bottom-left-radius: 30px;"/>
@@ -8,7 +8,7 @@
         <ui:VisualElement style="flex-grow: 1; position: absolute; height: 13px; width: 13px; top: 1035px; left: 2177px; background-color: rgba(255, 252, 203, 0.69); border-top-left-radius: 30px; border-top-right-radius: 30px; border-bottom-right-radius: 30px; border-bottom-left-radius: 30px;"/>
         <ui:VisualElement style="flex-grow: 1; position: absolute; height: 13px; width: 13px; top: 1062px; left: 2187px; background-color: rgba(255, 252, 203, 0.69); border-top-left-radius: 30px; border-top-right-radius: 30px; border-bottom-right-radius: 30px; border-bottom-left-radius: 30px;"/>
     </ui:VisualElement>
-    <ui:VisualElement name="VisualElement" style="flex-grow: 1; position: absolute; translate: 8px 21px;">
+    <ui:VisualElement name="VisualElement" picking-mode="Ignore" style="flex-grow: 1; position: absolute; translate: 8px 21px;">
         <ui:VisualElement style="flex-grow: 1; position: absolute; height: 30px; width: 5px; top: 1238px; left: 2365px; background-color: rgba(255, 252, 203, 0.69); border-top-left-radius: 30px; border-top-right-radius: 30px; border-bottom-right-radius: 30px; border-bottom-left-radius: 30px; rotate: 23deg; translate: 140px -24px;"/>
         <ui:VisualElement style="flex-grow: 1; position: absolute; height: 30px; width: 5px; top: 1238px; left: 2365px; background-color: rgba(255, 252, 203, 0.69); border-top-left-radius: 30px; border-top-right-radius: 30px; border-bottom-right-radius: 30px; border-bottom-left-radius: 30px; rotate: 23deg; translate: 127px -19px;"/>
         <ui:VisualElement style="flex-grow: 1; position: absolute; height: 30px; width: 5px; top: 1238px; left: 2365px; background-color: rgba(255, 252, 203, 0.69); border-top-left-radius: 30px; border-top-right-radius: 30px; border-bottom-right-radius: 30px; border-bottom-left-radius: 30px; rotate: 23deg; translate: 112px -11px;"/>
@@ -20,14 +20,14 @@
         <ui:VisualElement style="flex-grow: 1; position: absolute; height: 30px; width: 5px; top: 1238px; left: 2365px; background-color: rgba(85, 76, 114, 0.35); border-top-left-radius: 30px; border-top-right-radius: 30px; border-bottom-right-radius: 30px; border-bottom-left-radius: 30px; rotate: 63deg; translate: 80px -18px; scale: 0.7 7;"/>
         <ui:VisualElement style="flex-grow: 1; position: absolute; height: 30px; width: 5px; top: 1238px; left: 2365px; background-color: rgba(85, 76, 114, 0.35); border-top-left-radius: 30px; border-top-right-radius: 30px; border-bottom-right-radius: 30px; border-bottom-left-radius: 30px; rotate: 63deg; translate: 66px -22px; scale: 0.7 5;"/>
     </ui:VisualElement>
-    <ui:VisualElement style="flex-grow: 1;">
+    <ui:VisualElement picking-mode="Ignore" style="flex-grow: 1;">
         <ui:VisualElement style="flex-grow: 1; position: absolute; height: 10px; width: 3px; top: 1128px; left: 2176px; background-color: rgba(84, 75, 113, 0.72); border-top-left-radius: 4px; border-top-right-radius: 4px; border-bottom-right-radius: 4px; border-bottom-left-radius: 4px; rotate: -28deg;"/>
         <ui:VisualElement style="flex-grow: 1; position: absolute; height: 10px; width: 3px; top: 1128px; left: 2176px; background-color: rgba(84, 75, 113, 0.72); border-top-left-radius: 4px; border-top-right-radius: 4px; border-bottom-right-radius: 4px; border-bottom-left-radius: 4px; rotate: 28deg; translate: 13px 1px;"/>
     </ui:VisualElement>
-    <ui:VisualElement style="flex-grow: 1; position: absolute;">
+    <ui:VisualElement picking-mode="Ignore" style="flex-grow: 1; position: absolute;">
         <ui:VisualElement style="flex-grow: 1; position: absolute; background-color: rgba(255, 252, 203, 0.36); height: 140px; width: 125px; top: 1183px; left: 2121px; border-top-left-radius: 60px; border-top-right-radius: 60px; border-bottom-right-radius: 60px; border-bottom-left-radius: 60px;"/>
     </ui:VisualElement>
-    <ui:VisualElement style="flex-grow: 1; position: absolute;">
+    <ui:VisualElement picking-mode="Ignore" style="flex-grow: 1; position: absolute;">
         <ui:VisualElement style="flex-grow: 1; position: absolute; height: 30px; width: 5px; top: 1238px; left: 2365px; background-color: rgba(85, 76, 114, 0.35); border-top-left-radius: 30px; border-top-right-radius: 30px; border-bottom-right-radius: 30px; border-bottom-left-radius: 30px; rotate: 23deg; translate: -232px -19px; scale: 1 0.7;"/>
         <ui:VisualElement style="flex-grow: 1; position: absolute; height: 30px; width: 5px; top: 1238px; left: 2365px; background-color: rgba(85, 76, 114, 0.35); border-top-left-radius: 30px; border-top-right-radius: 30px; border-bottom-right-radius: 30px; border-bottom-left-radius: 30px; rotate: 23deg; translate: -221px -16px; scale: 1 0.7;"/>
         <ui:VisualElement style="flex-grow: 1; position: absolute; height: 30px; width: 5px; top: 1238px; left: 2365px; background-color: rgba(85, 76, 114, 0.35); border-top-left-radius: 30px; border-top-right-radius: 30px; border-bottom-right-radius: 30px; border-bottom-left-radius: 30px; rotate: 23deg; translate: -243px -23px; scale: 1 0.7;"/>

@@ -23,7 +23,7 @@ public class BouncyLifeCycle : MonoBehaviour
 
     [Header("Scaling Objects (Growth + Displacement)")]
     public List<Transform> objectsToScale;
-    public float scaleObjectsIncrease = 2f; // How much these objects grow during the bob
+    public float scaleObjectsIncrease = 2f;
 
     private Vector3 originalScale;
     private Vector3 originalPos;
@@ -35,64 +35,34 @@ public class BouncyLifeCycle : MonoBehaviour
         originalScale = transform.localScale;
         originalPos = transform.position;
 
-        // Store the starting scales of the extra objects
         foreach (Transform obj in objectsToScale)
         {
             if (obj != null) originalObjectScales.Add(obj.localScale);
         }
-
-        StartCoroutine(BouncyBirth());
     }
 
-    void Update()
+    void OnMouseDown()
     {
-        if (Input.anyKeyDown && !isAnimating)
+        if (!isAnimating)
         {
             StartCoroutine(BobRoutine());
         }
     }
 
-    IEnumerator BouncyBirth()
-    {
-        isAnimating = true;
-        float elapsed = 0;
-
-        Vector3 initialSquash = originalScale;
-        initialSquash.z = startZScale;
-        transform.localScale = initialSquash;
-
-        while (elapsed < birthDuration)
-        {
-            elapsed += Time.deltaTime;
-            float t = elapsed / birthDuration;
-
-            float c4 = (2f * Mathf.PI) / 3f;
-            float bounceT = t == 0 ? 0 : t == 1 ? 1
-                : Mathf.Pow(2f, -10f * t) * Mathf.Sin((t * 10f - 0.75f) * c4) + 1f;
-
-            float finalZ = Mathf.LerpUnclamped(startZScale, originalScale.z, bounceT);
-            transform.localScale = new Vector3(originalScale.x, originalScale.y, finalZ);
-
-            yield return null;
-        }
-
-        transform.localScale = originalScale;
-        isAnimating = false;
-    }
+    
 
     IEnumerator BobRoutine()
     {
         isAnimating = true;
+        // We use the CURRENT position as the anchor for the displacement
         Vector3 startModelPos = transform.position;
 
-        // Snapshot eye positions
         Vector3[] startEyePositions = new Vector3[eyesToMove.Count];
         for (int i = 0; i < eyesToMove.Count; i++)
         {
             if (eyesToMove[i] != null) startEyePositions[i] = eyesToMove[i].position;
         }
 
-        // Snapshot scaling objects positions
         Vector3[] startObjPositions = new Vector3[objectsToScale.Count];
         for (int i = 0; i < objectsToScale.Count; i++)
         {
@@ -108,7 +78,6 @@ public class BouncyLifeCycle : MonoBehaviour
             float addedSqueeze = sineWave * stretchSqueeze;
             float addedObjScale = sineWave * scaleObjectsIncrease;
 
-            // 1. Scale the Model
             Vector3 newScale = originalScale;
             Vector3 localDir = Vector3.forward;
 
@@ -120,7 +89,6 @@ public class BouncyLifeCycle : MonoBehaviour
             }
             transform.localScale = newScale;
 
-            // 2. Position Displacement (Lunge)
             if (pinBackSide)
             {
                 Vector3 worldMoveDir = transform.TransformDirection(localDir);
@@ -129,21 +97,16 @@ public class BouncyLifeCycle : MonoBehaviour
 
             Vector3 displacement = transform.position - startModelPos;
 
-            // 3. Move Eyes
             for (int i = 0; i < eyesToMove.Count; i++)
             {
                 if (eyesToMove[i] != null) eyesToMove[i].position = startEyePositions[i] + displacement;
             }
 
-            // 4. Move AND Scale the new objects
             for (int i = 0; i < objectsToScale.Count; i++)
             {
                 if (objectsToScale[i] != null)
                 {
-                    // Displacement
                     objectsToScale[i].position = startObjPositions[i] + displacement;
-
-                    // Uniform Scale Up
                     Vector3 objBaseScale = originalObjectScales[i];
                     objectsToScale[i].localScale = objBaseScale + (Vector3.one * addedObjScale);
                 }
@@ -152,9 +115,10 @@ public class BouncyLifeCycle : MonoBehaviour
             yield return null;
         }
 
-        // Final Reset
+        // Final Reset - return to the state before the click
         transform.localScale = originalScale;
-        transform.position = originalPos;
+        transform.position = startModelPos;
+
         for (int i = 0; i < eyesToMove.Count; i++)
         {
             if (eyesToMove[i] != null) eyesToMove[i].position = startEyePositions[i];

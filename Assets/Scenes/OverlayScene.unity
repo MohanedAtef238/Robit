@@ -539,8 +539,6 @@ Transform:
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 1320788258}
-  - {fileID: 586708726}
-  - {fileID: 1742461676}
   - {fileID: 1082685714}
   - {fileID: 1253642019}
   m_Father: {fileID: 0}
@@ -682,6 +680,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 34065285}
+  - {fileID: 586708726}
   m_Father: {fileID: 1320788258}
   m_LocalEulerAnglesHint: {x: -0.005, y: 0.264, z: -0.042}
 --- !u!114 &175940723
@@ -814,14 +813,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 586708725}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.08854635, y: 0.9160991, z: -0.17525572, w: -0.349582}
-  m_LocalPosition: {x: -0.5753692, y: 0.6360206, z: -0.28400162}
+  m_LocalRotation: {x: -0.016746463, y: 0.921048, z: -0.14755236, w: -0.36002555}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1053013120}
   - {fileID: 1127751085}
-  m_Father: {fileID: 91883970}
+  m_Father: {fileID: 175940722}
   m_LocalEulerAnglesHint: {x: 22.52, y: 221.283, z: -2.463}
 --- !u!114 &586708727
 MonoBehaviour:
@@ -1281,6 +1280,7 @@ GameObject:
   - component: {fileID: 1082685717}
   - component: {fileID: 1082685718}
   - component: {fileID: 1082685719}
+  - component: {fileID: 1082685720}
   m_Layer: 0
   m_Name: Cube
   m_TagString: Untagged
@@ -1382,16 +1382,12 @@ MonoBehaviour:
   pinBackSide: 1
   eyesToMove:
   - {fileID: 1253642019}
-  - {fileID: 1212484297}
-  - {fileID: 489148195}
-  - {fileID: 1203909575}
-  - {fileID: 1441460881}
-  - {fileID: 1320788258}
-  - {fileID: 1605402831}
+  - {fileID: 175940722}
+  - {fileID: 1518090078}
   objectsToScale:
   - {fileID: 175940722}
   - {fileID: 1518090078}
-  scaleObjectsIncrease: 0.5
+  scaleObjectsIncrease: 1.1
 --- !u!95 &1082685718
 Animator:
   serializedVersion: 7
@@ -1435,6 +1431,27 @@ MonoBehaviour:
   - {fileID: 1320788258}
   - {fileID: 1203909575}
   followTranslateAmount: 0.02
+--- !u!65 &1082685720
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1082685713}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.024134578, y: 0.01742586, z: 0.00714955}
+  m_Center: {x: 0.00088563183, y: -0.0013497229, z: -0.005912182}
 --- !u!1 &1127751084
 GameObject:
   m_ObjectHideFlags: 0
@@ -1477,6 +1494,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1203909575}
   - component: {fileID: 1203909574}
+  - component: {fileID: 1203909576}
   m_Layer: 5
   m_Name: RobitUI
   m_TagString: Untagged
@@ -1522,6 +1540,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1203909576
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1203909573}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e21e10eb4557212419894b74885a5ea9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIManager
+  mainMenuDocument: {fileID: 1203909574}
+  flowerDocument: {fileID: 1898056944}
 --- !u!1 &1212484296
 GameObject:
   m_ObjectHideFlags: 0
@@ -2249,6 +2281,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1498864465}
+  - {fileID: 1742461676}
   m_Father: {fileID: 1320788258}
   m_LocalEulerAnglesHint: {x: 0.446, y: 25.509, z: -4.055}
 --- !u!114 &1518090079
@@ -2503,14 +2536,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1742461675}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.0002216622, y: 0.0022929606, z: 0.07772892, w: 0.9969719}
-  m_LocalPosition: {x: -0.5753692, y: 0.6360206, z: -0.28400162}
+  m_LocalRotation: {x: 0.0039731846, y: -0.21852376, z: 0.0350076, w: 0.9751954}
+  m_LocalPosition: {x: 0.2802878, y: 0.0084358845, z: -0.6939229}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1627072273}
   - {fileID: 1467389658}
-  m_Father: {fileID: 91883970}
+  m_Father: {fileID: 1518090078}
   m_LocalEulerAnglesHint: {x: -0.005, y: 0.264, z: -0.042}
 --- !u!114 &1742461677
 MonoBehaviour:
@@ -2689,7 +2722,7 @@ MonoBehaviour:
   m_PanelSettings: {fileID: 11400000, guid: 6fe11cb326cfddc40a65cb70996999fc, type: 2}
   m_ParentUI: {fileID: 0}
   sourceAsset: {fileID: 9197481963319205126, guid: 03f8d93355e733b4abf24775cf3e67e8, type: 3}
-  m_SortingOrder: 10
+  m_SortingOrder: 20
   m_Position: 0
   m_WorldSpaceSizeMode: 1
   m_WorldSpaceWidth: 1920

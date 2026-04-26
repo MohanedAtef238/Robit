@@ -35,60 +35,60 @@ public class MacroButtonController : MonoBehaviour
     // ── Inspector tunables ──────────────────────────────────────────
     [Header("Arc  (200 start, 340 end)")]
     [SerializeField] private float arcStartAngle = 200f;
-    [SerializeField] private float arcEndAngle   = 340f;
-    [SerializeField] private float radialRadius  = 10f;
+    [SerializeField] private float arcEndAngle = 340f;
+    [SerializeField] private float radialRadius = 10f;
 
     [Header("Carousel Animation")]
-    [SerializeField] private float inDurationMs  = 300f;
+    [SerializeField] private float inDurationMs = 300f;
     [SerializeField] private float outDurationMs = 180f;
-    [SerializeField] private float staggerMs     = 60f;
+    [SerializeField] private float staggerMs = 60f;
 
     [Header("Group Label Animation")]
-    [SerializeField] private float labelFadeInMs    = 250f;
-    [SerializeField] private float labelHoldMs      = 900f;
-    [SerializeField] private float labelFadeOutMs   = 350f;
-    [SerializeField] private float labelOffsetY     = -55f;
+    [SerializeField] private float labelFadeInMs = 250f;
+    [SerializeField] private float labelHoldMs = 900f;
+    [SerializeField] private float labelFadeOutMs = 350f;
+    [SerializeField] private float labelOffsetY = -55f;
 
     [Header("Button Name Tooltip")]
-    [SerializeField] private float tooltipFadeInMs  = 200f;
-    [SerializeField] private float tooltipHoldMs    = 800f;
+    [SerializeField] private float tooltipFadeInMs = 200f;
+    [SerializeField] private float tooltipHoldMs = 800f;
     [SerializeField] private float tooltipFadeOutMs = 300f;
-    [SerializeField] private float tooltipDelayMs   = 150f;
+    [SerializeField] private float tooltipDelayMs = 150f;
 
     [Header("Button Sizing")]
-    [SerializeField] private float buttonSize   = 70f;
+    [SerializeField] private float buttonSize = 70f;
     [SerializeField] private float buttonMargin = 12f;
-    [SerializeField] private float iconSize     = 34f;
+    [SerializeField] private float iconSize = 34f;
 
     [Header("Wheel Arrow")]
     [SerializeField] private float wheelArrowSize = 44f;
 
     [Header("Container Layout")]
-    [SerializeField] private float containerWidth        = 180f;
-    [SerializeField] private float containerPaddingTB    = 16f;
-    [SerializeField] private float containerPaddingLR    = 12f;
+    [SerializeField] private float containerWidth = 180f;
+    [SerializeField] private float containerPaddingTB = 16f;
+    [SerializeField] private float containerPaddingLR = 12f;
     [SerializeField] private float containerBorderRadius = 16f;
 
     // ── Runtime references ──────────────────────────────────────────
-    private UIDocument      uiDocument;
-    private VisualElement   macroContainer;
-    private VisualElement   buttonGrid;
-    private Label           groupLabel;
-    private Button          prevBtn;
-    private Button          nextBtn;
-    private MacroButton[]   slotButtons = new MacroButton[SlotsPerPage];
-    private IInputProvider  inputProvider;
+    private UIDocument uiDocument;
+    private VisualElement macroContainer;
+    private VisualElement buttonGrid;
+    private Label groupLabel;
+    private Button prevBtn;
+    private Button nextBtn;
+    private MacroButton[] slotButtons = new MacroButton[SlotsPerPage];
+    private IInputProvider inputProvider;
 
     // ── State ───────────────────────────────────────────────────────
-    private int       _groupIndex;
-    private Vector2   anchorPanelPos;
-    private bool      _open;
+    private int _groupIndex;
+    private Vector2 anchorPanelPos;
+    private bool _open;
     private IVisualElementScheduledItem _labelFadeOutHandle;
     private Action[] _slotIconRefreshCbs = new Action[SlotsPerPage];
-    private Label[]  _slotTooltips = new Label[SlotsPerPage];
+    private Label[] _slotTooltips = new Label[SlotsPerPage];
     private IVisualElementScheduledItem[] _tooltipFadeHandles = new IVisualElementScheduledItem[SlotsPerPage];
 
-    private float MacroHalfSize => buttonSize     * 0.5f;
+    private float MacroHalfSize => buttonSize * 0.5f;
     private float ArrowHalfSize => wheelArrowSize * 0.5f;
 
     // ── Lifecycle ───────────────────────────────────────────────────
@@ -104,8 +104,8 @@ public class MacroButtonController : MonoBehaviour
         inputProvider = new PointerInputProvider();
         var root = uiDocument.rootVisualElement;
         macroContainer = root.Q<VisualElement>("macro-container");
-        buttonGrid     = root.Q<VisualElement>("button-grid");
-        groupLabel     = root.Q<Label>("group-name-label");
+        buttonGrid = root.Q<VisualElement>("button-grid");
+        groupLabel = root.Q<Label>("group-name-label");
 
         // Grab the 3 reusable slot buttons
         for (int i = 0; i < SlotsPerPage; i++)
@@ -176,7 +176,7 @@ public class MacroButtonController : MonoBehaviour
 
         var panelSize = uiDocument.rootVisualElement.layout;
         float margin = radialRadius + buttonSize;
-        anchorPanelPos.x = Mathf.Clamp(anchorPanelPos.x, margin, panelSize.width  - margin);
+        anchorPanelPos.x = Mathf.Clamp(anchorPanelPos.x, margin, panelSize.width - margin);
         anchorPanelPos.y = Mathf.Clamp(anchorPanelPos.y, margin, panelSize.height - margin);
 
         EnterRadialLayout();
@@ -196,9 +196,9 @@ public class MacroButtonController : MonoBehaviour
             var btn = slotButtons[i];
             if (btn == null || btn.style.display == DisplayStyle.None) continue;
             ApplyTransitions(btn, 0, (long)outDurationMs);
-            btn.style.scale   = new Scale(Vector2.zero);
+            btn.style.scale = new Scale(Vector2.zero);
             btn.style.opacity = 0f;
-            btn.style.rotate  = new Rotate(new Angle(-1080f));
+            btn.style.rotate = new Rotate(new Angle(-1080f));
         }
 
         if (groupLabel != null) groupLabel.style.opacity = 0f;
@@ -220,8 +220,8 @@ public class MacroButtonController : MonoBehaviour
             if (btn == null) continue;
             btn.Unbind();
             ClearTransitions(btn);
-            btn.style.rotate  = new Rotate(new Angle(0f));
-            btn.style.scale   = new Scale(Vector2.zero);
+            btn.style.rotate = new Rotate(new Angle(0f));
+            btn.style.scale = new Scale(Vector2.zero);
             btn.style.opacity = 0f;
             btn.style.display = DisplayStyle.None;
         }
@@ -236,23 +236,23 @@ public class MacroButtonController : MonoBehaviour
     {
         if (macroContainer == null) return;
 
-        macroContainer.style.position          = Position.Absolute;
-        macroContainer.style.left              = anchorPanelPos.x;
-        macroContainer.style.top               = anchorPanelPos.y;
-        macroContainer.style.right             = StyleKeyword.Auto;
-        macroContainer.style.width             = 0;
-        macroContainer.style.height            = 0;
-        macroContainer.style.paddingLeft       = 0;
-        macroContainer.style.paddingRight      = 0;
-        macroContainer.style.paddingTop        = 0;
-        macroContainer.style.paddingBottom     = 0;
-        macroContainer.style.backgroundColor   = new StyleColor(Color.clear);
-        macroContainer.style.borderLeftWidth   = 0;
-        macroContainer.style.borderRightWidth  = 0;
-        macroContainer.style.borderTopWidth    = 0;
+        macroContainer.style.position = Position.Absolute;
+        macroContainer.style.left = anchorPanelPos.x;
+        macroContainer.style.top = anchorPanelPos.y;
+        macroContainer.style.right = StyleKeyword.Auto;
+        macroContainer.style.width = 0;
+        macroContainer.style.height = 0;
+        macroContainer.style.paddingLeft = 0;
+        macroContainer.style.paddingRight = 0;
+        macroContainer.style.paddingTop = 0;
+        macroContainer.style.paddingBottom = 0;
+        macroContainer.style.backgroundColor = new StyleColor(Color.clear);
+        macroContainer.style.borderLeftWidth = 0;
+        macroContainer.style.borderRightWidth = 0;
+        macroContainer.style.borderTopWidth = 0;
         macroContainer.style.borderBottomWidth = 0;
-        macroContainer.style.overflow          = Overflow.Visible;
-        macroContainer.style.display           = DisplayStyle.Flex;
+        macroContainer.style.overflow = Overflow.Visible;
+        macroContainer.style.display = DisplayStyle.Flex;
 
         if (buttonGrid != null)
         {
@@ -269,12 +269,12 @@ public class MacroButtonController : MonoBehaviour
             btn.Unbind();
             ClearTransitions(btn);
             btn.style.position = Position.Absolute;
-            btn.style.left     = -MacroHalfSize;
-            btn.style.top      = -MacroHalfSize;
-            btn.style.rotate   = new Rotate(new Angle(0f));
-            btn.style.scale    = new Scale(Vector2.zero);
-            btn.style.opacity  = 0f;
-            btn.style.display  = DisplayStyle.None;
+            btn.style.left = -MacroHalfSize;
+            btn.style.top = -MacroHalfSize;
+            btn.style.rotate = new Rotate(new Angle(0f));
+            btn.style.scale = new Scale(Vector2.zero);
+            btn.style.opacity = 0f;
+            btn.style.display = DisplayStyle.None;
         }
         HideArrows();
         if (groupLabel != null)
@@ -288,8 +288,8 @@ public class MacroButtonController : MonoBehaviour
 
     private Vector2 ArcSlotOffset(int slot, float halfSize, float radiusOverride = -1f)
     {
-        float r     = radiusOverride > 0f ? radiusOverride : radialRadius;
-        float t     = slot / (float)(SlotsPerPage + 1);
+        float r = radiusOverride > 0f ? radiusOverride : radialRadius;
+        float t = slot / (float)(SlotsPerPage + 1);
         float angle = Mathf.Lerp(arcStartAngle, arcEndAngle, t) * Mathf.Deg2Rad;
         return new Vector2(
             Mathf.Cos(angle) * r - halfSize,
@@ -333,7 +333,7 @@ public class MacroButtonController : MonoBehaviour
             // MuteToggle: the mute state changes on click, so refresh the icon 50 ms later
             if (actions[i] == MacroActionType.MuteToggle)
             {
-                var capturedBtn  = btn;
+                var capturedBtn = btn;
                 int capturedSlot = i;
                 _slotIconRefreshCbs[capturedSlot] = () =>
                     capturedBtn.schedule.Execute(
@@ -350,31 +350,31 @@ public class MacroButtonController : MonoBehaviour
     {
         switch (type)
         {
-            case MacroActionType.Back:            return "icon-back";
-            case MacroActionType.Forward:         return "icon-forward";
-            case MacroActionType.Refresh:         return "icon-refresh";
-            case MacroActionType.NewTab:          return "icon-new-tab";
-            case MacroActionType.CloseTab:        return "icon-close-tab";
-            case MacroActionType.SwitchWindow:    return "icon-switch-window";
-            case MacroActionType.ZoomIn:          return "icon-zoom-in";
-            case MacroActionType.ZoomOut:         return "icon-zoom-out";
-            case MacroActionType.Screenshot:      return "icon-screenshot";
-            case MacroActionType.PageUp:          return "icon-page-up";
-            case MacroActionType.PageDown:        return "icon-page-down";
+            case MacroActionType.Back: return "icon-back";
+            case MacroActionType.Forward: return "icon-forward";
+            case MacroActionType.Refresh: return "icon-refresh";
+            case MacroActionType.NewTab: return "icon-new-tab";
+            case MacroActionType.CloseTab: return "icon-close-tab";
+            case MacroActionType.SwitchWindow: return "icon-switch-window";
+            case MacroActionType.ZoomIn: return "icon-zoom-in";
+            case MacroActionType.ZoomOut: return "icon-zoom-out";
+            case MacroActionType.Screenshot: return "icon-screenshot";
+            case MacroActionType.PageUp: return "icon-page-up";
+            case MacroActionType.PageDown: return "icon-page-down";
             case MacroActionType.ReturnToDesktop: return "icon-home";
-            case MacroActionType.SnapLeft:        return "icon-snap-left";
-            case MacroActionType.SnapRight:       return "icon-snap-right";
+            case MacroActionType.SnapLeft: return "icon-snap-left";
+            case MacroActionType.SnapRight: return "icon-snap-right";
             case MacroActionType.MaximizeRestore: return "icon-maximize";
-            case MacroActionType.Minimize:        return "icon-minimize";
-            case MacroActionType.CloseWindow:     return "icon-close-window";
-            case MacroActionType.Undo:            return "icon-undo";
-            case MacroActionType.Redo:            return "icon-redo";
-            case MacroActionType.MuteToggle:      return Win32AudioInterop.GetMute() ? "icon-voice" : "icon-mute";
-            case MacroActionType.FindOnPage:      return "icon-find";
-            case MacroActionType.HomeDashboard:   return "icon-home";
-            case MacroActionType.AppCycler:       return "icon-switch-window";
-            case MacroActionType.Settings:        return "icon-settings";
-            default:                              return null;
+            case MacroActionType.Minimize: return "icon-minimize";
+            case MacroActionType.CloseWindow: return "icon-close-window";
+            case MacroActionType.Undo: return "icon-undo";
+            case MacroActionType.Redo: return "icon-redo";
+            case MacroActionType.MuteToggle: return Win32AudioInterop.GetMute() ? "icon-voice" : "icon-mute";
+            case MacroActionType.FindOnPage: return "icon-find";
+            case MacroActionType.HomeDashboard: return "icon-home";
+            case MacroActionType.AppCycler: return "icon-switch-window";
+            case MacroActionType.Settings: return "icon-settings";
+            default: return null;
         }
     }
 
@@ -429,10 +429,10 @@ public class MacroButtonController : MonoBehaviour
         // Fade in
         groupLabel.schedule.Execute(() =>
         {
-            groupLabel.style.transitionProperty       = new List<StylePropertyName> { new("opacity") };
-            groupLabel.style.transitionDuration       = new List<TimeValue> { new((long)labelFadeInMs, TimeUnit.Millisecond) };
+            groupLabel.style.transitionProperty = new List<StylePropertyName> { new("opacity") };
+            groupLabel.style.transitionDuration = new List<TimeValue> { new((long)labelFadeInMs, TimeUnit.Millisecond) };
             groupLabel.style.transitionTimingFunction = new List<EasingFunction> { new(EasingMode.EaseOut) };
-            groupLabel.style.transitionDelay          = new List<TimeValue> { new(0, TimeUnit.Millisecond) };
+            groupLabel.style.transitionDelay = new List<TimeValue> { new(0, TimeUnit.Millisecond) };
             groupLabel.style.opacity = 1f;
         }).StartingIn(16);
 
@@ -465,10 +465,10 @@ public class MacroButtonController : MonoBehaviour
             var btn = slotButtons[i];
             if (btn == null) continue;
             ClearTransitions(btn);
-            btn.style.left    = -MacroHalfSize;
-            btn.style.top     = -MacroHalfSize;
-            btn.style.rotate  = new Rotate(new Angle(0f));
-            btn.style.scale   = new Scale(Vector2.zero);
+            btn.style.left = -MacroHalfSize;
+            btn.style.top = -MacroHalfSize;
+            btn.style.rotate = new Rotate(new Angle(0f));
+            btn.style.scale = new Scale(Vector2.zero);
             btn.style.opacity = 0f;
             btn.style.display = DisplayStyle.None;
         }
@@ -486,21 +486,21 @@ public class MacroButtonController : MonoBehaviour
         for (int s = 0; s < SlotsPerPage; s++)
         {
             if (revealActions[s] == MacroActionType.None) continue;
-            var btn  = slotButtons[s];
+            var btn = slotButtons[s];
             if (btn == null) continue;
             Vector2 dest = ContentOffset(s);
-            long    dly  = (long)(staggerMs * s);
+            long dly = (long)(staggerMs * s);
 
-            btn.style.left    = dest.x;
-            btn.style.top     = dest.y;
-            btn.style.rotate  = new Rotate(new Angle(1080f));
+            btn.style.left = dest.x;
+            btn.style.top = dest.y;
+            btn.style.rotate = new Rotate(new Angle(1080f));
             btn.style.display = DisplayStyle.Flex;
             btn.schedule.Execute(() =>
             {
                 ApplyTransitions(btn, dly, (long)inDurationMs);
-                btn.style.scale   = new Scale(Vector2.one);
+                btn.style.scale = new Scale(Vector2.one);
                 btn.style.opacity = 1f;
-                btn.style.rotate  = new Rotate(new Angle(0f));
+                btn.style.rotate = new Rotate(new Angle(0f));
             }).StartingIn(16);
         }
 
@@ -530,9 +530,9 @@ public class MacroButtonController : MonoBehaviour
             if (btn == null) continue;
 
             ApplyTransitions(btn, 0, (long)outDurationMs);
-            btn.style.scale   = new Scale(Vector2.zero);
+            btn.style.scale = new Scale(Vector2.zero);
             btn.style.opacity = 0f;
-            btn.style.rotate  = new Rotate(new Angle(-1080f));
+            btn.style.rotate = new Rotate(new Angle(-1080f));
         }
 
         // After exit animation, rebind and enter new group
@@ -554,20 +554,20 @@ public class MacroButtonController : MonoBehaviour
 
                 ClearTransitions(btn);
                 btn.style.position = Position.Absolute;
-                btn.style.left     = entryDest.x;
-                btn.style.top      = entryDest.y;
-                btn.style.rotate   = new Rotate(new Angle(1080f));
-                btn.style.scale    = new Scale(Vector2.zero);
-                btn.style.opacity  = 0f;
-                btn.style.display  = DisplayStyle.Flex;
+                btn.style.left = entryDest.x;
+                btn.style.top = entryDest.y;
+                btn.style.rotate = new Rotate(new Angle(1080f));
+                btn.style.scale = new Scale(Vector2.zero);
+                btn.style.opacity = 0f;
+                btn.style.display = DisplayStyle.Flex;
 
                 int captured = i;
                 btn.schedule.Execute(() =>
                 {
                     long dly = (long)(staggerMs * captured);
                     ApplyTransitions(slotButtons[captured], dly, (long)inDurationMs);
-                    slotButtons[captured].style.rotate  = new Rotate(new Angle(0f));
-                    slotButtons[captured].style.scale   = new Scale(Vector2.one);
+                    slotButtons[captured].style.rotate = new Rotate(new Angle(0f));
+                    slotButtons[captured].style.scale = new Scale(Vector2.one);
                     slotButtons[captured].style.opacity = 1f;
                 }).StartingIn(16);
             }
@@ -622,7 +622,7 @@ public class MacroButtonController : MonoBehaviour
             // tooltipOffsetY = -(tipHeight + gap); negative = upward in UI coords
             Vector2 btnPos = ContentOffset(s);
             tip.style.left = btnPos.x - 20f; // wider than button for centering
-            tip.style.top  = btnPos.y - (22f + 20f);  // 22px tip + 20px gap above button top
+            tip.style.top = btnPos.y - (22f + 20f);  // 22px tip + 20px gap above button top
             tip.style.width = buttonSize + 40f;
             tip.style.display = DisplayStyle.Flex;
 
@@ -633,10 +633,10 @@ public class MacroButtonController : MonoBehaviour
             tip.schedule.Execute(() =>
             {
                 var t = _slotTooltips[captured];
-                t.style.transitionProperty       = new List<StylePropertyName> { new("opacity") };
-                t.style.transitionDuration       = new List<TimeValue> { new((long)tooltipFadeInMs, TimeUnit.Millisecond) };
+                t.style.transitionProperty = new List<StylePropertyName> { new("opacity") };
+                t.style.transitionDuration = new List<TimeValue> { new((long)tooltipFadeInMs, TimeUnit.Millisecond) };
                 t.style.transitionTimingFunction = new List<EasingFunction> { new(EasingMode.EaseOut) };
-                t.style.transitionDelay          = new List<TimeValue> { new(0, TimeUnit.Millisecond) };
+                t.style.transitionDelay = new List<TimeValue> { new(0, TimeUnit.Millisecond) };
                 t.style.opacity = 1f;
             }).StartingIn(slotDelay);
 
@@ -646,7 +646,7 @@ public class MacroButtonController : MonoBehaviour
             {
                 if (_tooltipFadeHandles[captured] != fadeHandle) return;
                 var t = _slotTooltips[captured];
-                t.style.transitionDuration       = new List<TimeValue> { new((long)tooltipFadeOutMs, TimeUnit.Millisecond) };
+                t.style.transitionDuration = new List<TimeValue> { new((long)tooltipFadeOutMs, TimeUnit.Millisecond) };
                 t.style.transitionTimingFunction = new List<EasingFunction> { new(EasingMode.EaseIn) };
                 t.style.opacity = 0f;
             }).StartingIn(slotDelay + (long)(tooltipFadeInMs + tooltipHoldMs));
@@ -671,17 +671,17 @@ public class MacroButtonController : MonoBehaviour
         // Refresh text and position (in case auto-dismiss already cleared it)
         tip.text = MacroActionFactory.Create(actions[slot]).DisplayName;
         Vector2 btnPos = ContentOffset(slot);
-        tip.style.left  = btnPos.x - 20f;
-        tip.style.top   = btnPos.y - (22f + 20f);  // 22px tip + 20px gap above button top
+        tip.style.left = btnPos.x - 20f;
+        tip.style.top = btnPos.y - (22f + 20f);  // 22px tip + 20px gap above button top
         tip.style.width = buttonSize + 40f;
         tip.style.display = DisplayStyle.Flex;
 
         tip.schedule.Execute(() =>
         {
-            tip.style.transitionProperty       = new List<StylePropertyName> { new("opacity") };
-            tip.style.transitionDuration       = new List<TimeValue> { new((long)tooltipFadeInMs, TimeUnit.Millisecond) };
+            tip.style.transitionProperty = new List<StylePropertyName> { new("opacity") };
+            tip.style.transitionDuration = new List<TimeValue> { new((long)tooltipFadeInMs, TimeUnit.Millisecond) };
             tip.style.transitionTimingFunction = new List<EasingFunction> { new(EasingMode.EaseOut) };
-            tip.style.transitionDelay          = new List<TimeValue> { new(0, TimeUnit.Millisecond) };
+            tip.style.transitionDelay = new List<TimeValue> { new(0, TimeUnit.Millisecond) };
             tip.style.opacity = 1f;
         }).StartingIn(16);
     }
@@ -695,7 +695,7 @@ public class MacroButtonController : MonoBehaviour
         handle = tip.schedule.Execute(() =>
         {
             if (_tooltipFadeHandles[slot] != handle) return;
-            tip.style.transitionDuration       = new List<TimeValue> { new((long)tooltipFadeOutMs, TimeUnit.Millisecond) };
+            tip.style.transitionDuration = new List<TimeValue> { new((long)tooltipFadeOutMs, TimeUnit.Millisecond) };
             tip.style.transitionTimingFunction = new List<EasingFunction> { new(EasingMode.EaseIn) };
             tip.style.opacity = 0f;
         }).StartingIn(50);
@@ -710,13 +710,13 @@ public class MacroButtonController : MonoBehaviour
         if (arrow == null) return;
         Vector2 pos = ArcSlotOffset(slot, ArrowHalfSize, radialRadius + (MacroHalfSize - ArrowHalfSize));
         arrow.style.position = Position.Absolute;
-        arrow.style.left     = pos.x;
-        arrow.style.top      = pos.y;
+        arrow.style.left = pos.x;
+        arrow.style.top = pos.y;
         if (slot == 0)
             arrow.style.scale = new Scale(new Vector2(-1f, 1f));
         else
             arrow.style.scale = new Scale(Vector2.one);
-        arrow.style.rotate  = new Rotate(new Angle(0f));
+        arrow.style.rotate = new Rotate(new Angle(0f));
         arrow.style.opacity = 1f;
         arrow.style.display = DisplayStyle.Flex;
     }
@@ -736,7 +736,7 @@ public class MacroButtonController : MonoBehaviour
 
     private void ApplyLayout()
     {
-        var doc  = uiDocument != null ? uiDocument : GetComponent<UIDocument>();
+        var doc = uiDocument != null ? uiDocument : GetComponent<UIDocument>();
         if (doc == null) return;
         var root = doc.rootVisualElement;
         if (root == null) return;
@@ -744,15 +744,15 @@ public class MacroButtonController : MonoBehaviour
         var container = root.Q<VisualElement>("macro-container");
         if (container != null)
         {
-            container.style.width                    = containerWidth;
-            container.style.paddingTop               = containerPaddingTB;
-            container.style.paddingBottom            = containerPaddingTB;
-            container.style.paddingLeft              = containerPaddingLR;
-            container.style.paddingRight             = containerPaddingLR;
-            container.style.borderTopLeftRadius      = containerBorderRadius;
-            container.style.borderTopRightRadius     = containerBorderRadius;
-            container.style.borderBottomLeftRadius   = containerBorderRadius;
-            container.style.borderBottomRightRadius  = containerBorderRadius;
+            container.style.width = containerWidth;
+            container.style.paddingTop = containerPaddingTB;
+            container.style.paddingBottom = containerPaddingTB;
+            container.style.paddingLeft = containerPaddingLR;
+            container.style.paddingRight = containerPaddingLR;
+            container.style.borderTopLeftRadius = containerBorderRadius;
+            container.style.borderTopRightRadius = containerBorderRadius;
+            container.style.borderBottomLeftRadius = containerBorderRadius;
+            container.style.borderBottomRightRadius = containerBorderRadius;
         }
 
         float half = MacroHalfSize;
@@ -760,15 +760,15 @@ public class MacroButtonController : MonoBehaviour
         {
             var btn = slotButtons[i];
             if (btn == null) continue;
-            btn.style.width               = buttonSize;
-            btn.style.height              = buttonSize;
-            btn.style.marginTop           = buttonMargin;
-            btn.style.marginBottom        = buttonMargin;
-            btn.style.marginLeft          = buttonMargin;
-            btn.style.marginRight         = buttonMargin;
-            btn.style.borderTopLeftRadius     = half;
-            btn.style.borderTopRightRadius    = half;
-            btn.style.borderBottomLeftRadius  = half;
+            btn.style.width = buttonSize;
+            btn.style.height = buttonSize;
+            btn.style.marginTop = buttonMargin;
+            btn.style.marginBottom = buttonMargin;
+            btn.style.marginLeft = buttonMargin;
+            btn.style.marginRight = buttonMargin;
+            btn.style.borderTopLeftRadius = half;
+            btn.style.borderTopRightRadius = half;
+            btn.style.borderBottomLeftRadius = half;
             btn.style.borderBottomRightRadius = half;
             var icon = btn.Q<VisualElement>(className: "btn-icon");
             if (icon != null) { icon.style.width = iconSize; icon.style.height = iconSize; }
@@ -778,11 +778,11 @@ public class MacroButtonController : MonoBehaviour
         {
             if (a == null) return;
             float ah = ArrowHalfSize;
-            a.style.width               = wheelArrowSize;
-            a.style.height              = wheelArrowSize;
-            a.style.borderTopLeftRadius     = ah;
-            a.style.borderTopRightRadius    = ah;
-            a.style.borderBottomLeftRadius  = ah;
+            a.style.width = wheelArrowSize;
+            a.style.height = wheelArrowSize;
+            a.style.borderTopLeftRadius = ah;
+            a.style.borderTopRightRadius = ah;
+            a.style.borderBottomLeftRadius = ah;
             a.style.borderBottomRightRadius = ah;
         }
         SizeArrow(prevBtn != null ? prevBtn : root.Q<Button>("BtnWheelPrev"));
@@ -805,18 +805,18 @@ public class MacroButtonController : MonoBehaviour
 
     private void ApplyTransitions(VisualElement el, long delayMs, long durationMs)
     {
-        el.style.transitionProperty       = new List<StylePropertyName>
+        el.style.transitionProperty = new List<StylePropertyName>
             { new("left"), new("top"), new("scale"), new("opacity"), new("rotate") };
-        el.style.transitionDuration       = new List<TimeValue> { new(durationMs, TimeUnit.Millisecond) };
+        el.style.transitionDuration = new List<TimeValue> { new(durationMs, TimeUnit.Millisecond) };
         el.style.transitionTimingFunction = new List<EasingFunction> { new(EasingMode.EaseOutCubic) };
-        el.style.transitionDelay          = new List<TimeValue> { new(delayMs, TimeUnit.Millisecond) };
+        el.style.transitionDelay = new List<TimeValue> { new(delayMs, TimeUnit.Millisecond) };
     }
 
     private static void ClearTransitions(VisualElement el)
     {
-        el.style.transitionProperty       = StyleKeyword.Null;
-        el.style.transitionDuration       = StyleKeyword.Null;
+        el.style.transitionProperty = StyleKeyword.Null;
+        el.style.transitionDuration = StyleKeyword.Null;
         el.style.transitionTimingFunction = StyleKeyword.Null;
-        el.style.transitionDelay          = StyleKeyword.Null;
+        el.style.transitionDelay = StyleKeyword.Null;
     }
 }
