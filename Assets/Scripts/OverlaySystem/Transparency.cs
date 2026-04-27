@@ -14,27 +14,19 @@ public class Transparency : MonoBehaviour
 
     // Debug fields — used by the editor OnGUI overlay
     private bool isClickThrough = true;
+    #if !UNITY_EDITOR
     private bool isTransparencyEnabled = true;
+    #endif
     private string debugHitInfo = "none";
     private Vector2 debugCursorPos;
     private bool debugOverUI = false;
     
     private const float TOGGLE_COOLDOWN = 0.1f;
+    #if !UNITY_EDITOR
     private float lastToggleTime = 0f;
+    #endif
     
     private Camera mainCamera;
-    
-    [StructLayout(LayoutKind.Sequential)]
-    private struct POINT
-    {
-        public int X;
-        public int Y;
-    }
-
-    [DllImport("user32.dll")]
-    private static extern bool GetCursorPos(out POINT lpPoint);
-    [DllImport("user32.dll")]
-    private static extern bool ScreenToClient(IntPtr hWnd, ref POINT lpPoint);
     
     [Tooltip("Check this for the Overlay scene. Uncheck it for the Home/Menu scene.")]
     public bool startInTransparentMode = true; 
@@ -107,14 +99,42 @@ public class Transparency : MonoBehaviour
         {
             mainCamera.backgroundColor = new Color(mainCamera.backgroundColor.r, mainCamera.backgroundColor.g, mainCamera.backgroundColor.b, 1f);
         }
-        enabled = false; 
+        this.enabled = false; 
     }
+
+    public void PausePolling()
+    {
+        this.enabled = false;
+        SetClickThrough(false);
+    }
+
+    public void ResumePolling()
+    {
+        this.enabled = true;
+        if (mainCamera != null)
+        {
+            mainCamera.backgroundColor = new Color(mainCamera.backgroundColor.r, mainCamera.backgroundColor.g, mainCamera.backgroundColor.b, 0f);
+        }
+        #if !UNITY_EDITOR
+        WindowManager.MakeTransparent();
+        #endif
+        SetClickThrough(true);
+    }
+
+
     
     public void EnableTransparency()
     {
         #if !UNITY_EDITOR
         isTransparencyEnabled = true;
         #endif
+        this.enabled = true;
+        
+        if (mainCamera != null)
+        {
+            mainCamera.backgroundColor = new Color(mainCamera.backgroundColor.r, mainCamera.backgroundColor.g, mainCamera.backgroundColor.b, 0f);
+        }
+
         SetClickThrough(true);
         #if !UNITY_EDITOR
         WindowManager.MakeTransparent();
@@ -132,12 +152,12 @@ public class Transparency : MonoBehaviour
             return;
         }
         
-        POINT cursorPos;
-        if (!GetCursorPos(out cursorPos))
+        Win32Interop.POINT cursorPos;
+        if (!Win32Interop.GetCursorPos(out cursorPos))
             return;
         
-        POINT clientPos = cursorPos;
-        ScreenToClient(hWnd, ref clientPos);
+        Win32Interop.POINT clientPos = cursorPos;
+        Win32Interop.ScreenToClient(hWnd, ref clientPos);
         
         Vector2 unityScreenPos = new Vector2(clientPos.X, Screen.height - clientPos.Y);
         bool overUI = IsPointerOverUI(unityScreenPos, out string hitInfo);

@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class RelativeEyelid : MonoBehaviour
 {
@@ -27,15 +28,17 @@ public class RelativeEyelid : MonoBehaviour
 
     void Update()
     {
+        if (Mouse.current == null) return;
+
         // Mouse Down = Close
-        if (Input.GetMouseButtonDown(0))
+        if (Mouse.current.leftButton.wasPressedThisFrame)
         {
             StopActiveMove();
             activeMove = StartCoroutine(AnimateEyelid(closedRotation));
         }
 
         // Mouse Up = Open
-        if (Input.GetMouseButtonUp(0))
+        if (Mouse.current.leftButton.wasReleasedThisFrame)
         {
             StopActiveMove();
             activeMove = StartCoroutine(AnimateEyelid(openRotation));

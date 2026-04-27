@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class EyeSocketLockYZ : MonoBehaviour
 {
@@ -26,10 +27,13 @@ public class EyeSocketLockYZ : MonoBehaviour
 
     void ApplyLookRotation()
     {
+        if (Mouse.current == null) return;
+
         // 1. Get Mouse relative to screen center
+        Vector2 currentMousePos = Mouse.current.position.ReadValue();
         Vector2 mousePos = new Vector2(
-            (Input.mousePosition.x / Screen.width) - 0.5f,
-            (Input.mousePosition.y / Screen.height) - 0.5f
+            (currentMousePos.x / Screen.width) - 0.5f,
+            (currentMousePos.y / Screen.height) - 0.5f
         );
 
         // 2. Map Mouse X to Target Z and Mouse Y to Target Y

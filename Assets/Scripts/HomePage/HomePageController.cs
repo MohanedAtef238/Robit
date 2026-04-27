@@ -23,6 +23,7 @@ public class HomePageController : MonoBehaviour
     private HomeBackgroundBlurController _homeBlur;
     private HomeThemeController _theme;
     private WindowsPopupSuppressor _suppressor;
+    private Transparency _transparency;
 
     // View-switching state
     private VisualElement _settingsView;
@@ -56,6 +57,8 @@ public class HomePageController : MonoBehaviour
 
         if (_theme == null)
             _theme = gameObject.AddComponent<HomeThemeController>();
+
+        _transparency = FindFirstObjectByType<Transparency>();
     }
 
     void Start()
@@ -196,7 +199,10 @@ public class HomePageController : MonoBehaviour
             _tintOverlay.style.display = DisplayStyle.Flex;
 
         // Keep layered transparency but capture mouse clicks
-        WindowManager.SetClickThrough(false);
+        if (_transparency != null)
+            _transparency.PausePolling();
+        else
+            WindowManager.SetClickThrough(false);
 
         // Enable DWM Acrylic blur behind the window
         WindowManager.SetAcrylicBlur(true);
@@ -238,7 +244,10 @@ public class HomePageController : MonoBehaviour
         WindowManager.SetAcrylicBlur(false);
 
         // Restore transparent overlay
-        WindowManager.MakeTransparent();
+        if (_transparency != null)
+            _transparency.ResumePolling();
+        else
+            WindowManager.MakeTransparent();
 
         Debug.Log("[HomePageController] Closed.");
     }

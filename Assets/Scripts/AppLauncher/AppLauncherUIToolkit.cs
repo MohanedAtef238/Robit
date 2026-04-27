@@ -61,7 +61,16 @@ public class AppLauncherUIToolkit : MonoBehaviour
 
         // HomeScene needs an interactive (non-transparent) window
         // OverlayScene leaves it in click-through mode before loading us.
-        WindowManager.MakeOpaque();
+        WindowManager.SetClickThrough(false);
+        WindowManager.SetAcrylicBlur(true);
+
+        // Ensure the camera is transparent so we can see the Acrylic
+        var cam = Camera.main;
+        if (cam != null)
+        {
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = new Color(0, 0, 0, 0);
+        }
 
         uiDocument = GetComponent<UIDocument>();
         if (uiDocument == null || uiDocument.rootVisualElement == null)

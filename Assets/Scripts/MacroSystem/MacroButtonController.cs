@@ -19,6 +19,7 @@ public class MacroButtonController : MonoBehaviour
 
     private static readonly MacroGroup[] Groups = new[]
     {
+        new MacroGroup { name = "System",    action0 = MacroActionType.HomeDashboard, action1 = MacroActionType.AppCycler,     action2 = MacroActionType.Settings },
         new MacroGroup { name = "Navigate",  action0 = MacroActionType.Back,          action1 = MacroActionType.Forward,       action2 = MacroActionType.Refresh },
         new MacroGroup { name = "Tabs",      action0 = MacroActionType.NewTab,        action1 = MacroActionType.CloseTab,      action2 = MacroActionType.None },
         new MacroGroup { name = "Read",      action0 = MacroActionType.ZoomIn,        action1 = MacroActionType.ZoomOut,       action2 = MacroActionType.Screenshot },
@@ -27,7 +28,6 @@ public class MacroButtonController : MonoBehaviour
         new MacroGroup { name = "Window",    action0 = MacroActionType.Minimize,      action1 = MacroActionType.CloseWindow,   action2 = MacroActionType.None },
         new MacroGroup { name = "Edit",      action0 = MacroActionType.Undo,          action1 = MacroActionType.Redo,          action2 = MacroActionType.None },
         new MacroGroup { name = "Tools",     action0 = MacroActionType.MuteToggle,    action1 = MacroActionType.FindOnPage,    action2 = MacroActionType.None },
-        new MacroGroup { name = "System",    action0 = MacroActionType.HomeDashboard, action1 = MacroActionType.AppCycler,     action2 = MacroActionType.Settings },
     };
 
     private const int SlotsPerPage = 3;

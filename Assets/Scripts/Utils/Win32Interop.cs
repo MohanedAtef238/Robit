@@ -140,6 +140,81 @@ public static class Win32Interop
     public const uint WS_THICKFRAME = 0x00040000;
 
     // ═══════════════════════════════════════════════════════════════════════════
+    // Windows 11 & DWM Modernization
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MARGINS
+    {
+        public int cxLeftWidth;
+        public int cxRightWidth;
+        public int cyTopHeight;
+        public int cyBottomHeight;
+    }
+
+    public enum DWMWINDOWATTRIBUTE : uint
+    {
+        DWMWA_USE_IMMERSIVE_DARK_MODE = 20,
+        DWMWA_WINDOW_CORNER_PREFERENCE = 33,
+        DWMWA_SYSTEMBACKDROP_TYPE = 38
+    }
+
+    public enum DWM_SYSTEMBACKDROP_TYPE : uint
+    {
+        DWMSBT_AUTO = 0,
+        DWMSBT_NONE = 1,
+        DWMSBT_MAINWINDOW = 2,      // Mica
+        DWMSBT_TRANSIENTWINDOW = 3, // Acrylic
+        DWMSBT_TABBEDWINDOW = 4     // Mica Alt
+    }
+
+    public enum DWM_WINDOW_CORNER_PREFERENCE : uint
+    {
+        DWMWCP_DEFAULT = 0,
+        DWMWCP_DONOTROUND = 1,
+        DWMWCP_ROUND = 2,
+        DWMWCP_ROUNDSMALL = 3
+    }
+
+    [DllImport("dwmapi.dll")]
+    public static extern uint DwmExtendFrameIntoClientArea(IntPtr hWnd, ref MARGINS margins);
+
+    [DllImport("dwmapi.dll")]
+    public static extern int DwmSetWindowAttribute(IntPtr hwnd, DWMWINDOWATTRIBUTE dwAttribute, ref int pvAttribute, int cbAttribute);
+
+    [DllImport("user32.dll")]
+    public static extern int SetWindowCompositionAttribute(IntPtr hWnd, ref WindowCompositionAttributeData data);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct WindowCompositionAttributeData
+    {
+        public int Attribute;
+        public IntPtr Data;
+        public int SizeOfData;
+    }
+
+    public const int WCA_ACCENT_POLICY = 19;
+
+    public enum AccentState
+    {
+        ACCENT_DISABLED = 0,
+        ACCENT_ENABLE_GRADIENT = 1,
+        ACCENT_ENABLE_TRANSPARENTGRADIENT = 2,
+        ACCENT_ENABLE_BLURBEHIND = 3,
+        ACCENT_ENABLE_ACRYLICBLURBEHIND = 4,
+        ACCENT_INVALID_STATE = 5
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct AccentPolicy
+    {
+        public AccentState AccentState;
+        public int AccentFlags;
+        public uint GradientColor;
+        public int AnimationId;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
     // Cursor / coordinate helpers
     // ═══════════════════════════════════════════════════════════════════════════
 
@@ -157,7 +232,10 @@ public static class Win32Interop
     }
 
     [DllImport("user32.dll")]
-    public static extern bool SetCursorPos(int X, int Y);
+    public static extern bool GetCursorPos(out POINT lpPoint);
+
+    [DllImport("user32.dll")]
+    public static extern bool ScreenToClient(IntPtr hWnd, ref POINT lpPoint);
 
     [DllImport("user32.dll")]
     public static extern bool ClientToScreen(IntPtr hWnd, ref POINT lpPoint);
