@@ -10,7 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Robit.Tests.EditMode
+namespace Robit.Tests
 {
     public class MacroActionFactoryTests
     {

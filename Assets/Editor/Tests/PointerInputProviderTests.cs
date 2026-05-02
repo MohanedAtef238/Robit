@@ -16,7 +16,7 @@ using NUnit.Framework;
 using System;
 using UnityEngine.UIElements;
 
-namespace Robit.Tests.EditMode
+namespace Robit.Tests
 {
     // ── Hand-rolled fake: records whether onActivated was ever called ─────────
     internal class FakeMacroAction : IMacroAction

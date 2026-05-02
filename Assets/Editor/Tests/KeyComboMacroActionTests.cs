@@ -9,7 +9,7 @@
 
 using NUnit.Framework;
 
-namespace Robit.Tests.EditMode
+namespace Robit.Tests
 {
     public class KeyComboMacroActionTests
     {

@@ -2,7 +2,7 @@ using NUnit.Framework;
 using UnityEngine;
 using System.Collections.Generic;
 
-namespace Tests.Editor
+namespace Robit.Tests
 {
     public class DesktopParserTests
     {

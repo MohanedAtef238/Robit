@@ -10,7 +10,7 @@
 using NUnit.Framework;
 using System;
 
-namespace Robit.Tests.EditMode
+namespace Robit.Tests
 {
     public class MacroButtonBindingTests
     {

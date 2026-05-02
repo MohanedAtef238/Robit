@@ -1,7 +1,7 @@
 using NUnit.Framework;
 using UnityEngine;
 
-namespace Tests.Editor
+namespace Robit.Tests
 {
     public class MacroSystemTests
     {

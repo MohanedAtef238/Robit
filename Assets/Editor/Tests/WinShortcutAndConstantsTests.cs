@@ -20,7 +20,7 @@ using System.IO;
 using LnkParser;
 using LnkParser.Constants;
 
-namespace Robit.Tests.EditMode
+namespace Robit.Tests
 {
     public class WinShortcutTests
     {
