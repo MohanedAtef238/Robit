@@ -55,7 +55,7 @@ public static class Win32Interop
     public const uint GW_HWNDNEXT = 2;
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // Window positioning & Z-order (used by HolePunchController)
+    // Window positioning & Z-order
     // ═══════════════════════════════════════════════════════════════════════════
 
     [DllImport("user32.dll", SetLastError = true)]

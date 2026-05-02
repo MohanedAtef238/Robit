@@ -36,63 +36,7 @@ public class AppLauncher : MonoBehaviour
 
     public Process CurrentProcess => currentProcess;
 
-    // public void LaunchApplication(string path, string workingDirectory)
-    // {
-    //     try
-    //     {
-    //         UnityEngine.Debug.Log($"[AppLauncher] Sending '{path}' to HolePunchController.");
-
-    //         var holePunch = FindFirstObjectByType<HolePunchController>();
-    //         if (holePunch != null)
-    //         {
-    //             holePunch.targetProcessName = System.IO.Path.GetFileNameWithoutExtension(path);
-    //             holePunch.executablePath = path;
-
-    //             // Open the overlay panel animation
-    //             var captureController = FindFirstObjectByType<RobitCaptureController>();
-    //             if (captureController != null)
-    //                 captureController.OpenPanel();
-                
-    //             // Activate the hole punch
-    //             holePunch.Activate();
-    //         }
-    //         else
-    //         {
-    //             UnityEngine.Debug.LogWarning("[AppLauncher] No HolePunchController found! Launching normally.");
-    //             if (currentProcess != null && !currentProcess.HasExited)
-    //             {
-    //                 currentProcess.CloseMainWindow();
-    //                 currentProcess.Dispose();
-    //             }
-
-    //             ProcessStartInfo startInfo = new ProcessStartInfo(path);
-    //             if (!string.IsNullOrEmpty(workingDirectory) && Directory.Exists(workingDirectory))
-    //                 startInfo.WorkingDirectory = workingDirectory;
-
-    //             currentProcess = Process.Start(startInfo);
-    //         }
-
-    //         // Hide the AppLauncher UI
-    //         var appUI = FindFirstObjectByType<AppLauncherUIToolkit>();
-    //         if (appUI != null)
-    //         {
-    //             var doc = appUI.GetComponent<UnityEngine.UIElements.UIDocument>();
-    //             if (doc != null && doc.rootVisualElement != null)
-    //                 doc.rootVisualElement.style.display = UnityEngine.UIElements.DisplayStyle.None;
-    //         }
-
-    //         // Show macro buttons with bounce animation
-    //         var macroCtrl = FindFirstObjectByType<MacroButtonController>();
-    //         if (macroCtrl != null)
-    //             macroCtrl.ShowWithBounce();
-    //     }
-    //     catch (Exception e)
-    //     {
-    //         UnityEngine.Debug.LogError($"Failed to prepare application: {path}, Error: {e.Message}");
-    //     }
-    // }
-
-        public void LaunchApplication(string path, string workingDirectory)
+    public void LaunchApplication(string path, string workingDirectory)
     {
         try
         {
@@ -124,16 +68,6 @@ public class AppLauncher : MonoBehaviour
     /// </summary>
     public void ReturnToDesktop()
     {
-        // Close the overlay panel animation
-        var captureController = FindFirstObjectByType<RobitCaptureController>();
-        if (captureController != null)
-            captureController.ClosePanel();
-
-        // Kill the running app
-        var holePunch = FindFirstObjectByType<HolePunchController>();
-        if (holePunch != null)
-            holePunch.CloseTargetApp();
-
         // Show the AppLauncher UI again
         var appUI = FindFirstObjectByType<AppLauncherUIToolkit>();
         if (appUI != null)
@@ -153,8 +87,6 @@ public class AppLauncher : MonoBehaviour
 
     public void CloseCurrentApp()
     {
-        StopCaptureIfActive();
-
         if (currentProcess != null && !currentProcess.HasExited)
         {
             try
@@ -175,7 +107,6 @@ public class AppLauncher : MonoBehaviour
 
     public void GoHome()
     {
-        StopCaptureIfActive();
         CloseCurrentApp();
         StartCoroutine(GoHomeRoutine());
     }
@@ -187,10 +118,4 @@ public class AppLauncher : MonoBehaviour
         UnityEngine.Debug.Log("[AppLauncher] Returning to Home.");
     }
 
-    private void StopCaptureIfActive()
-    {
-        var holePunch = FindFirstObjectByType<HolePunchController>();
-        if (holePunch != null)
-            holePunch.Deactivate();
-    }
 }

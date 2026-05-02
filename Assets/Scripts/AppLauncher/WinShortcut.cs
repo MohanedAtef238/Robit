@@ -21,8 +21,22 @@ namespace LnkParser
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception("Failed to parse this file as a Windowsshortcut", ex);
+                    throw new Exception("Failed to parse this file as a Windows shortcut", ex);
                 }
+            }
+        }
+
+        // Initialize an instance of this class using an already-open stream.
+        // Provided for unit testing — allows MemoryStream fixtures without disk access.
+        public WinShortcut(Stream stream)
+        {
+            try
+            {
+                this.Parse(stream);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Failed to parse this file as a Windows shortcut", ex);
             }
         }
 
@@ -57,17 +71,23 @@ namespace LnkParser
         // Reads flags and file attributes from header.
         private int ParseHeader(Stream stream)
         {
+            if (stream.Length < 76)
+                throw new EndOfStreamException("Stream is too short to be a valid LNK file");
+
             stream.Seek(20, SeekOrigin.Begin);//jump to the LinkFlags part of ShellLinkHeader
             var buffer = new byte[4];
-            stream.Read(buffer, 0, buffer.Length);
+            if (stream.Read(buffer, 0, buffer.Length) != buffer.Length)
+                throw new EndOfStreamException("Failed to read LinkFlags");
             var linkFlags = BitConverter.ToInt32(buffer, 0);
 
-            stream.Read(buffer, 0, buffer.Length);//read next 4 bytes, that is FileAttributesileAttributes
+            if (stream.Read(buffer, 0, buffer.Length) != buffer.Length)
+                throw new EndOfStreamException("Failed to read FileAttributes");
             var fileAttrFlags = BitConverter.ToInt32(buffer, 0);
             IsDirectory = (fileAttrFlags & Constants.FileAttributes.Directory) == Constants.FileAttributes.Directory;
 
             stream.Seek(36, SeekOrigin.Current);//jump to the HotKey part
-            stream.Read(buffer, 0, 2);
+            if (stream.Read(buffer, 0, 2) != 2)
+                throw new EndOfStreamException("Failed to read HotKey");
 
             var keys = new List<string>();
             var hotKeyLowByte = (Constants.VirtualKeys)buffer[0];
@@ -90,7 +110,8 @@ namespace LnkParser
         {
             stream.Seek(76, SeekOrigin.Begin);//jump to the LinkTargetIDList part
             var buffer = new byte[2];
-            stream.Read(buffer, 0, buffer.Length);
+            if (stream.Read(buffer, 0, buffer.Length) != buffer.Length)
+                throw new EndOfStreamException("Failed to read TargetIDList size");
             var size = BitConverter.ToInt16(buffer, 0);
             //the TargetIDList part isn't used currently, so just move the cursor forward
             stream.Seek(size, SeekOrigin.Current);
@@ -102,7 +123,8 @@ namespace LnkParser
             var start = stream.Position;//save the start position of LinkInfo
             stream.Seek(8, SeekOrigin.Current);//jump to the LinkInfoFlags part
             var buffer = new byte[4];
-            stream.Read(buffer, 0, buffer.Length);
+            if (stream.Read(buffer, 0, buffer.Length) != buffer.Length)
+                throw new EndOfStreamException("Failed to read LinkInfoFlags");
             var lnkInfoFlags = BitConverter.ToInt32(buffer, 0);
             if ((lnkInfoFlags & Constants.LinkInfoFlags.VolumeIDAndLocalBasePath) == Constants.LinkInfoFlags.VolumeIDAndLocalBasePath)
             {
@@ -148,7 +170,7 @@ namespace LnkParser
         {
             var sizeBuffer = new byte[2];
             if (stream.Read(sizeBuffer, 0, sizeBuffer.Length) != sizeBuffer.Length)
-                return null;
+                throw new EndOfStreamException("Failed to read string data size");
 
             ushort charCount = BitConverter.ToUInt16(sizeBuffer, 0);
             if (charCount == 0)
@@ -158,7 +180,7 @@ namespace LnkParser
             var dataBuffer = new byte[byteCount];
 
             if (stream.Read(dataBuffer, 0, dataBuffer.Length) != dataBuffer.Length)
-                return null;
+                throw new EndOfStreamException("Failed to read string data content");
 
             return isUnicode
                 ? Encoding.Unicode.GetString(dataBuffer)

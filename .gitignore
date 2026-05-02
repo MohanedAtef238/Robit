@@ -89,3 +89,4 @@ crashlytics-build.properties
 /Assets/eyetracker_examples
 /Assets/Scripts/Editor
 /ProfilerCaptures
+/CodeCoverage
