@@ -5,6 +5,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
 using System.Collections;
+using Unity.Profiling;
 
 public class Transparency : MonoBehaviour
 {
@@ -14,30 +15,44 @@ public class Transparency : MonoBehaviour
 
     // Debug fields — used by the editor OnGUI overlay
     private bool isClickThrough = true;
+    #if !UNITY_EDITOR
     private bool isTransparencyEnabled = true;
+    #endif
     private string debugHitInfo = "none";
     private Vector2 debugCursorPos;
     private bool debugOverUI = false;
     
     private const float TOGGLE_COOLDOWN = 0.1f;
+    #if !UNITY_EDITOR
     private float lastToggleTime = 0f;
+    #endif
     
     private Camera mainCamera;
-    
-    [StructLayout(LayoutKind.Sequential)]
-    private struct POINT
+
+    // --- Performance: cached fields to avoid per-frame allocations ---
+    private UIDocument[] _cachedUIDocuments = Array.Empty<UIDocument>();
+    private PointerEventData _pointerEventData;
+    private EventSystem _lastKnownEventSystem;
+    private readonly List<RaycastResult> _raycastResults = new List<RaycastResult>(8);
+    private int _lastRawX = -1;
+    private int _lastRawY = -1;
+    private GUIStyle _debugStyle;
+    private static readonly ProfilerMarker _updateMarker = new ProfilerMarker("Transparency.Update");
+    private static readonly ProfilerMarker _pickMarker = new ProfilerMarker("Transparency.IsPointerOverUI");
+    // -----------------------------------------------------------------
+
+    [Tooltip("Check this for the Overlay scene. Uncheck it for the Home/Menu scene.")]
+    public bool startInTransparentMode = true;
+
+    void OnEnable()
     {
-        public int X;
-        public int Y;
+        RefreshUIDocumentCache();
     }
 
-    [DllImport("user32.dll")]
-    private static extern bool GetCursorPos(out POINT lpPoint);
-    [DllImport("user32.dll")]
-    private static extern bool ScreenToClient(IntPtr hWnd, ref POINT lpPoint);
-    
-    [Tooltip("Check this for the Overlay scene. Uncheck it for the Home/Menu scene.")]
-    public bool startInTransparentMode = true; 
+    public void RefreshUIDocumentCache()
+    {
+        _cachedUIDocuments = FindObjectsByType<UIDocument>(FindObjectsSortMode.None);
+    }
 
     void Start()
     {
@@ -107,14 +122,42 @@ public class Transparency : MonoBehaviour
         {
             mainCamera.backgroundColor = new Color(mainCamera.backgroundColor.r, mainCamera.backgroundColor.g, mainCamera.backgroundColor.b, 1f);
         }
-        enabled = false; 
+        this.enabled = false; 
     }
+
+    public void PausePolling()
+    {
+        this.enabled = false;
+        SetClickThrough(false);
+    }
+
+    public void ResumePolling()
+    {
+        this.enabled = true;
+        if (mainCamera != null)
+        {
+            mainCamera.backgroundColor = new Color(mainCamera.backgroundColor.r, mainCamera.backgroundColor.g, mainCamera.backgroundColor.b, 0f);
+        }
+        #if !UNITY_EDITOR
+        WindowManager.MakeTransparent();
+        #endif
+        SetClickThrough(true);
+    }
+
+
     
     public void EnableTransparency()
     {
         #if !UNITY_EDITOR
         isTransparencyEnabled = true;
         #endif
+        this.enabled = true;
+        
+        if (mainCamera != null)
+        {
+            mainCamera.backgroundColor = new Color(mainCamera.backgroundColor.r, mainCamera.backgroundColor.g, mainCamera.backgroundColor.b, 0f);
+        }
+
         SetClickThrough(true);
         #if !UNITY_EDITOR
         WindowManager.MakeTransparent();
@@ -125,6 +168,7 @@ public class Transparency : MonoBehaviour
     // Polls cursor position and toggles click-through based on UI/3D hits
     void Update()
     {
+        using var _um = _updateMarker.Auto();
         #if !UNITY_EDITOR
         if (!isTransparencyEnabled)
         {
@@ -132,12 +176,17 @@ public class Transparency : MonoBehaviour
             return;
         }
         
-        POINT cursorPos;
-        if (!GetCursorPos(out cursorPos))
+        Win32Interop.POINT cursorPos;
+        if (!Win32Interop.GetCursorPos(out cursorPos))
             return;
-        
-        POINT clientPos = cursorPos;
-        ScreenToClient(hWnd, ref clientPos);
+
+        // Short-circuit before any further P/Invoke or UI work if the cursor hasn't moved
+        if (cursorPos.X == _lastRawX && cursorPos.Y == _lastRawY) return;
+        _lastRawX = cursorPos.X;
+        _lastRawY = cursorPos.Y;
+
+        Win32Interop.POINT clientPos = cursorPos;
+        Win32Interop.ScreenToClient(hWnd, ref clientPos);
         
         Vector2 unityScreenPos = new Vector2(clientPos.X, Screen.height - clientPos.Y);
         bool overUI = IsPointerOverUI(unityScreenPos, out string hitInfo);
@@ -151,14 +200,18 @@ public class Transparency : MonoBehaviour
         
         if (overUI && isClickThrough)
         {
+            #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[Transparency] Click-through OFF. Hit: {hitInfo}");
+            #endif
             SetClickThrough(false);
             WindowManager.FocusWindow();
             lastToggleTime = Time.time;
         }
         else if (!overUI && !isClickThrough)
         {
+            #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[Transparency] Click-through ON");
+            #endif
             SetClickThrough(true);
             lastToggleTime = Time.time;
         }
@@ -168,46 +221,55 @@ public class Transparency : MonoBehaviour
     void OnGUI()
     {
         #if UNITY_EDITOR
-        GUIStyle style = new GUIStyle(GUI.skin.box);
-        style.fontSize = 14;
-        style.normal.textColor = Color.white;
-        style.alignment = TextAnchor.UpperLeft;
-        style.padding = new RectOffset(10, 10, 10, 10);
-        
+        // Cache the GUIStyle so it isn't rebuilt every OnGUI call
+        if (_debugStyle == null)
+        {
+            _debugStyle = new GUIStyle(GUI.skin.box);
+            _debugStyle.fontSize = 14;
+            _debugStyle.normal.textColor = Color.white;
+            _debugStyle.alignment = TextAnchor.UpperLeft;
+            _debugStyle.padding = new RectOffset(10, 10, 10, 10);
+            _debugStyle.richText = true;
+        }
+
         string status = isClickThrough ? "<color=red>CLICK-THROUGH</color>" : "<color=green>INTERACTIVE</color>";
         string hitColor = debugOverUI ? "lime" : "yellow";
-        
+
         string debugText = $"=== TRANSPARENCY DEBUG ===\n" +
                           $"Status: {status}\n" +
                           $"Cursor: ({debugCursorPos.x:F0}, {debugCursorPos.y:F0})\n" +
                           $"Hit: <color={hitColor}>{debugHitInfo}</color>\n" +
                           $"Camera: {(mainCamera != null ? "OK" : "NULL")}\n" +
                           $"EventSystem: {(EventSystem.current != null ? "OK" : "NULL")}";
-        
+
         GUI.backgroundColor = new Color(0, 0, 0, 0.8f);
         GUI.Box(new Rect(10, 10, 280, 140), "");
-        
-        style.richText = true;
-        GUI.Label(new Rect(10, 10, 280, 140), debugText, style);
+        GUI.Label(new Rect(10, 10, 280, 140), debugText, _debugStyle);
         #endif
     }
     
     // Raycasts UI elements first, then UI Toolkit panels, then 3D colliders
     private bool IsPointerOverUI(Vector2 screenPosition, out string hitInfo)
     {
+        using var _pm = _pickMarker.Auto();
         hitInfo = "none";
-        
+
         if (EventSystem.current != null)
         {
-            PointerEventData eventData = new PointerEventData(EventSystem.current);
-            eventData.position = screenPosition;
-            
-            List<RaycastResult> uiResults = new List<RaycastResult>();
-            EventSystem.current.RaycastAll(eventData, uiResults);
-            
-            if (uiResults.Count > 0)
+            // Re-create PointerEventData only if the EventSystem instance has changed
+            if (_pointerEventData == null || _lastKnownEventSystem != EventSystem.current)
             {
-                hitInfo = $"UI:{uiResults[0].gameObject.name}";
+                _lastKnownEventSystem = EventSystem.current;
+                _pointerEventData = new PointerEventData(EventSystem.current);
+            }
+            _pointerEventData.position = screenPosition;
+
+            _raycastResults.Clear();
+            EventSystem.current.RaycastAll(_pointerEventData, _raycastResults);
+
+            if (_raycastResults.Count > 0)
+            {
+                hitInfo = $"UI:{_raycastResults[0].gameObject.name}";
                 return true;
             }
         }
@@ -217,8 +279,8 @@ public class Transparency : MonoBehaviour
         }
 
         // Check UI Toolkit panels (not detected by EventSystem.RaycastAll)
-        var uiDocuments = FindObjectsByType<UIDocument>(FindObjectsSortMode.None);
-        foreach (var doc in uiDocuments)
+        // Uses _cachedUIDocuments — refreshed in OnEnable and via RefreshUIDocumentCache()
+        foreach (var doc in _cachedUIDocuments)
         {
             if (doc == null || doc.rootVisualElement == null) continue;
             var panel = doc.rootVisualElement.panel;
@@ -246,7 +308,7 @@ public class Transparency : MonoBehaviour
         {
             hitInfo = "NO_CAMERA";
         }
-        
+
         return false;
     }
 

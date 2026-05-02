@@ -12,6 +12,7 @@ public class SettingsOverlayController : MonoBehaviour
     private VisualElement card;
     private Button exitBtn;
     private Button closeBtn;
+    private Transparency _transparency;
 
     private bool _isOpen;
     private bool _initialized;
@@ -30,6 +31,7 @@ public class SettingsOverlayController : MonoBehaviour
         card = root.Q("settings-card");
         exitBtn = root.Q<Button>("exitBtn");
         closeBtn = root.Q<Button>("settingsCloseBtn");
+        _transparency = FindFirstObjectByType<Transparency>();
 
         if (backdrop == null || card == null)
         {
@@ -70,7 +72,13 @@ public class SettingsOverlayController : MonoBehaviour
         card.RemoveFromClassList("settings-card--enter");
         card.AddToClassList("settings-card--ready");
 
-        WindowManager.MakeOpaque();
+        // Pause transparency polling and enable Acrylic
+        if (_transparency != null)
+            _transparency.PausePolling();
+        else
+            WindowManager.SetClickThrough(false);
+
+        WindowManager.SetAcrylicBlur(true);
 
         Debug.Log("[SettingsOverlay] Opened.");
     }
@@ -89,10 +97,18 @@ public class SettingsOverlayController : MonoBehaviour
         backdrop.RemoveFromClassList("settings-backdrop--visible");
         backdrop.AddToClassList("settings-backdrop--hidden");
 
+        // Disable Acrylic
+        WindowManager.SetAcrylicBlur(false);
+
         // Check if the home page is still open — if not, restore transparency
         var homePage = FindFirstObjectByType<HomePageController>();
         if (homePage == null || !homePage.IsOpen)
-            WindowManager.MakeTransparent();
+        {
+            if (_transparency != null)
+                _transparency.ResumePolling();
+            else
+                WindowManager.MakeTransparent();
+        }
 
         Debug.Log("[SettingsOverlay] Closed.");
     }

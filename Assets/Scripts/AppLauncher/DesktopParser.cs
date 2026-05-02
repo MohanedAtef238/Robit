@@ -63,11 +63,7 @@ public class DesktopParser : MonoBehaviour
             {
                 var shortcut = new WinShortcut(file);
 
-                if (string.IsNullOrEmpty(shortcut.TargetPath))
-                    continue;
-
-                // 🔥 Optional filter (recommended)
-                if (!shortcut.TargetPath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                if (!IsValidShortcut(shortcut.TargetPath))
                     continue;
 
                 if (!File.Exists(shortcut.TargetPath))
@@ -168,7 +164,15 @@ private Texture2D ExtractHighQualityIcon(string filePath)
     }
 }
 
-    private void AddShortcut(string name, string targetPath, Texture2D icon)
+    public bool IsValidShortcut(string targetPath)
+    {
+        if (string.IsNullOrEmpty(targetPath))
+            return false;
+
+        return targetPath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public void AddShortcut(string name, string targetPath, Texture2D icon)
     {
         shortcuts.Add(new ShortcutInfo
         {
