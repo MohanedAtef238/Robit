@@ -1,7 +1,6 @@
 :root {
 }
 
-/* View All Apps button — Classic (purple) theme */
 #viewAppsBtn {
     background-color: rgba(22, 18, 48, 0.85);
     border-left-color: rgba(125, 101, 182, 0.8);
@@ -24,7 +23,7 @@
 }
 
 #viewAppsBtn:active {
-    background-color: rgba(125, 101, 182, 1.0);
+    background-color: rgb(125, 101, 182);
     scale: 0.97;
 }
 
@@ -49,18 +48,17 @@ Slider Label {
     background-color: rgba(175, 150, 230, 0.9);
 }
 
-/* Selected state (classic theme) for the zoom picker — toggled via class */
 #zoom100Btn.zoom-selected,
 #zoom125Btn.zoom-selected,
 #zoom150Btn.zoom-selected,
 #zoom200Btn.zoom-selected {
-    background-color: rgba(175, 150, 230, 1.0);
+    background-color: rgb(175, 150, 230);
     -unity-background-image-tint-color: rgb(255, 255, 255);
     scale: 1.08;
 }
 
 Slider #unity-tracker {
-    background-color: rgba(125, 101, 182, 0.85);
+    background-color: rgba(125, 101, 182, 0.67);
     background-size: 100% 100%;
     -unity-background-scale-mode: stretch-to-fill;
     position: absolute;
@@ -76,13 +74,21 @@ Slider #unity-tracker {
 }
 
 Slider #unity-drag-container {
-    background-color: rgba(162, 224, 242, 0.6);
+    background-color: rgba(182, 238, 243, 0.51);
     scale: 0.9 0.3;
     border-top-left-radius: 48px;
     border-top-right-radius: 48px;
     border-bottom-right-radius: 48px;
     border-bottom-left-radius: 48px;
     transform-origin: center;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    border-left-color: rgb(0, 0, 0);
+    border-right-color: rgb(0, 0, 0);
+    border-top-color: rgb(0, 0, 0);
+    border-bottom-color: rgb(0, 0, 0);
 }
 
 Slider #unity-dragger {
