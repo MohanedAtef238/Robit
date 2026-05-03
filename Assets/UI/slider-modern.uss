@@ -10,27 +10,10 @@ Slider Label {
     display: none;
 }
 
-/* ── Slider row pill background (spans icon → slider end) ── */
+
 #Sound,
 #brightness {
-    background-color: rgba(55, 75, 105, 0.35);
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
-    border-bottom-right-radius: 20px;
-    border-bottom-left-radius: 20px;
-    padding-left: 14px;
-    padding-right: 14px;
-    border-left-width: 1px;
-    border-right-width: 1px;
-    border-top-width: 1px;
-    border-bottom-width: 1px;
-    border-left-color: rgba(100, 140, 200, 0.20);
-    border-right-color: rgba(100, 140, 200, 0.20);
-    border-top-color: rgba(100, 140, 200, 0.20);
-    border-bottom-color: rgba(100, 140, 200, 0.20);
 }
-
-/* ── Icon tinting so they read against the pill background ── */
 #soundIcon,
 #sunIcon {
     -unity-background-image-tint-color: rgb(180, 210, 255);
