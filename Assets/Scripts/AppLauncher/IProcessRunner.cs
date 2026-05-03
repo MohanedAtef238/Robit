@@ -1,7 +1,9 @@
-using System.Diagnostics;
-
-public interface IProcessRunner
+namespace Robit.LauncherSystem
 {
-    Process Start(string path, string workingDirectory);
-    void Close(Process process);
+    public interface IProcessRunner
+    {
+        IProcess Start(string path, string workingDirectory);
+        void Close(IProcess process);
+    }
 }
+

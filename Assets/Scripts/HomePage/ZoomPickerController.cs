@@ -26,7 +26,7 @@ public class ZoomPickerController : MonoBehaviour
             var btn = root.Q<Button>(BtnNames[i]);
             if (btn == null)
             {
-                Debug.LogWarning($"[ZoomPickerController] Button {BtnNames[i]} not found.");
+                RobitLogger.LogWarning($"[ZoomPickerController] Button {BtnNames[i]} not found.");
                 continue;
             }
             _buttons[i] = btn;
@@ -39,7 +39,7 @@ public class ZoomPickerController : MonoBehaviour
         }
 
         if (foundCount == 0)
-            Debug.LogError("[ZoomPickerController] No zoom buttons were found in the active UI document.");
+            RobitLogger.LogError("[ZoomPickerController] No zoom buttons were found in the active UI document.");
 
         _currentPercent = Win32DisplayScaleInterop.GetScalePercent();
         RefreshHighlight();
@@ -69,3 +69,4 @@ public class ZoomPickerController : MonoBehaviour
         }
     }
 }
+

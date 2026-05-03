@@ -7,3 +7,4 @@ public class FindOnPageAction : KeyComboMacroAction
     protected override VirtualKeys[] Modifiers => new[] { VirtualKeys.Control };
     protected override VirtualKeys MainKey => VirtualKeys.F;
 }
+

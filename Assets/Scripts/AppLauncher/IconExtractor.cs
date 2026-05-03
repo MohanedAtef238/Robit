@@ -119,12 +119,12 @@ public static class IconExtractor
             try
             {
                 File.WriteAllBytes(icoPath, icos[i]);
-                Debug.Log($"Saved ICO: {icoPath}");
+                RobitLogger.Log($"Saved ICO: {icoPath}");
                 savedPaths.Add(icoPath);
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Failed to save ICO file: {ex.Message}");
+                RobitLogger.LogError($"Failed to save ICO file: {ex.Message}");
             }
         }
 

@@ -77,7 +77,7 @@ public class Transparency : MonoBehaviour
             StartCoroutine(ForceOpaqueRoutine());
         }
         
-        Debug.Log($"[Transparency] Initialized. Mode: {(startInTransparentMode ? "Transparent" : "Opaque")}");
+        RobitLogger.Log($"[Transparency] Initialized. Mode: {(startInTransparentMode ? "Transparent" : "Opaque")}");
         #endif
     }
 
@@ -162,7 +162,7 @@ public class Transparency : MonoBehaviour
         #if !UNITY_EDITOR
         WindowManager.MakeTransparent();
         #endif
-        Debug.Log("[Transparency] Transparency mode enabled");
+        RobitLogger.Log("[Transparency] Transparency mode enabled");
     }
 
     // Polls cursor position and toggles click-through based on UI/3D hits
@@ -201,7 +201,7 @@ public class Transparency : MonoBehaviour
         if (overUI && isClickThrough)
         {
             #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[Transparency] Click-through OFF. Hit: {hitInfo}");
+            RobitLogger.Log($"[Transparency] Click-through OFF. Hit: {hitInfo}");
             #endif
             SetClickThrough(false);
             WindowManager.FocusWindow();
@@ -210,7 +210,7 @@ public class Transparency : MonoBehaviour
         else if (!overUI && !isClickThrough)
         {
             #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[Transparency] Click-through ON");
+            RobitLogger.Log($"[Transparency] Click-through ON");
             #endif
             SetClickThrough(true);
             lastToggleTime = Time.time;
@@ -320,4 +320,5 @@ public class Transparency : MonoBehaviour
         #endif
     }
 }
+
 

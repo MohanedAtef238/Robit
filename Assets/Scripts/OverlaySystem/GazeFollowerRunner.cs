@@ -52,7 +52,7 @@ public class GazeFollowerRunner : MonoBehaviour
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
         if (gazeProcess != null && !gazeProcess.HasExited)
         {
-            UnityEngine.Debug.Log("[GazeFollowerRunner] GazeFollower is already running.");
+            RobitLogger.Log("[GazeFollowerRunner] GazeFollower is already running.");
             return;
         }
 
@@ -63,13 +63,13 @@ public class GazeFollowerRunner : MonoBehaviour
 
         if (!TryResolvePath(workingDirectoryConfig, expectFile: false, out string workingDirectory, out string workingDetails))
         {
-            UnityEngine.Debug.LogWarning("[GazeFollowerRunner] Working directory could not be resolved (gaze tracking unavailable).\n" + workingDetails);
+            RobitLogger.LogWarning("[GazeFollowerRunner] Working directory could not be resolved (gaze tracking unavailable).\n" + workingDetails);
             return;
         }
 
         if (!TryResolvePath(pythonPathConfig, expectFile: true, out string pythonExe, out string pythonDetails))
         {
-            UnityEngine.Debug.LogWarning("[GazeFollowerRunner] Python executable could not be resolved (gaze tracking unavailable).\n" + pythonDetails);
+            RobitLogger.LogWarning("[GazeFollowerRunner] Python executable could not be resolved (gaze tracking unavailable).\n" + pythonDetails);
             return;
         }
 
@@ -79,14 +79,14 @@ public class GazeFollowerRunner : MonoBehaviour
             string fallbackRelative = Path.Combine(workingDirectoryConfig, "game_test.py");
             if (!TryResolvePath(fallbackRelative, expectFile: true, out scriptPath, out string fallbackDetails))
             {
-                UnityEngine.Debug.LogWarning("[GazeFollowerRunner] Gaze script could not be resolved (gaze tracking unavailable).\n" + scriptDetails + "\n" + fallbackDetails);
+                RobitLogger.LogWarning("[GazeFollowerRunner] Gaze script could not be resolved (gaze tracking unavailable).\n" + scriptDetails + "\n" + fallbackDetails);
                 return;
             }
         }
 
         if (logResolvedPaths)
         {
-            UnityEngine.Debug.Log("[GazeFollowerRunner] Using paths:\n" +
+            RobitLogger.Log("[GazeFollowerRunner] Using paths:\n" +
                                   $" - WorkingDir: {workingDirectory}\n" +
                                   $" - PythonExe : {pythonExe}\n" +
                                   $" - Script    : {scriptPath}");
@@ -113,14 +113,14 @@ public class GazeFollowerRunner : MonoBehaviour
             gazeProcess.Start();
             gazeProcess.BeginOutputReadLine();
             gazeProcess.BeginErrorReadLine();
-            UnityEngine.Debug.Log("[GazeFollowerRunner] Started game_Test.py.");
+            RobitLogger.Log("[GazeFollowerRunner] Started game_Test.py.");
         }
         catch (Exception ex)
         {
-            UnityEngine.Debug.LogError($"[GazeFollowerRunner] Failed to start gaze process: {ex.Message}");
+            RobitLogger.LogError($"[GazeFollowerRunner] Failed to start gaze process: {ex.Message}");
         }
 #else
-        UnityEngine.Debug.LogWarning("[GazeFollowerRunner] This runner currently supports Windows builds only.");
+        RobitLogger.LogWarning("[GazeFollowerRunner] This runner currently supports Windows builds only.");
 #endif
     }
 
@@ -136,7 +136,7 @@ public class GazeFollowerRunner : MonoBehaviour
         }
         catch (Exception ex)
         {
-            UnityEngine.Debug.LogWarning($"[GazeFollowerRunner] Failed to stop gaze process: {ex.Message}");
+            RobitLogger.LogWarning($"[GazeFollowerRunner] Failed to stop gaze process: {ex.Message}");
         }
         finally
         {
@@ -164,11 +164,11 @@ public class GazeFollowerRunner : MonoBehaviour
 
         if (string.Equals(e.Data.Trim(), "CALIBRATION_DONE", StringComparison.Ordinal))
         {
-            UnityEngine.Debug.Log("[GazeFollowerRunner] Calibration completed. Gaze is now driving mouse movement.");
+            RobitLogger.Log("[GazeFollowerRunner] Calibration completed. Gaze is now driving mouse movement.");
             return;
         }
 
-        UnityEngine.Debug.Log($"[GazeFollowerRunner][PY] {e.Data}");
+        RobitLogger.Log($"[GazeFollowerRunner][PY] {e.Data}");
     }
 
     private void OnErrorDataReceived(object sender, DataReceivedEventArgs e)
@@ -176,12 +176,12 @@ public class GazeFollowerRunner : MonoBehaviour
         if (string.IsNullOrWhiteSpace(e.Data))
             return;
 
-        UnityEngine.Debug.LogWarning($"[GazeFollowerRunner][PY-ERR] {e.Data}");
+        RobitLogger.LogWarning($"[GazeFollowerRunner][PY-ERR] {e.Data}");
     }
 
     private void OnProcessExited(object sender, EventArgs e)
     {
-        UnityEngine.Debug.Log("[GazeFollowerRunner] Gaze process exited.");
+        RobitLogger.Log("[GazeFollowerRunner] Gaze process exited.");
     }
 
     private void CleanupProcessHandlers()
@@ -204,7 +204,7 @@ public class GazeFollowerRunner : MonoBehaviour
         if (!TryResolveEnvFilePath(envFileName, out string envPath, out string details))
         {
             if (logResolvedPaths)
-                UnityEngine.Debug.Log("[GazeFollowerRunner] Env file not found. Using inspector values.\n" + details);
+                RobitLogger.Log("[GazeFollowerRunner] Env file not found. Using inspector values.\n" + details);
             return;
         }
 
@@ -218,7 +218,7 @@ public class GazeFollowerRunner : MonoBehaviour
         if (values.TryGetValue("GAZE_SCRIPT_NAME", out string script) && !string.IsNullOrWhiteSpace(script))
             scriptFileNameConfig = script.Trim();
 
-        UnityEngine.Debug.Log($"[GazeFollowerRunner] Loaded env overrides from: {envPath}");
+        RobitLogger.Log($"[GazeFollowerRunner] Loaded env overrides from: {envPath}");
     }
 
     private static Dictionary<string, string> ParseEnvFile(string envPath)
@@ -361,3 +361,4 @@ public class GazeFollowerRunner : MonoBehaviour
         return foundPath != null;
     }
 }
+

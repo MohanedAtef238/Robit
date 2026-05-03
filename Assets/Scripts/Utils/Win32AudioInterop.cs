@@ -93,7 +93,7 @@ public static class Win32AudioInterop
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"[Win32AudioInterop] GetVolume failed: {e.Message}");
+            RobitLogger.LogWarning($"[Win32AudioInterop] GetVolume failed: {e.Message}");
             return 0.5f;
         }
     }
@@ -110,7 +110,7 @@ public static class Win32AudioInterop
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"[Win32AudioInterop] SetVolume failed: {e.Message}");
+            RobitLogger.LogWarning($"[Win32AudioInterop] SetVolume failed: {e.Message}");
         }
     }
 
@@ -125,7 +125,7 @@ public static class Win32AudioInterop
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"[Win32AudioInterop] GetMute failed: {e.Message}");
+            RobitLogger.LogWarning($"[Win32AudioInterop] GetMute failed: {e.Message}");
             return false;
         }
     }
@@ -141,7 +141,8 @@ public static class Win32AudioInterop
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"[Win32AudioInterop] SetMute failed: {e.Message}");
+            RobitLogger.LogWarning($"[Win32AudioInterop] SetMute failed: {e.Message}");
         }
     }
 }
+

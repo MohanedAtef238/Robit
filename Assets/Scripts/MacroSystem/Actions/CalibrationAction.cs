@@ -8,6 +8,7 @@ public class CalibrationAction : IMacroAction
     public void Execute()
     {
         // TODO: wire into GazeCalibration when eye-tracking is connected
-        Debug.Log("[MacroButton] Executing: calibration");
+        RobitLogger.Log("[MacroButton] Executing: calibration");
     }
 }
+

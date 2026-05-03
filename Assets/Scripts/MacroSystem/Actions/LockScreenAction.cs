@@ -8,3 +8,4 @@ public class LockScreenAction : KeyComboMacroAction
     protected override VirtualKeys MainKey => VirtualKeys.L;
     protected override bool FocusBehind => false;
 }
+

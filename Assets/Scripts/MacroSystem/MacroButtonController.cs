@@ -97,7 +97,7 @@ public class MacroButtonController : MonoBehaviour
         uiDocument = GetComponent<UIDocument>();
         if (uiDocument == null || uiDocument.rootVisualElement == null)
         {
-            Debug.LogError("[MacroButtonController] UIDocument or root is null");
+            RobitLogger.LogError("[MacroButtonController] UIDocument or root is null");
             return;
         }
 
@@ -112,7 +112,7 @@ public class MacroButtonController : MonoBehaviour
         {
             slotButtons[i] = root.Q<MacroButton>($"BtnSlot{i}");
             if (slotButtons[i] == null)
-                Debug.LogWarning($"[MacroButtonController] BtnSlot{i} not found in UXML");
+                RobitLogger.LogWarning($"[MacroButtonController] BtnSlot{i} not found in UXML");
         }
 
         prevBtn = root.Q<Button>("BtnWheelPrev");
@@ -143,7 +143,7 @@ public class MacroButtonController : MonoBehaviour
 
         ApplyLayout();
         HideImmediate();
-        Debug.Log($"[MacroButtonController] Ready -- {Groups.Length} groups, {Groups.Length * SlotsPerPage} total macros");
+        RobitLogger.Log($"[MacroButtonController] Ready -- {Groups.Length} groups, {Groups.Length * SlotsPerPage} total macros");
     }
 
     void OnDisable()
@@ -346,36 +346,40 @@ public class MacroButtonController : MonoBehaviour
 
     // ── Icon management ─────────────────────────────────────────────
 
+    private static readonly System.Collections.Generic.Dictionary<MacroActionType, string> actionIconMap = 
+        new System.Collections.Generic.Dictionary<MacroActionType, string>
+    {
+        { MacroActionType.Back, "icon-back" },
+        { MacroActionType.Forward, "icon-forward" },
+        { MacroActionType.Refresh, "icon-refresh" },
+        { MacroActionType.NewTab, "icon-new-tab" },
+        { MacroActionType.CloseTab, "icon-close-tab" },
+        { MacroActionType.SwitchWindow, "icon-switch-window" },
+        { MacroActionType.ZoomIn, "icon-zoom-in" },
+        { MacroActionType.ZoomOut, "icon-zoom-out" },
+        { MacroActionType.Screenshot, "icon-screenshot" },
+        { MacroActionType.PageUp, "icon-page-up" },
+        { MacroActionType.PageDown, "icon-page-down" },
+        { MacroActionType.ReturnToDesktop, "icon-home" },
+        { MacroActionType.SnapLeft, "icon-snap-left" },
+        { MacroActionType.SnapRight, "icon-snap-right" },
+        { MacroActionType.MaximizeRestore, "icon-maximize" },
+        { MacroActionType.Minimize, "icon-minimize" },
+        { MacroActionType.CloseWindow, "icon-close-window" },
+        { MacroActionType.Undo, "icon-undo" },
+        { MacroActionType.Redo, "icon-redo" },
+        { MacroActionType.FindOnPage, "icon-find" },
+        { MacroActionType.HomeDashboard, "icon-home" },
+        { MacroActionType.AppCycler, "icon-switch-window" },
+        { MacroActionType.Settings, "icon-settings" }
+    };
+
     private string GetIconClass(MacroActionType type)
     {
-        switch (type)
-        {
-            case MacroActionType.Back: return "icon-back";
-            case MacroActionType.Forward: return "icon-forward";
-            case MacroActionType.Refresh: return "icon-refresh";
-            case MacroActionType.NewTab: return "icon-new-tab";
-            case MacroActionType.CloseTab: return "icon-close-tab";
-            case MacroActionType.SwitchWindow: return "icon-switch-window";
-            case MacroActionType.ZoomIn: return "icon-zoom-in";
-            case MacroActionType.ZoomOut: return "icon-zoom-out";
-            case MacroActionType.Screenshot: return "icon-screenshot";
-            case MacroActionType.PageUp: return "icon-page-up";
-            case MacroActionType.PageDown: return "icon-page-down";
-            case MacroActionType.ReturnToDesktop: return "icon-home";
-            case MacroActionType.SnapLeft: return "icon-snap-left";
-            case MacroActionType.SnapRight: return "icon-snap-right";
-            case MacroActionType.MaximizeRestore: return "icon-maximize";
-            case MacroActionType.Minimize: return "icon-minimize";
-            case MacroActionType.CloseWindow: return "icon-close-window";
-            case MacroActionType.Undo: return "icon-undo";
-            case MacroActionType.Redo: return "icon-redo";
-            case MacroActionType.MuteToggle: return Win32AudioInterop.GetMute() ? "icon-voice" : "icon-mute";
-            case MacroActionType.FindOnPage: return "icon-find";
-            case MacroActionType.HomeDashboard: return "icon-home";
-            case MacroActionType.AppCycler: return "icon-switch-window";
-            case MacroActionType.Settings: return "icon-settings";
-            default: return null;
-        }
+        if (type == MacroActionType.MuteToggle)
+            return Win32AudioInterop.GetMute() ? "icon-voice" : "icon-mute";
+
+        return actionIconMap.TryGetValue(type, out string iconClass) ? iconClass : null;
     }
 
     private void SetButtonIcon(MacroButton btn, MacroActionType actionType)
@@ -820,3 +824,4 @@ public class MacroButtonController : MonoBehaviour
         el.style.transitionDelay = StyleKeyword.Null;
     }
 }
+

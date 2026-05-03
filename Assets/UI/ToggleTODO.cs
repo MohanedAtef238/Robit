@@ -23,3 +23,4 @@ public class TogglePanelColor : MonoBehaviour, IPointerClickHandler
         panelImage.color = isColorA ? colorA : colorB;
     }
 }
+

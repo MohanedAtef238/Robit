@@ -9,6 +9,7 @@ public class MuteToggleAction : IMacroAction
     {
         bool muted = Win32AudioInterop.GetMute();
         Win32AudioInterop.SetMute(!muted);
-        Debug.Log($"[MacroButton] Executing: mute_toggle → {(!muted ? "muted" : "unmuted")}");
+        RobitLogger.Log($"[MacroButton] Executing: mute_toggle → {(!muted ? "muted" : "unmuted")}");
     }
 }
+

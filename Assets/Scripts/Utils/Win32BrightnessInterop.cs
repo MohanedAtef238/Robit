@@ -71,7 +71,7 @@ public static class Win32BrightnessInterop
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"[Win32BrightnessInterop] TryGetPhysicalMonitor failed: {e.Message}");
+            RobitLogger.LogWarning($"[Win32BrightnessInterop] TryGetPhysicalMonitor failed: {e.Message}");
             return false;
         }
     }
@@ -94,7 +94,7 @@ public static class Win32BrightnessInterop
     {
         if (!TryGetPhysicalMonitor(out var monitor))
         {
-            Debug.LogWarning("[Win32BrightnessInterop] Could not acquire physical monitor. " +
+            RobitLogger.LogWarning("[Win32BrightnessInterop] Could not acquire physical monitor. " +
                              "Brightness control may not be supported on this display.");
             return -1;
         }
@@ -106,7 +106,7 @@ public static class Win32BrightnessInterop
                 if (max == min) return (int)cur;
                 return Mathf.RoundToInt(((float)(cur - min) / (max - min)) * 100f);
             }
-            Debug.LogWarning("[Win32BrightnessInterop] GetMonitorBrightness returned false.");
+            RobitLogger.LogWarning("[Win32BrightnessInterop] GetMonitorBrightness returned false.");
             return -1;
         }
         finally
@@ -122,14 +122,14 @@ public static class Win32BrightnessInterop
 
         if (!TryGetPhysicalMonitor(out var monitor))
         {
-            Debug.LogWarning("[Win32BrightnessInterop] Could not acquire physical monitor.");
+            RobitLogger.LogWarning("[Win32BrightnessInterop] Could not acquire physical monitor.");
             return false;
         }
         try
         {
             if (!GetMonitorBrightness(monitor.hPhysicalMonitor, out uint min, out _, out uint max))
             {
-                Debug.LogWarning("[Win32BrightnessInterop] GetMonitorBrightness failed, cannot set brightness.");
+                RobitLogger.LogWarning("[Win32BrightnessInterop] GetMonitorBrightness failed, cannot set brightness.");
                 return false;
             }
 
@@ -137,7 +137,7 @@ public static class Win32BrightnessInterop
             uint mapped = (uint)(min + (max - min) * (value / 100f));
             bool ok = SetMonitorBrightness(monitor.hPhysicalMonitor, mapped);
             if (!ok)
-                Debug.LogWarning("[Win32BrightnessInterop] SetMonitorBrightness returned false.");
+                RobitLogger.LogWarning("[Win32BrightnessInterop] SetMonitorBrightness returned false.");
             return ok;
         }
         finally
@@ -152,3 +152,4 @@ public static class Win32BrightnessInterop
         return GetBrightness() >= 0;
     }
 }
+

@@ -19,17 +19,17 @@ public class UIManager : MonoBehaviour
         if (flowerButton != null)
         {
             flowerButton.clicked += OnFlowerButtonClicked;
-            Debug.Log("FlowerButton found and linked!");
+            RobitLogger.Log("FlowerButton found and linked!");
         }
         else
         {
-            Debug.LogError("UIManager: FlowerButton not found in Main Menu Document!");
+            RobitLogger.LogError("UIManager: FlowerButton not found in Main Menu Document!");
         }
     }
 
     void OnFlowerButtonClicked()
     {
-        Debug.Log("FlowerButton was clicked!");
+        RobitLogger.Log("FlowerButton was clicked!");
 
         // 1. CHANGE COLOR (The Debug Check)
         // This turns the button background green

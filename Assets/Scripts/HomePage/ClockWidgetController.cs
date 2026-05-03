@@ -86,7 +86,7 @@ public class ClockWidgetController : MonoBehaviour
 
         if (request.result != UnityWebRequest.Result.Success)
         {
-            Debug.LogWarning($"[ClockWidget] Weather request failed: {request.error}");
+            RobitLogger.LogWarning($"[ClockWidget] Weather request failed: {request.error}");
             if (statusLabel != null) statusLabel.text = "Error";
             if (locationLabel != null) locationLabel.text = fallbackCity;
             yield break;
@@ -96,7 +96,7 @@ public class ClockWidgetController : MonoBehaviour
 
         if (json.Contains("\"cod\":401"))
         {
-            Debug.LogWarning("[ClockWidget] Invalid weather API key.");
+            RobitLogger.LogWarning("[ClockWidget] Invalid weather API key.");
             if (statusLabel != null) statusLabel.text = "API Key Error";
             yield break;
         }
@@ -104,7 +104,7 @@ public class ClockWidgetController : MonoBehaviour
         var data = JsonUtility.FromJson<WeatherResponse>(json);
         if (data?.main == null || data.weather == null || data.weather.Length == 0)
         {
-            Debug.LogWarning("[ClockWidget] Failed to parse weather data.");
+            RobitLogger.LogWarning("[ClockWidget] Failed to parse weather data.");
             if (statusLabel != null) statusLabel.text = "Parse Error";
             yield break;
         }
@@ -120,3 +120,4 @@ public class ClockWidgetController : MonoBehaviour
     [Serializable] public class Weather { public string description; public string icon; }
     [Serializable] public class Main { public float temp; }
 }
+

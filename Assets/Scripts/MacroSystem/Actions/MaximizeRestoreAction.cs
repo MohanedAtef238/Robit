@@ -7,3 +7,4 @@ public class MaximizeRestoreAction : KeyComboMacroAction
     protected override VirtualKeys[] Modifiers => new[] { VirtualKeys.LeftWindows };
     protected override VirtualKeys MainKey => VirtualKeys.Up;
 }
+

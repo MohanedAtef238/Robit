@@ -71,6 +71,7 @@ public abstract class KeyComboMacroAction : IMacroAction
                 keybd_event((byte)mods[i], 0, Win32Interop.KEYEVENTF_KEYUP, UIntPtr.Zero);
         });
 #endif
-        Debug.Log($"[MacroButton] Executing: {ActionId}");
+        RobitLogger.Log($"[MacroButton] Executing: {ActionId}");
     }
 }
+

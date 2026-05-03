@@ -39,3 +39,4 @@ public enum MacroActionType
     // Legacy (kept for compatibility)
     Calibration,
 }
+

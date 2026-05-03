@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UIElements;
@@ -19,7 +19,7 @@ public class GeminiChatWidget : MonoBehaviour
     {
         if (uiDocument == null)
         {
-            Debug.LogError("UIDocument not assigned!");
+            RobitLogger.LogError("UIDocument not assigned!");
             return;
         }
 
@@ -31,7 +31,7 @@ public class GeminiChatWidget : MonoBehaviour
 
         if (inputDialogueField == null || outputDialogueLabel == null || inputButton == null)
         {
-            Debug.LogError("One or more UI elements not found! Check names in UI Builder.");
+            RobitLogger.LogError("One or more UI elements not found! Check names in UI Builder.");
             return;
         }
 
@@ -116,7 +116,7 @@ public class GeminiChatWidget : MonoBehaviour
 
         if (request.result != UnityWebRequest.Result.Success)
         {
-            Debug.LogError($"Gemini API Error: {request.result}\n{request.downloadHandler.text}");
+            RobitLogger.LogError($"Gemini API Error: {request.result}\n{request.downloadHandler.text}");
             outputDialogueLabel.text = "Error getting response. Check console.";
             yield break;
         }
@@ -150,7 +150,7 @@ public class GeminiChatWidget : MonoBehaviour
         }
         catch (System.Exception ex)
         {
-            Debug.LogWarning("Failed to parse Gemini response: " + ex);
+            RobitLogger.LogWarning("Failed to parse Gemini response: " + ex);
         }
         return "No response";
     }

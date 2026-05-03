@@ -1,13 +1,14 @@
 using NUnit.Framework;
 using UnityEngine;
 using System.Collections.Generic;
+using Robit.LauncherSystem;
 
 namespace Robit.Tests
 {
     public class AppLauncherTests
     {
         private GameObject _launcherObject;
-        private AppLauncher _launcher;
+        private global::AppLauncher _launcher;
         private MockProcessRunner _mockRunner;
         private MockSceneLoader _mockLoader;
 
@@ -92,3 +93,4 @@ namespace Robit.Tests
         }
     }
 }
+

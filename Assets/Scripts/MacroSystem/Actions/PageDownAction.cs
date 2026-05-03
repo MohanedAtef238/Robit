@@ -8,3 +8,4 @@ public class PageDownAction : KeyComboMacroAction
     protected override VirtualKeys[] Modifiers => Array.Empty<VirtualKeys>();
     protected override VirtualKeys MainKey => VirtualKeys.Next;
 }
+

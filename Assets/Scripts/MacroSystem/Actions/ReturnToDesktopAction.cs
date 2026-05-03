@@ -15,11 +15,12 @@ public class ReturnToDesktopAction : IMacroAction
         // }
         // else
         // {
-        //     Debug.LogWarning("[ReturnToDesktopAction] AppLauncher.Instance is null.");
+        //     RobitLogger.LogWarning("[ReturnToDesktopAction] AppLauncher.Instance is null.");
         // }
 
         SceneManager.LoadScene("DemoScene");
 
-        Debug.Log("[MacroButton] Executing: return_to_desktop");
+        RobitLogger.Log("[MacroButton] Executing: return_to_desktop");
     }
 }
+

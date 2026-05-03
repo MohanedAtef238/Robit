@@ -4,11 +4,12 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 using System.IO;
+using Robit.LauncherSystem;
 
 public class AppLauncher : MonoBehaviour
 {
     public static AppLauncher Instance;
-    private Process currentProcess;
+    private IProcess currentProcess;
     private IProcessRunner _processRunner = new WindowsProcessRunner();
     private ISceneLoader _sceneLoader = new UnitySceneLoader();
 
@@ -37,7 +38,7 @@ public class AppLauncher : MonoBehaviour
         }
     }
 
-    public Process CurrentProcess => currentProcess;
+    public IProcess CurrentProcess => currentProcess;
 
     public void LaunchApplication(string path, string workingDirectory)
     {
@@ -54,7 +55,7 @@ public class AppLauncher : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            UnityEngine.Debug.LogError($"Failed to launch application: {path}, Error: {e.Message}");
+            RobitLogger.LogError($"Failed to launch application: {path}, Error: {e.Message}");
         }
     }
 
@@ -78,7 +79,7 @@ public class AppLauncher : MonoBehaviour
         if (macroCtrl != null)
             macroCtrl.HideWithShrink();
 
-        UnityEngine.Debug.Log("[AppLauncher] Returned to desktop.");
+        RobitLogger.Log("[AppLauncher] Returned to desktop.");
     }
 
     public void CloseCurrentApp()
@@ -91,7 +92,7 @@ public class AppLauncher : MonoBehaviour
             }
             catch (Exception e)
             {
-                UnityEngine.Debug.LogWarning($"Failed to close process gracefully: {e.Message}");
+                RobitLogger.LogWarning($"Failed to close process gracefully: {e.Message}");
             }
             finally
             {
@@ -110,7 +111,8 @@ public class AppLauncher : MonoBehaviour
     {   
         yield return null;
         _sceneLoader.LoadScene("MainScene");
-        UnityEngine.Debug.Log("[AppLauncher] Returning to Home.");
+        RobitLogger.Log("[AppLauncher] Returning to Home.");
     }
 
 }
+

@@ -90,7 +90,7 @@ public class HomeBackgroundBlurController : MonoBehaviour
     {
         if (targetCamera == null)
         {
-            Debug.LogWarning("[HomeBackgroundBlur] No camera found; blur volume can still exist but may not render.");
+            RobitLogger.LogWarning("[HomeBackgroundBlur] No camera found; blur volume can still exist but may not render.");
             return;
         }
 

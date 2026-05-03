@@ -55,28 +55,27 @@ public class AppLauncherUIToolkit : MonoBehaviour
         if (panelVisible) Hide(); else Show();
     }
 
-    IEnumerator Start()
+    private void SetupWindow()
     {
         WindowManager.Initialize();
-
-        // HomeScene needs an interactive (non-transparent) window
-        // OverlayScene leaves it in click-through mode before loading us.
         WindowManager.SetClickThrough(false);
         WindowManager.SetAcrylicBlur(true);
 
-        // Ensure the camera is transparent so we can see the Acrylic
         var cam = Camera.main;
         if (cam != null)
         {
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0, 0, 0, 0);
         }
+    }
 
+    private bool BindUIElements()
+    {
         uiDocument = GetComponent<UIDocument>();
         if (uiDocument == null || uiDocument.rootVisualElement == null)
         {
-            Debug.LogError("[AppLauncherUIToolkit] UIDocument or root is null");
-            yield break;
+            RobitLogger.LogError("[AppLauncherUIToolkit] UIDocument or root is null");
+            return false;
         }
 
         rootParams = uiDocument.rootVisualElement;
@@ -88,8 +87,8 @@ public class AppLauncherUIToolkit : MonoBehaviour
 
         if (statusText == null || cardsContainer == null || pageIndicator == null || navLeft == null || navRight == null)
         {
-            Debug.LogError("[AppLauncherUIToolkit] UXML structure is missing required elements.");
-            yield break;
+            RobitLogger.LogError("[AppLauncherUIToolkit] UXML structure is missing required elements.");
+            return false;
         }
 
         navLeft.clicked += () => TryChangePage(-1);
@@ -100,19 +99,19 @@ public class AppLauncherUIToolkit : MonoBehaviour
         backBtn = rootParams.Q<Button>("back-btn");
         if (backBtn != null)
             backBtn.clicked += () => UnityEngine.SceneManagement.SceneManager.LoadScene("OverlayScene");
+            
         pageIndicator.style.display = DisplayStyle.None;
+        return true;
+    }
 
-        // Show the panel immediately so the user sees it loading
-        Show();
-        statusText.text = "⠋  Scanning shortcuts...";
-        spinnerCoroutine = StartCoroutine(AnimateSpinner());
-
+    private void InitializeDesktopParser()
+    {
         if (desktopParser == null)
         {
             desktopParser = FindFirstObjectByType<DesktopParser>();
             if (desktopParser == null)
             {
-                Debug.Log("[AppLauncherUIToolkit] DesktopParser not found in scene. Creating a new one automatically.");
+                RobitLogger.Log("[AppLauncherUIToolkit] DesktopParser not found in scene. Creating a new one automatically.");
                 GameObject parserObj = new GameObject("DesktopParserInstance");
                 desktopParser = parserObj.AddComponent<DesktopParser>();
             }
@@ -122,7 +121,35 @@ public class AppLauncherUIToolkit : MonoBehaviour
         {
             new GameObject("AppLauncher").AddComponent<AppLauncher>();
         }
+    }
 
+    private IEnumerator Start()
+    {
+        SetupWindow();
+
+        if (!BindUIElements()) yield break;
+
+        // Show the panel immediately so the user sees it loading
+        Show();
+        statusText.text = "⠋  Scanning shortcuts...";
+        spinnerCoroutine = StartCoroutine(AnimateSpinner());
+
+        InitializeDesktopParser();
+
+        yield return StartCoroutine(WaitForDesktopParser());
+
+        if (!desktopParser.parsingComplete) yield break;
+
+        RobitLogger.Log($"[AppLauncherUIToolkit] DesktopParser finished with {desktopParser.shortcuts.Count} shortcuts");
+        allShortcuts = new List<ShortcutInfo>(desktopParser.shortcuts);
+
+        if (spinnerCoroutine != null) { StopCoroutine(spinnerCoroutine); spinnerCoroutine = null; }
+
+        yield return StartCoroutine(InitializeCarousel());
+    }
+
+    private IEnumerator WaitForDesktopParser()
+    {
         float timeout = 10f;
         float elapsed = 0f;
 
@@ -135,17 +162,8 @@ public class AppLauncherUIToolkit : MonoBehaviour
         if (!desktopParser.parsingComplete)
         {
             statusText.text = "ERROR: Desktop parsing timed out.";
-            Debug.LogError("[AppLauncherUIToolkit] DesktopParser did not complete in time");
-            yield break;
+            RobitLogger.LogError("[AppLauncherUIToolkit] DesktopParser did not complete in time");
         }
-
-        Debug.Log($"[AppLauncherUIToolkit] DesktopParser finished with {desktopParser.shortcuts.Count} shortcuts after {elapsed:F2}s");
-        allShortcuts = new List<ShortcutInfo>(desktopParser.shortcuts);
-
-        if (spinnerCoroutine != null) { StopCoroutine(spinnerCoroutine); spinnerCoroutine = null; }
-
-        // Populate the carousel — panel already visible, stays visible.
-        yield return StartCoroutine(InitializeCarousel());
     }
 
     private IEnumerator AnimateSpinner()
@@ -165,7 +183,7 @@ public class AppLauncherUIToolkit : MonoBehaviour
         if (allShortcuts.Count == 0)
         {
             statusText.text = "No shortcuts (.lnk files) were found on the User or Public desktops.";
-            Debug.Log(statusText.text);
+            RobitLogger.Log(statusText.text);
             yield break;
         }
 
@@ -266,7 +284,7 @@ public class AppLauncherUIToolkit : MonoBehaviour
 
             if (desktopCardTemplate == null)
             {
-                Debug.LogError("[AppLauncherUIToolkit] Desktop Card Template is not assigned.");
+                RobitLogger.LogError("[AppLauncherUIToolkit] Desktop Card Template is not assigned.");
                 break;
             }
 
@@ -317,7 +335,8 @@ public class AppLauncherUIToolkit : MonoBehaviour
 
     void OnAppCardClick(string path, string workingDirectory)
     {
-        Debug.Log($"[AppLauncherUIToolkit] Launching '{path}'");
+        RobitLogger.Log($"[AppLauncherUIToolkit] Launching '{path}'");
         AppLauncher.Instance.LaunchApplication(path, workingDirectory);
     }
 }
+

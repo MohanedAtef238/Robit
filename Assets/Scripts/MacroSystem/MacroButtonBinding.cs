@@ -5,3 +5,4 @@ public class MacroButtonBinding
     public string buttonName;
     public MacroActionType actionType;
 }
+

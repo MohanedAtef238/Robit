@@ -10,3 +10,4 @@ public interface IInputProvider
     /// Remove all listeners this provider added to the target element.
     void Detach(VisualElement target);
 }
+

@@ -23,3 +23,4 @@ public partial class MacroButton : Button
             InputProvider.Detach(this);
     }
 }
+

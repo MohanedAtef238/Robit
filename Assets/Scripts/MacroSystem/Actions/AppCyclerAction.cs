@@ -15,7 +15,8 @@ public class AppCyclerAction : IMacroAction
         }
         else
         {
-            Debug.LogWarning("[AppCyclerAction] No AppCyclerController found in scene.");
+            RobitLogger.LogWarning("[AppCyclerAction] No AppCyclerController found in scene.");
         }
     }
 }
+

@@ -51,10 +51,68 @@ public class BouncyLifeCycle : MonoBehaviour
 
     
 
+    private Vector3 CalculateNewScale(float addedForward, float addedSqueeze, out Vector3 localDir)
+    {
+        Vector3 newScale = originalScale;
+        switch (scaleAxis)
+        {
+            case BobDirection.X:
+                newScale.x += addedForward; newScale.y -= addedSqueeze; newScale.z -= addedSqueeze;
+                localDir = Vector3.right;
+                break;
+            case BobDirection.Y:
+                newScale.y += addedForward; newScale.x -= addedSqueeze; newScale.z -= addedSqueeze;
+                localDir = Vector3.up;
+                break;
+            default:
+                newScale.z += addedForward; newScale.x -= addedSqueeze; newScale.y -= addedSqueeze;
+                localDir = Vector3.forward;
+                break;
+        }
+        return newScale;
+    }
+
+    private void ApplyDisplacement(Vector3 startModelPos, Vector3[] startEyePositions, Vector3[] startObjPositions, float addedObjScale)
+    {
+        Vector3 displacement = transform.position - startModelPos;
+
+        for (int i = 0; i < eyesToMove.Count; i++)
+        {
+            if (eyesToMove[i] != null) eyesToMove[i].position = startEyePositions[i] + displacement;
+        }
+
+        for (int i = 0; i < objectsToScale.Count; i++)
+        {
+            if (objectsToScale[i] != null)
+            {
+                objectsToScale[i].position = startObjPositions[i] + displacement;
+                objectsToScale[i].localScale = originalObjectScales[i] + (Vector3.one * addedObjScale);
+            }
+        }
+    }
+
+    private void ResetAnimationState(Vector3 startModelPos, Vector3[] startEyePositions, Vector3[] startObjPositions)
+    {
+        transform.localScale = originalScale;
+        transform.position = startModelPos;
+
+        for (int i = 0; i < eyesToMove.Count; i++)
+        {
+            if (eyesToMove[i] != null) eyesToMove[i].position = startEyePositions[i];
+        }
+        for (int i = 0; i < objectsToScale.Count; i++)
+        {
+            if (objectsToScale[i] != null)
+            {
+                objectsToScale[i].position = startObjPositions[i];
+                objectsToScale[i].localScale = originalObjectScales[i];
+            }
+        }
+    }
+
     IEnumerator BobRoutine()
     {
         isAnimating = true;
-        // We use the CURRENT position as the anchor for the displacement
         Vector3 startModelPos = transform.position;
 
         Vector3[] startEyePositions = new Vector3[eyesToMove.Count];
@@ -78,16 +136,7 @@ public class BouncyLifeCycle : MonoBehaviour
             float addedSqueeze = sineWave * stretchSqueeze;
             float addedObjScale = sineWave * scaleObjectsIncrease;
 
-            Vector3 newScale = originalScale;
-            Vector3 localDir = Vector3.forward;
-
-            switch (scaleAxis)
-            {
-                case BobDirection.X: newScale.x += addedForward; newScale.y -= addedSqueeze; newScale.z -= addedSqueeze; localDir = Vector3.right; break;
-                case BobDirection.Y: newScale.y += addedForward; newScale.x -= addedSqueeze; newScale.z -= addedSqueeze; localDir = Vector3.up; break;
-                case BobDirection.Z: newScale.z += addedForward; newScale.x -= addedSqueeze; newScale.y -= addedSqueeze; localDir = Vector3.forward; break;
-            }
-            transform.localScale = newScale;
+            transform.localScale = CalculateNewScale(addedForward, addedSqueeze, out Vector3 localDir);
 
             if (pinBackSide)
             {
@@ -95,43 +144,11 @@ public class BouncyLifeCycle : MonoBehaviour
                 transform.position = startModelPos + (worldMoveDir * (addedForward / 2f));
             }
 
-            Vector3 displacement = transform.position - startModelPos;
-
-            for (int i = 0; i < eyesToMove.Count; i++)
-            {
-                if (eyesToMove[i] != null) eyesToMove[i].position = startEyePositions[i] + displacement;
-            }
-
-            for (int i = 0; i < objectsToScale.Count; i++)
-            {
-                if (objectsToScale[i] != null)
-                {
-                    objectsToScale[i].position = startObjPositions[i] + displacement;
-                    Vector3 objBaseScale = originalObjectScales[i];
-                    objectsToScale[i].localScale = objBaseScale + (Vector3.one * addedObjScale);
-                }
-            }
-
+            ApplyDisplacement(startModelPos, startEyePositions, startObjPositions, addedObjScale);
             yield return null;
         }
 
-        // Final Reset - return to the state before the click
-        transform.localScale = originalScale;
-        transform.position = startModelPos;
-
-        for (int i = 0; i < eyesToMove.Count; i++)
-        {
-            if (eyesToMove[i] != null) eyesToMove[i].position = startEyePositions[i];
-        }
-        for (int i = 0; i < objectsToScale.Count; i++)
-        {
-            if (objectsToScale[i] != null)
-            {
-                objectsToScale[i].position = startObjPositions[i];
-                objectsToScale[i].localScale = originalObjectScales[i];
-            }
-        }
-
+        ResetAnimationState(startModelPos, startEyePositions, startObjPositions);
         isAnimating = false;
     }
 }

@@ -7,3 +7,4 @@ public class CloseTabAction : KeyComboMacroAction
     protected override VirtualKeys[] Modifiers => new[] { VirtualKeys.Control };
     protected override VirtualKeys MainKey => VirtualKeys.W;
 }
+

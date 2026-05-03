@@ -90,3 +90,5 @@ crashlytics-build.properties
 /Assets/Scripts/Editor
 /ProfilerCaptures
 /CodeCoverage
+/Assets/Screenshots
+Assets/Screenshots.meta

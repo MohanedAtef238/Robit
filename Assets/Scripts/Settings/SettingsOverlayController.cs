@@ -21,7 +21,7 @@ public class SettingsOverlayController : MonoBehaviour
     {
         if (uiDocument == null)
         {
-            Debug.LogError("[SettingsOverlay] UIDocument not assigned.");
+            RobitLogger.LogError("[SettingsOverlay] UIDocument not assigned.");
             return;
         }
 
@@ -35,7 +35,7 @@ public class SettingsOverlayController : MonoBehaviour
 
         if (backdrop == null || card == null)
         {
-            Debug.LogError("[SettingsOverlay] Could not find required UI elements.");
+            RobitLogger.LogError("[SettingsOverlay] Could not find required UI elements.");
             return;
         }
 
@@ -80,7 +80,7 @@ public class SettingsOverlayController : MonoBehaviour
 
         WindowManager.SetAcrylicBlur(true);
 
-        Debug.Log("[SettingsOverlay] Opened.");
+        RobitLogger.Log("[SettingsOverlay] Opened.");
     }
 
     /// Closes the settings overlay.
@@ -110,13 +110,13 @@ public class SettingsOverlayController : MonoBehaviour
                 WindowManager.MakeTransparent();
         }
 
-        Debug.Log("[SettingsOverlay] Closed.");
+        RobitLogger.Log("[SettingsOverlay] Closed.");
     }
 
     /// Cleanly exits the application after restoring all hidden windows.
     private void ExitApplication()
     {
-        Debug.Log("[SettingsOverlay] Exit requested — restoring hidden windows and quitting.");
+        RobitLogger.Log("[SettingsOverlay] Exit requested — restoring hidden windows and quitting.");
 
         // Safety: restore any windows the suppressor hid
         HiddenWindowTracker.RestoreAll();
@@ -138,3 +138,4 @@ public class SettingsOverlayController : MonoBehaviour
 
     public bool IsOpen => _isOpen;
 }
+

@@ -16,7 +16,7 @@ public static class WindowManager
         if (unityHwnd == IntPtr.Zero)
         {
             unityHwnd = Win32Interop.GetActiveWindow();
-            Debug.Log($"[WindowManager] Initialized: {unityHwnd}");
+            RobitLogger.Log($"[WindowManager] Initialized: {unityHwnd}");
         }
         #endif
     }
@@ -58,7 +58,7 @@ public static class WindowManager
         
         Win32Interop.SetWindowPos(hWnd, Win32Interop.HWND_TOPMOST, 0, 0, 0, 0, Win32Interop.SWP_NOSIZE | Win32Interop.SWP_NOMOVE | Win32Interop.SWP_FRAMECHANGED);
         
-        Debug.Log("[WindowManager] Transparent");
+        RobitLogger.Log("[WindowManager] Transparent");
         #endif
     }
 
@@ -83,7 +83,7 @@ public static class WindowManager
             SetSystemBackdrop(Win32Interop.DWM_SYSTEMBACKDROP_TYPE.DWMSBT_NONE);
         }
         
-        Debug.Log($"[WindowManager] Modern Acrylic blur {(enabled ? "enabled" : "disabled")}");
+        RobitLogger.Log($"[WindowManager] Modern Acrylic blur {(enabled ? "enabled" : "disabled")}");
         #endif
     }
 
@@ -148,7 +148,7 @@ public static class WindowManager
         Win32Interop.SetForegroundWindow(hWnd);
         Win32Interop.SetActiveWindow(hWnd);
         
-        Debug.Log("[WindowManager] Opaque");
+        RobitLogger.Log("[WindowManager] Opaque");
         #endif
     }
 
@@ -165,7 +165,7 @@ public static class WindowManager
         
         Win32Interop.SetWindowPos(hWnd, Win32Interop.HWND_TOPMOST, 0, 0, windowWidth, windowHeight, Win32Interop.SWP_SHOWWINDOW);
         
-        Debug.Log($"[WindowManager] Window resized to: {windowWidth}x{windowHeight}");
+        RobitLogger.Log($"[WindowManager] Window resized to: {windowWidth}x{windowHeight}");
         #endif
     }
 
@@ -227,16 +227,17 @@ public static class WindowManager
             if (Win32Interop.IsWindowVisible(next) && Win32Interop.GetWindowTextLength(next) > 0 && next != hWnd)
             {
                 Win32Interop.SetForegroundWindow(next);
-                Debug.Log($"[WindowManager] Focused window behind: {next}");
+                RobitLogger.Log($"[WindowManager] Focused window behind: {next}");
                 return true;
             }
             next = Win32Interop.GetWindow(next, Win32Interop.GW_HWNDNEXT);
         }
 
-        Debug.LogWarning("[WindowManager] No visible window found behind Unity");
+        RobitLogger.LogWarning("[WindowManager] No visible window found behind Unity");
         return false;
         #else
         return false;
         #endif
     }
 }
+

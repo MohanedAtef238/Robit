@@ -10,7 +10,7 @@ public class UIClickHandler : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         transparency = FindFirstObjectByType<Transparency>();
         if (transparency == null)
         {
-            Debug.LogError("Transparency script not found in the scene! Make sure it's attached to a GameObject.");
+            RobitLogger.LogError("Transparency script not found in the scene! Make sure it's attached to a GameObject.");
         }
     }
 
@@ -28,3 +28,4 @@ public class UIClickHandler : MonoBehaviour, IPointerEnterHandler, IPointerExitH
             transparency.SetClickThrough(true);
     }
 }
+

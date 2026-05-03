@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Collections.Generic;
+using Robit.LauncherSystem;
 
 public class MockProcessRunner : IProcessRunner
 {
@@ -8,7 +9,7 @@ public class MockProcessRunner : IProcessRunner
     public bool CloseCalled { get; private set; }
     public bool ShouldFail { get; set; }
 
-    public Process Start(string path, string workingDirectory)
+    public IProcess Start(string path, string workingDirectory)
     {
         if (ShouldFail) throw new System.Exception("Mock Launch Failure");
         LastStartedPath = path;
@@ -16,7 +17,7 @@ public class MockProcessRunner : IProcessRunner
         return null; // We return null because we don't want to spawn a real process
     }
 
-    public void Close(Process process)
+    public void Close(IProcess process)
     {
         CloseCalled = true;
     }
@@ -31,3 +32,4 @@ public class MockSceneLoader : ISceneLoader
         LastLoadedScene = sceneName;
     }
 }
+

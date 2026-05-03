@@ -30,7 +30,7 @@ public class WindowsPopupSuppressor : MonoBehaviour
         if (_running) return;
         _running = true;
         _pollRoutine = StartCoroutine(PollLoop());
-        Debug.Log("[PopupSuppressor] Started.");
+        RobitLogger.Log("[PopupSuppressor] Started.");
     }
 
     public void StopSuppressing()
@@ -42,7 +42,7 @@ public class WindowsPopupSuppressor : MonoBehaviour
             _pollRoutine = null;
         }
         HiddenWindowTracker.RestoreAll();
-        Debug.Log("[PopupSuppressor] Stopped — all hidden windows restored.");
+        RobitLogger.Log("[PopupSuppressor] Stopped — all hidden windows restored.");
     }
 
     private IEnumerator PollLoop()
@@ -100,7 +100,7 @@ public class WindowsPopupSuppressor : MonoBehaviour
     {
         HiddenWindowTracker.Track(hwnd);
         Win32Interop.ShowWindow(hwnd, Win32Interop.SW_HIDE);
-        Debug.Log($"[PopupSuppressor] Hid window: {identifier} (0x{hwnd:X})");
+        RobitLogger.Log($"[PopupSuppressor] Hid window: {identifier} (0x{hwnd:X})");
     }
 
     private void OnDestroy()
@@ -108,3 +108,4 @@ public class WindowsPopupSuppressor : MonoBehaviour
         if (_running) StopSuppressing();
     }
 }
+

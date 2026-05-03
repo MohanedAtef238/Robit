@@ -198,11 +198,11 @@ namespace Doji.Ico {
         public BMPImage LoadBMP(BinaryReader aReader) {
             BMPImage bmp = new BMPImage();
             if (!ReadAsIcoBitmap && !ReadFileHeader(aReader, ref bmp.header)) {
-                Debug.LogError("Not a BMP file");
+                RobitLogger.LogError("Not a BMP file");
                 return null;
             }
             if (!ReadInfoHeader(aReader, ref bmp.info)) {
-                Debug.LogError("Unsupported header format");
+                RobitLogger.LogError("Unsupported header format");
                 return null;
             }
             if (bmp.info.compressionMethod != BMPComressionMode.BI_RGB
@@ -211,7 +211,7 @@ namespace Doji.Ico {
                 && bmp.info.compressionMethod != BMPComressionMode.BI_RLE4
                 && bmp.info.compressionMethod != BMPComressionMode.BI_RLE8
                 ) {
-                Debug.LogError("Unsupported image format: " + bmp.info.compressionMethod);
+                RobitLogger.LogError("Unsupported image format: " + bmp.info.compressionMethod);
                 return null;
             }
             long offset = 14 + bmp.info.size;
@@ -253,7 +253,7 @@ namespace Doji.Ico {
             else if (uncompressed && bmp.info.nBitsPerPixel <= 8 && bmp.palette != null)
                 ReadIndexedImage(aReader, bmp);
             else {
-                Debug.LogError("Unsupported file format: " + bmp.info.compressionMethod + " BPP: " + bmp.info.nBitsPerPixel);
+                RobitLogger.LogError("Unsupported file format: " + bmp.info.compressionMethod + " BPP: " + bmp.info.nBitsPerPixel);
                 return null;
             }
             return bmp;
@@ -265,7 +265,7 @@ namespace Doji.Ico {
             int h = Mathf.Abs(bmp.info.height);
             Color32[] data = bmp.imageData = new Color32[w * h];
             if (aReader.BaseStream.Position + w * h * 4 > aReader.BaseStream.Length) {
-                Debug.LogError("Unexpected end of file.");
+                RobitLogger.LogError("Unexpected end of file.");
                 return;
             }
             int shiftR = GetShiftCount(bmp.info.rMask);
@@ -294,7 +294,7 @@ namespace Doji.Ico {
             int pad = rowLength - w * 3;
             Color32[] data = bmp.imageData = new Color32[w * h];
             if (aReader.BaseStream.Position + count > aReader.BaseStream.Length) {
-                Debug.LogError("Unexpected end of file. (Have " + (aReader.BaseStream.Position + count) + " bytes, expected " + aReader.BaseStream.Length + " bytes)");
+                RobitLogger.LogError("Unexpected end of file. (Have " + (aReader.BaseStream.Position + count) + " bytes, expected " + aReader.BaseStream.Length + " bytes)");
                 return;
             }
             int shiftR = GetShiftCount(bmp.info.rMask);
@@ -321,7 +321,7 @@ namespace Doji.Ico {
             int pad = rowLength - w * 2;
             Color32[] data = bmp.imageData = new Color32[w * h];
             if (aReader.BaseStream.Position + count > aReader.BaseStream.Length) {
-                Debug.LogError("Unexpected end of file. (Have " + (aReader.BaseStream.Position + count) + " bytes, expected " + aReader.BaseStream.Length + " bytes)");
+                RobitLogger.LogError("Unexpected end of file. (Have " + (aReader.BaseStream.Position + count) + " bytes, expected " + aReader.BaseStream.Length + " bytes)");
                 return;
             }
             int shiftR = GetShiftCount(bmp.info.rMask);
@@ -353,7 +353,7 @@ namespace Doji.Ico {
             int pad = rowLength - (w * bitCount + 7) / 8;
             Color32[] data = bmp.imageData = new Color32[w * h];
             if (aReader.BaseStream.Position + count > aReader.BaseStream.Length) {
-                Debug.LogError("Unexpected end of file. (Have " + (aReader.BaseStream.Position + count) + " bytes, expected " + aReader.BaseStream.Length + " bytes)");
+                RobitLogger.LogError("Unexpected end of file. (Have " + (aReader.BaseStream.Position + count) + " bytes, expected " + aReader.BaseStream.Length + " bytes)");
                 return;
             }
             BitStreamReader bitReader = new BitStreamReader(aReader);
@@ -361,7 +361,7 @@ namespace Doji.Ico {
                 for (int x = 0; x < w; x++) {
                     int v = (int)bitReader.ReadBits(bitCount);
                     if (v >= bmp.palette.Count) {
-                        Debug.LogError("Indexed bitmap has indices greater than it's color palette");
+                        RobitLogger.LogError("Indexed bitmap has indices greater than it's color palette");
                         return;
                     }
                     data[x + y * w] = bmp.palette[v];
@@ -379,7 +379,7 @@ namespace Doji.Ico {
             for (int y = 0; y < h; y++) {
                 for (int x = 0; x < w; x++) {
                     byte b = bitReader.ReadBit();
-                    //Debug.Log(v);
+                    //RobitLogger.Log(v);
                     data[x + y * w].a = (byte)(b == 0 ? 255 : 0);
                 }
                 bitReader.Flush();
@@ -582,7 +582,7 @@ namespace Doji.Ico {
             compression = (BMPComressionMode)enumValue;
             bool defined = Enum.IsDefined(typeof(BMPComressionMode), enumValue);
             if (!defined) {
-                Debug.LogError(enumValue + " is not a supported compression mode.");
+                RobitLogger.LogError(enumValue + " is not a supported compression mode.");
             }
             return defined;
         }

@@ -8,3 +8,4 @@ public class PageUpAction : KeyComboMacroAction
     protected override VirtualKeys[] Modifiers => Array.Empty<VirtualKeys>();
     protected override VirtualKeys MainKey => VirtualKeys.Prior;
 }
+

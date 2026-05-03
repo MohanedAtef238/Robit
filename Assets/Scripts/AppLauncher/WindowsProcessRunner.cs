@@ -1,24 +1,28 @@
 using System.Diagnostics;
 using System.IO;
 
-public class WindowsProcessRunner : IProcessRunner
+namespace Robit.LauncherSystem
 {
-    public Process Start(string path, string workingDirectory)
+    public class WindowsProcessRunner : IProcessRunner
     {
-        ProcessStartInfo startInfo = new ProcessStartInfo(path);
-        if (!string.IsNullOrEmpty(workingDirectory) && Directory.Exists(workingDirectory))
+        public IProcess Start(string path, string workingDirectory)
         {
-            startInfo.WorkingDirectory = workingDirectory;
+            ProcessStartInfo startInfo = new ProcessStartInfo(path);
+            if (!string.IsNullOrEmpty(workingDirectory) && Directory.Exists(workingDirectory))
+            {
+                startInfo.WorkingDirectory = workingDirectory;
+            }
+            Process p = Process.Start(startInfo);
+            return p != null ? new WindowsProcess(p) : null;
         }
-        return Process.Start(startInfo);
-    }
 
-    public void Close(Process process)
-    {
-        if (process != null && !process.HasExited)
+        public void Close(IProcess process)
         {
-            process.CloseMainWindow();
-            process.Dispose();
+            if (process != null && !process.HasExited)
+            {
+                process.Dispose();
+            }
         }
     }
 }
+

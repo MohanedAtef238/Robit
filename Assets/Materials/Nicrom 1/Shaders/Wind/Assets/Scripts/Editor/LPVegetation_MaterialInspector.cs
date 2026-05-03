@@ -1,4 +1,4 @@
-﻿using UnityEditor;
+using UnityEditor;
 using UnityEngine;
 
 namespace Nicrom {
@@ -139,3 +139,4 @@ namespace Nicrom {
         }
     }
 }
+

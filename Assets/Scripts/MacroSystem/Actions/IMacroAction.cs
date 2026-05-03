@@ -10,3 +10,4 @@ public interface IMacroAction
     /// this is the action thats going to be executed when the button is pressed, overriden for each new macro
     void Execute();
 }
+

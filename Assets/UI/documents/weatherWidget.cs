@@ -1,4 +1,4 @@
-ï»¿using System;
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -64,8 +64,8 @@ public class DesktopWidget : MonoBehaviour
         float minute = now.Minute + now.Second / 60f;
         float hour = (now.Hour % 12) + minute / 60f;
 
-        float targetMinuteAngle = minute * 6f; // 0Â° at top
-        float targetHourAngle = hour * 30f;    // 0Â° at top
+        float targetMinuteAngle = minute * 6f; // 0° at top
+        float targetHourAngle = hour * 30f;    // 0° at top
 
         // Smooth interpolation
         currentMinuteAngle = Mathf.LerpAngle(currentMinuteAngle, targetMinuteAngle, Time.deltaTime * 8f);
@@ -104,18 +104,18 @@ public class DesktopWidget : MonoBehaviour
 
         if (request.result != UnityWebRequest.Result.Success)
         {
-            Debug.LogError("Weather request failed: " + request.error);
+            RobitLogger.LogError("Weather request failed: " + request.error);
             if (statusLabel != null) statusLabel.text = "Error";
             if (locationLabel != null) locationLabel.text = "Unknown";
             yield break;
         }
 
         string json = request.downloadHandler.text;
-        Debug.Log("Weather JSON: " + json);
+        RobitLogger.Log("Weather JSON: " + json);
 
         if (json.Contains("\"cod\":401"))
         {
-            Debug.LogError("Invalid API Key!");
+            RobitLogger.LogError("Invalid API Key!");
             if (statusLabel != null) statusLabel.text = "API Key Error";
             yield break;
         }
@@ -124,7 +124,7 @@ public class DesktopWidget : MonoBehaviour
 
         if (weatherData == null || weatherData.main == null || weatherData.weather == null || weatherData.weather.Length == 0)
         {
-            Debug.LogError("Failed to parse weather data");
+            RobitLogger.LogError("Failed to parse weather data");
             if (statusLabel != null) statusLabel.text = "Parse Error";
             yield break;
         }
@@ -132,7 +132,7 @@ public class DesktopWidget : MonoBehaviour
         // Update labels
         if (locationLabel != null) locationLabel.text = string.IsNullOrEmpty(weatherData.name) ? fallbackCity : weatherData.name;
         if (degreeLabel != null) degreeLabel.text = Mathf.RoundToInt(weatherData.main.temp).ToString();
-        if (celsiusLabel != null) celsiusLabel.text = "Â°C";
+        if (celsiusLabel != null) celsiusLabel.text = "°C";
         if (statusLabel != null) statusLabel.text = weatherData.weather[0].description;
     }
 

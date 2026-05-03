@@ -157,7 +157,7 @@ public static class Win32DisplayScaleInterop
     public static int GetScalePercent()
     {
 #if !(UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN)
-        Debug.LogWarning("[Win32DisplayScaleInterop] Only supported on Windows.");
+        RobitLogger.LogWarning("[Win32DisplayScaleInterop] Only supported on Windows.");
         return 100;
 #else
         try
@@ -186,7 +186,7 @@ public static class Win32DisplayScaleInterop
         }
         catch (Exception ex)
         {
-            Debug.LogWarning($"[Win32DisplayScaleInterop] GetScalePercent: {ex.Message}");
+            RobitLogger.LogWarning($"[Win32DisplayScaleInterop] GetScalePercent: {ex.Message}");
         }
         return 100;
 #endif
@@ -198,12 +198,12 @@ public static class Win32DisplayScaleInterop
     public static bool SetScalePercent(int percent)
     {
 #if !(UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN)
-        Debug.LogWarning("[Win32DisplayScaleInterop] Only supported on Windows.");
+        RobitLogger.LogWarning("[Win32DisplayScaleInterop] Only supported on Windows.");
         return false;
 #else
         if (Array.IndexOf(SupportedPercents, percent) < 0)
         {
-            Debug.LogWarning($"[Win32DisplayScaleInterop] Unsupported scale: {percent}%");
+            RobitLogger.LogWarning($"[Win32DisplayScaleInterop] Unsupported scale: {percent}%");
             return false;
         }
 
@@ -212,7 +212,7 @@ public static class Win32DisplayScaleInterop
             // 1. Enumerate active display paths and grab the first source.
             if (!TryGetActiveSource(out LUID adapterId, out uint sourceId))
             {
-                Debug.LogError("[Win32DisplayScaleInterop] No active display source found.");
+                RobitLogger.LogError("[Win32DisplayScaleInterop] No active display source found.");
                 return false;
             }
 
@@ -231,7 +231,7 @@ public static class Win32DisplayScaleInterop
             int rc = DisplayConfigGetDeviceInfo(ref getPacket);
             if (rc != ERROR_SUCCESS)
             {
-                Debug.LogError($"[Win32DisplayScaleInterop] GET DPI scale failed (error {rc}).");
+                RobitLogger.LogError($"[Win32DisplayScaleInterop] GET DPI scale failed (error {rc}).");
                 return false;
             }
 
@@ -245,7 +245,7 @@ public static class Win32DisplayScaleInterop
             int targetStepIdx = IndexOfPercent(percent);
             if (targetStepIdx < 0)
             {
-                Debug.LogError($"[Win32DisplayScaleInterop] {percent}% not found in DPI step table.");
+                RobitLogger.LogError($"[Win32DisplayScaleInterop] {percent}% not found in DPI step table.");
                 return false;
             }
             int scaleRel = targetStepIdx - recommendedStepIdx;
@@ -266,16 +266,16 @@ public static class Win32DisplayScaleInterop
             int setRc = DisplayConfigSetDeviceInfo(ref setPacket);
             if (setRc != ERROR_SUCCESS)
             {
-                Debug.LogError($"[Win32DisplayScaleInterop] SET DPI scale failed (error {setRc}).");
+                RobitLogger.LogError($"[Win32DisplayScaleInterop] SET DPI scale failed (error {setRc}).");
                 return false;
             }
 
-            Debug.Log($"[Win32DisplayScaleInterop] Scale set to {percent}% (scaleRel={scaleRel}).");
+            RobitLogger.Log($"[Win32DisplayScaleInterop] Scale set to {percent}% (scaleRel={scaleRel}).");
             return true;
         }
         catch (Exception ex)
         {
-            Debug.LogError($"[Win32DisplayScaleInterop] SetScalePercent: {ex.Message}");
+            RobitLogger.LogError($"[Win32DisplayScaleInterop] SetScalePercent: {ex.Message}");
             return false;
         }
 #endif
@@ -345,3 +345,4 @@ public static class Win32DisplayScaleInterop
         return best;
     }
 }
+

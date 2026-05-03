@@ -51,7 +51,7 @@ public class AppCyclerController : MonoBehaviour
         {
             shortcuts = AppLauncher.Instance.CachedShortcuts;
             shortcutsReady = true;
-            Debug.Log($"[AppCycler] Loaded {shortcuts.Count} cached shortcuts from AppLauncher.");
+            RobitLogger.Log($"[AppCycler] Loaded {shortcuts.Count} cached shortcuts from AppLauncher.");
             yield break;
         }
 
@@ -80,7 +80,7 @@ public class AppCyclerController : MonoBehaviour
         }
 
         shortcutsReady = true;
-        Debug.Log($"[AppCycler] Parsed {shortcuts.Count} desktop shortcuts.");
+        RobitLogger.Log($"[AppCycler] Parsed {shortcuts.Count} desktop shortcuts.");
     }
 
     void OnEnable()
@@ -130,7 +130,7 @@ public class AppCyclerController : MonoBehaviour
     {
         if (!shortcutsReady || shortcuts.Count == 0)
         {
-            Debug.LogWarning("[AppCycler] Shortcuts not ready yet.");
+            RobitLogger.LogWarning("[AppCycler] Shortcuts not ready yet.");
             return;
         }
 
@@ -189,7 +189,7 @@ public class AppCyclerController : MonoBehaviour
     {
         if (!shortcutsReady || shortcuts.Count == 0)
         {
-            Debug.LogWarning("[AppCycler] No desktop shortcuts available yet.");
+            RobitLogger.LogWarning("[AppCycler] No desktop shortcuts available yet.");
             return;
         }
 
@@ -246,7 +246,7 @@ public class AppCyclerController : MonoBehaviour
         if (shortcuts.Count == 0) return;
         selectedIndex = ((selectedIndex + direction) % shortcuts.Count + shortcuts.Count) % shortcuts.Count;
         appNameLabel.text = shortcuts[selectedIndex].Name;
-        Debug.Log($"[AppCycler] Selected: {shortcuts[selectedIndex].Name}");
+        RobitLogger.Log($"[AppCycler] Selected: {shortcuts[selectedIndex].Name}");
     }
 
     // ── center click → switch & merge ───────────────────────────────
@@ -256,7 +256,7 @@ public class AppCyclerController : MonoBehaviour
         if (shortcuts.Count == 0) return;
 
         var selected = shortcuts[selectedIndex];
-        UnityEngine.Debug.Log($"[AppCycler] Launching: {selected.Name} at {selected.TargetPath}");
+        RobitLogger.Log($"[AppCycler] Launching: {selected.Name} at {selected.TargetPath}");
         MergeToIdle();
 
         if (AppLauncher.Instance != null)
@@ -275,7 +275,7 @@ public class AppCyclerController : MonoBehaviour
             }
             catch (System.Exception e)
             {
-                UnityEngine.Debug.LogError($"[AppCycler] Failed to launch '{selected.Name}': {e.Message}");
+                RobitLogger.LogError($"[AppCycler] Failed to launch '{selected.Name}': {e.Message}");
             }
         }
     }
@@ -349,3 +349,4 @@ public class AppCyclerController : MonoBehaviour
         el.style.transitionDelay          = StyleKeyword.Null;
     }
 }
+

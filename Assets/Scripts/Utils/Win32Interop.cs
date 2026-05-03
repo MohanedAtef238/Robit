@@ -343,85 +343,87 @@ public static class Win32Interop
     // Unity Key → Win32 VK mapping (used by SyntheticInputInjector)
     // ═══════════════════════════════════════════════════════════════════════════
 
-    public static int KeyToVirtualKey(Key key)
-    {
-        return key switch
+    private static readonly System.Collections.ObjectModel.ReadOnlyDictionary<Key, int> keyToVkMap = 
+        new System.Collections.ObjectModel.ReadOnlyDictionary<Key, int>(new System.Collections.Generic.Dictionary<Key, int>
         {
             // Letters
-            Key.A => 0x41, Key.B => 0x42, Key.C => 0x43, Key.D => 0x44,
-            Key.E => 0x45, Key.F => 0x46, Key.G => 0x47, Key.H => 0x48,
-            Key.I => 0x49, Key.J => 0x4A, Key.K => 0x4B, Key.L => 0x4C,
-            Key.M => 0x4D, Key.N => 0x4E, Key.O => 0x4F, Key.P => 0x50,
-            Key.Q => 0x51, Key.R => 0x52, Key.S => 0x53, Key.T => 0x54,
-            Key.U => 0x55, Key.V => 0x56, Key.W => 0x57, Key.X => 0x58,
-            Key.Y => 0x59, Key.Z => 0x5A,
+            { Key.A, 0x41 }, { Key.B, 0x42 }, { Key.C, 0x43 }, { Key.D, 0x44 },
+            { Key.E, 0x45 }, { Key.F, 0x46 }, { Key.G, 0x47 }, { Key.H, 0x48 },
+            { Key.I, 0x49 }, { Key.J, 0x4A }, { Key.K, 0x4B }, { Key.L, 0x4C },
+            { Key.M, 0x4D }, { Key.N, 0x4E }, { Key.O, 0x4F }, { Key.P, 0x50 },
+            { Key.Q, 0x51 }, { Key.R, 0x52 }, { Key.S, 0x53 }, { Key.T, 0x54 },
+            { Key.U, 0x55 }, { Key.V, 0x56 }, { Key.W, 0x57 }, { Key.X, 0x58 },
+            { Key.Y, 0x59 }, { Key.Z, 0x5A },
 
             // Numbers
-            Key.Digit0 => 0x30, Key.Digit1 => 0x31, Key.Digit2 => 0x32,
-            Key.Digit3 => 0x33, Key.Digit4 => 0x34, Key.Digit5 => 0x35,
-            Key.Digit6 => 0x36, Key.Digit7 => 0x37, Key.Digit8 => 0x38,
-            Key.Digit9 => 0x39,
+            { Key.Digit0, 0x30 }, { Key.Digit1, 0x31 }, { Key.Digit2, 0x32 },
+            { Key.Digit3, 0x33 }, { Key.Digit4, 0x34 }, { Key.Digit5, 0x35 },
+            { Key.Digit6, 0x36 }, { Key.Digit7, 0x37 }, { Key.Digit8, 0x38 },
+            { Key.Digit9, 0x39 },
 
             // Function keys
-            Key.F1 => 0x70, Key.F2 => 0x71, Key.F3 => 0x72, Key.F4 => 0x73,
-            Key.F5 => 0x74, Key.F6 => 0x75, Key.F7 => 0x76, Key.F8 => 0x77,
-            Key.F9 => 0x78, Key.F10 => 0x79, Key.F11 => 0x7A, Key.F12 => 0x7B,
+            { Key.F1, 0x70 }, { Key.F2, 0x71 }, { Key.F3, 0x72 }, { Key.F4, 0x73 },
+            { Key.F5, 0x74 }, { Key.F6, 0x75 }, { Key.F7, 0x76 }, { Key.F8, 0x77 },
+            { Key.F9, 0x78 }, { Key.F10, 0x79 }, { Key.F11, 0x7A }, { Key.F12, 0x7B },
 
             // Modifiers
-            Key.LeftShift   => 0xA0, Key.RightShift  => 0xA1,
-            Key.LeftCtrl    => 0xA2, Key.RightCtrl   => 0xA3,
-            Key.LeftAlt     => 0xA4, Key.RightAlt    => 0xA5,
+            { Key.LeftShift, 0xA0 }, { Key.RightShift, 0xA1 },
+            { Key.LeftCtrl, 0xA2 }, { Key.RightCtrl, 0xA3 },
+            { Key.LeftAlt, 0xA4 }, { Key.RightAlt, 0xA5 },
 
             // Navigation
-            Key.Enter       => 0x0D,
-            Key.Escape      => 0x1B,
-            Key.Space       => 0x20,
-            Key.Tab         => 0x09,
-            Key.Backspace   => 0x08,
-            Key.Delete      => 0x2E,
-            Key.Insert      => 0x2D,
-            Key.Home        => 0x24,
-            Key.End         => 0x23,
-            Key.PageUp      => 0x21,
-            Key.PageDown    => 0x22,
-            Key.UpArrow     => 0x26,
-            Key.DownArrow   => 0x28,
-            Key.LeftArrow   => 0x25,
-            Key.RightArrow  => 0x27,
+            { Key.Enter, 0x0D },
+            { Key.Escape, 0x1B },
+            { Key.Space, 0x20 },
+            { Key.Tab, 0x09 },
+            { Key.Backspace, 0x08 },
+            { Key.Delete, 0x2E },
+            { Key.Insert, 0x2D },
+            { Key.Home, 0x24 },
+            { Key.End, 0x23 },
+            { Key.PageUp, 0x21 },
+            { Key.PageDown, 0x22 },
+            { Key.UpArrow, 0x26 },
+            { Key.DownArrow, 0x28 },
+            { Key.LeftArrow, 0x25 },
+            { Key.RightArrow, 0x27 },
 
             // Punctuation
-            Key.Minus       => 0xBD,
-            Key.Equals      => 0xBB,
-            Key.LeftBracket => 0xDB,
-            Key.RightBracket=> 0xDD,
-            Key.Backslash   => 0xDC,
-            Key.Semicolon   => 0xBA,
-            Key.Quote       => 0xDE,
-            Key.Comma       => 0xBC,
-            Key.Period      => 0xBE,
-            Key.Slash       => 0xBF,
-            Key.Backquote   => 0xC0,
+            { Key.Minus, 0xBD },
+            { Key.Equals, 0xBB },
+            { Key.LeftBracket, 0xDB },
+            { Key.RightBracket, 0xDD },
+            { Key.Backslash, 0xDC },
+            { Key.Semicolon, 0xBA },
+            { Key.Quote, 0xDE },
+            { Key.Comma, 0xBC },
+            { Key.Period, 0xBE },
+            { Key.Slash, 0xBF },
+            { Key.Backquote, 0xC0 },
 
             // Numpad
-            Key.Numpad0 => 0x60, Key.Numpad1 => 0x61, Key.Numpad2 => 0x62,
-            Key.Numpad3 => 0x63, Key.Numpad4 => 0x64, Key.Numpad5 => 0x65,
-            Key.Numpad6 => 0x66, Key.Numpad7 => 0x67, Key.Numpad8 => 0x68,
-            Key.Numpad9 => 0x69,
-            Key.NumpadMultiply => 0x6A,
-            Key.NumpadPlus     => 0x6B,
-            Key.NumpadMinus    => 0x6D,
-            Key.NumpadPeriod   => 0x6E,
-            Key.NumpadDivide   => 0x6F,
-            Key.NumpadEnter    => 0x0D,
+            { Key.Numpad0, 0x60 }, { Key.Numpad1, 0x61 }, { Key.Numpad2, 0x62 },
+            { Key.Numpad3, 0x63 }, { Key.Numpad4, 0x64 }, { Key.Numpad5, 0x65 },
+            { Key.Numpad6, 0x66 }, { Key.Numpad7, 0x67 }, { Key.Numpad8, 0x68 },
+            { Key.Numpad9, 0x69 },
+            { Key.NumpadMultiply, 0x6A },
+            { Key.NumpadPlus, 0x6B },
+            { Key.NumpadMinus, 0x6D },
+            { Key.NumpadPeriod, 0x6E },
+            { Key.NumpadDivide, 0x6F },
+            { Key.NumpadEnter, 0x0D },
 
             // Special
-            Key.CapsLock    => 0x14,
-            Key.NumLock     => 0x90,
-            Key.ScrollLock  => 0x91,
-            Key.PrintScreen => 0x2C,
-            Key.Pause       => 0x13,
+            { Key.CapsLock, 0x14 },
+            { Key.NumLock, 0x90 },
+            { Key.ScrollLock, 0x91 },
+            { Key.PrintScreen, 0x2C },
+            { Key.Pause, 0x13 },
+        });
 
-            _ => 0, // unmapped
-        };
+    public static int KeyToVirtualKey(Key key)
+    {
+        return keyToVkMap.TryGetValue(key, out int vk) ? vk : 0;
     }
 }
+

@@ -15,7 +15,8 @@ public class SettingsAction : IMacroAction
         }
         else
         {
-            Debug.LogWarning("[SettingsAction] No SettingsOverlayController found in scene.");
+            RobitLogger.LogWarning("[SettingsAction] No SettingsOverlayController found in scene.");
         }
     }
 }
+

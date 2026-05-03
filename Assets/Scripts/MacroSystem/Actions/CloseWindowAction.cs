@@ -7,3 +7,4 @@ public class CloseWindowAction : KeyComboMacroAction
     protected override VirtualKeys[] Modifiers => new[] { VirtualKeys.Menu };
     protected override VirtualKeys MainKey => VirtualKeys.F4;
 }
+

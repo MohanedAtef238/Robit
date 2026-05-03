@@ -34,7 +34,7 @@ public class SettingsSliders : MonoBehaviour
         AudioListener.volume = value;
 
         // Optional: debug
-        Debug.Log($"Sound volume: {value}");
+        RobitLogger.Log($"Sound volume: {value}");
     }
 
     // -----------------------------
@@ -47,6 +47,6 @@ public class SettingsSliders : MonoBehaviour
         RenderSettings.ambientLight = Color.white * value;
 
         // Optional: debug
-        Debug.Log($"Brightness: {value}");
+        RobitLogger.Log($"Brightness: {value}");
     }
 }

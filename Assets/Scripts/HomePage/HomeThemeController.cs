@@ -50,9 +50,42 @@ public class HomeThemeController : MonoBehaviour
         SetTheme(activeTheme == Theme.Classic ? Theme.Modern : Theme.Classic);
     }
 
+    private struct ThemeProfile
+    {
+        public Color LabelColor;
+        public Color DialogueOutColor;
+        public Color BorderColor;
+        public Color ScaleLabelColor;
+        public Color TintOverlay;
+    }
+
+    private ThemeProfile GetProfile(Theme theme)
+    {
+        if (theme == Theme.Modern)
+        {
+            return new ThemeProfile
+            {
+                LabelColor = ModernLabelColor,
+                DialogueOutColor = ModernDialogueOutColor,
+                BorderColor = ModernBorderColor,
+                ScaleLabelColor = ModernScaleLabelColor,
+                TintOverlay = ModernTintOverlay
+            };
+        }
+        return new ThemeProfile
+        {
+            LabelColor = ClassicLabelColor,
+            DialogueOutColor = ClassicDialogueOutColor,
+            BorderColor = ClassicBorderColor,
+            ScaleLabelColor = ClassicScaleLabelColor,
+            TintOverlay = ClassicTintOverlay
+        };
+    }
+
     private void ApplyTheme(Theme theme)
     {
         bool modern = theme == Theme.Modern;
+        var profile = GetProfile(theme);
 
         // ── Swap USS stylesheet ──
         if (classicSheet != null && modernSheet != null)
@@ -73,42 +106,26 @@ public class HomeThemeController : MonoBehaviour
             }
         }
 
-        Color btnBg    = modern ? ModernButtonBg         : ClassicButtonBg;
-        Color label    = modern ? ModernLabelColor        : ClassicLabelColor;
-        Color diagOut  = modern ? ModernDialogueOutColor  : ClassicDialogueOutColor;
-        Color border   = modern ? ModernBorderColor       : ClassicBorderColor;
-        Color scaleLbl = modern ? ModernScaleLabelColor   : ClassicScaleLabelColor;
-        Color tint     = modern ? ModernTintOverlay       : ClassicTintOverlay;
-
         // ── Clear inline UXML button background-color so USS
         //    :hover / :active pseudo-classes can take effect. ──
-        ClearBg(_root, "soundDecBtn");
-        ClearBg(_root, "soundIncBtn");
-        ClearBg(_root, "brightnessDecBtn");
-        ClearBg(_root, "brightnessIncBtn");
-        ClearBg(_root, "zoom100Btn");
-        ClearBg(_root, "zoom125Btn");
-        ClearBg(_root, "zoom150Btn");
-        ClearBg(_root, "zoom200Btn");
+        string[] buttons = { "soundDecBtn", "soundIncBtn", "brightnessDecBtn", "brightnessIncBtn", "zoom100Btn", "zoom125Btn", "zoom150Btn", "zoom200Btn" };
+        foreach (var btnName in buttons) ClearBg(_root, btnName);
 
         // ── Clock / weather labels ──
-        SetColor(_root, "locationLabel",     label);
-        SetColor(_root, "digitalClockLabel", label);
-        SetColor(_root, "digitalClockM",     label);
-        SetColor(_root, "celsiusLabel",      label);
-        SetColor(_root, "degreeLabel",       label);
-        SetColor(_root, "statusLabel",       label);
+        string[] labels = { "locationLabel", "digitalClockLabel", "digitalClockM", "celsiusLabel", "degreeLabel", "statusLabel" };
+        foreach (var lblName in labels) SetColor(_root, lblName, profile.LabelColor);
 
         // ── Dialogue ──
-        SetColor(_root, "outputDialogueLabel", diagOut);
-        SetColor(_root, "inputDialogueLabel",  label);
+        SetColor(_root, "outputDialogueLabel", profile.DialogueOutColor);
+        SetColor(_root, "inputDialogueLabel",  profile.LabelColor);
+        
         var field = _root.Q("inputDialogueField");
         if (field != null)
         {
-            field.style.borderLeftColor  = border;
-            field.style.borderRightColor = border;
-            field.style.borderTopColor   = border;
-            field.style.borderBottomColor = border;
+            field.style.borderLeftColor  = profile.BorderColor;
+            field.style.borderRightColor = profile.BorderColor;
+            field.style.borderTopColor   = profile.BorderColor;
+            field.style.borderBottomColor = profile.BorderColor;
         }
 
         // ── Display Scale heading ──
@@ -116,15 +133,15 @@ public class HomeThemeController : MonoBehaviour
         if (zoomPicker != null)
         {
             var heading = zoomPicker.Q<Label>();
-            if (heading != null) heading.style.color = scaleLbl;
+            if (heading != null) heading.style.color = profile.ScaleLabelColor;
         }
 
         // ── Tint overlay ──
         var overlay = _root.Q("home-tint-overlay");
         if (overlay != null)
-            overlay.style.backgroundColor = tint;
+            overlay.style.backgroundColor = profile.TintOverlay;
 
-        Debug.Log($"[HomeTheme] Applied {theme} theme.");
+        RobitLogger.Log($"[HomeTheme] Applied {theme} theme.");
     }
 
     private static void SetBg(VisualElement root, string name, Color c)
@@ -145,3 +162,4 @@ public class HomeThemeController : MonoBehaviour
         if (el != null) el.style.color = c;
     }
 }
+

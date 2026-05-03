@@ -7,3 +7,4 @@ public class SwitchWindowAction : KeyComboMacroAction
     protected override VirtualKeys[] Modifiers => new[] { VirtualKeys.Menu };
     protected override VirtualKeys MainKey => VirtualKeys.Tab;
 }
+

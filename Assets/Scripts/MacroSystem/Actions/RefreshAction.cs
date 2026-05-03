@@ -7,3 +7,4 @@ public class RefreshAction : KeyComboMacroAction
     protected override VirtualKeys[] Modifiers => new[] { VirtualKeys.Control };
     protected override VirtualKeys MainKey => VirtualKeys.R;
 }
+

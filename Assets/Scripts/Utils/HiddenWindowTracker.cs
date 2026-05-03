@@ -41,15 +41,16 @@ public static void RestoreAll()
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"[HiddenWindowTracker] Failed to restore 0x{hwnd:X}: {e.Message}");
+                RobitLogger.LogWarning($"[HiddenWindowTracker] Failed to restore 0x{hwnd:X}: {e.Message}");
             }
         }
 
         if (count > 0)
-            Debug.Log($"[HiddenWindowTracker] Restored {count} hidden window(s).");
+            RobitLogger.Log($"[HiddenWindowTracker] Restored {count} hidden window(s).");
 
         _hiddenByUs.Clear();
     }
 
     public static int TrackedCount => _hiddenByUs.Count;
 }
+

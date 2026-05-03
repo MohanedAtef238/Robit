@@ -62,7 +62,7 @@ public class DesktopParser : MonoBehaviour
             }
         }
 
-        Debug.Log($"[DesktopParser] Found {shortcutFiles.Count} shortcuts");
+        RobitLogger.Log($"[DesktopParser] Found {shortcutFiles.Count} shortcuts");
 
         foreach (var file in shortcutFiles)
         {
@@ -83,21 +83,21 @@ public class DesktopParser : MonoBehaviour
 
                 if (icon == null)
                 {
-                    Debug.LogWarning($"[DesktopParser] Icon failed: {name}");
+                    RobitLogger.LogWarning($"[DesktopParser] Icon failed: {name}");
                 }
 
                 AddShortcut(name, shortcut.TargetPath, icon);
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"[DesktopParser] Failed: {file} | {e.Message}");
+                RobitLogger.LogWarning($"[DesktopParser] Failed: {file} | {e.Message}");
             }
 
             yield return null;
         }
 
         parsingComplete = true;
-        Debug.Log($"[DesktopParser] Done. Total: {shortcuts.Count}");
+        RobitLogger.Log($"[DesktopParser] Done. Total: {shortcuts.Count}");
     }
 
 private Texture2D ExtractHighQualityIcon(string filePath)
@@ -109,7 +109,7 @@ private Texture2D ExtractHighQualityIcon(string filePath)
     // Check for cached PNG first
     if (_fileSystem.FileExists(pngCachePath))
     {
-        Debug.Log($"[DesktopParser] Using cached PNG icon: {pngCachePath}");
+        RobitLogger.Log($"[DesktopParser] Using cached PNG icon: {pngCachePath}");
         byte[] pngData = _fileSystem.ReadAllBytes(pngCachePath);
         Texture2D tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
         if (tex.LoadImage(pngData))
@@ -119,7 +119,7 @@ private Texture2D ExtractHighQualityIcon(string filePath)
         else
         {
             UnityEngine.Object.Destroy(tex);
-            Debug.LogWarning($"[DesktopParser] Failed to load cached PNG, falling back to extraction");
+            RobitLogger.LogWarning($"[DesktopParser] Failed to load cached PNG, falling back to extraction");
         }
     }
 
@@ -157,18 +157,18 @@ private Texture2D ExtractHighQualityIcon(string filePath)
             
             byte[] pngData = tex.EncodeToPNG();
             File.WriteAllBytes(pngCachePath, pngData);
-            Debug.Log($"[DesktopParser] Cached PNG icon: {pngCachePath}");
+            RobitLogger.Log($"[DesktopParser] Cached PNG icon: {pngCachePath}");
         }
         catch (Exception cacheEx)
         {
-            Debug.LogWarning($"[DesktopParser] Failed to cache PNG: {cacheEx.Message}");
+            RobitLogger.LogWarning($"[DesktopParser] Failed to cache PNG: {cacheEx.Message}");
         }
 
         return tex;
     }
     catch (Exception e)
     {
-        Debug.LogWarning($"[DesktopParser] Failed to process ICO data from {filePath} | {e.Message}");
+        RobitLogger.LogWarning($"[DesktopParser] Failed to process ICO data from {filePath} | {e.Message}");
         return null;
     }
 }
@@ -191,6 +191,6 @@ private Texture2D ExtractHighQualityIcon(string filePath)
             Icon = icon
         });
 
-        Debug.Log($"[DesktopParser] Added: {name}");
+        RobitLogger.Log($"[DesktopParser] Added: {name}");
     }
 }

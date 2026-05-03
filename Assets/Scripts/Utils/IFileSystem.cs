@@ -8,3 +8,4 @@ public interface IFileSystem
     byte[] ReadAllBytes(string path);
     string GetSpecialFolderPath(System.Environment.SpecialFolder folder);
 }
+

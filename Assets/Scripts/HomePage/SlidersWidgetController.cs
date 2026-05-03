@@ -40,7 +40,7 @@ public class SlidersWidgetController : MonoBehaviour
             brightnessSlider.value = 50;
             brightnessSlider.SetEnabled(false);
             if (brightnessValueLabel != null) brightnessValueLabel.text = "N/A";
-            Debug.LogWarning("[SlidersWidget] Brightness control not supported on this display.");
+            RobitLogger.LogWarning("[SlidersWidget] Brightness control not supported on this display.");
         }
         else
         {
@@ -121,3 +121,4 @@ public class SlidersWidgetController : MonoBehaviour
             _sunIconEl.style.backgroundImage = new StyleBackground(tex);
     }
 }
+

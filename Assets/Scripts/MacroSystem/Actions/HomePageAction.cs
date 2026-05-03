@@ -18,7 +18,8 @@ public class HomePageAction : IMacroAction
         }
         else
         {
-            Debug.LogWarning("[HomePageAction] No HomePageController found in scene.");
+            RobitLogger.LogWarning("[HomePageAction] No HomePageController found in scene.");
         }
     }
 }
+

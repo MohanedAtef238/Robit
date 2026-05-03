@@ -16,7 +16,7 @@ public class AppLauncherUI : MonoBehaviour
         
         if (statusText == null)
         {
-            Debug.LogError("Status Text not set in the inspector!");
+            RobitLogger.LogError("Status Text not set in the inspector!");
             yield break;
         }
 
@@ -25,7 +25,7 @@ public class AppLauncherUI : MonoBehaviour
         if (desktopParser == null || cardContainer == null)
         {
             statusText.text = "ERROR: DesktopParser or CardContainer not linked in the inspector.";
-            Debug.LogError(statusText.text);
+            RobitLogger.LogError(statusText.text);
             yield break;
         }
 
@@ -49,11 +49,11 @@ public class AppLauncherUI : MonoBehaviour
         if (!desktopParser.parsingComplete)
         {
             statusText.text = "ERROR: Desktop parsing timed out.";
-            Debug.LogError("[AppLauncherUI] DesktopParser did not complete in time");
+            RobitLogger.LogError("[AppLauncherUI] DesktopParser did not complete in time");
             yield break;
         }
         
-        Debug.Log($"[AppLauncherUI] DesktopParser finished with {desktopParser.shortcuts.Count} shortcuts after {elapsed:F2}s");
+        RobitLogger.Log($"[AppLauncherUI] DesktopParser finished with {desktopParser.shortcuts.Count} shortcuts after {elapsed:F2}s");
 
         GenerateAppCards(desktopParser.shortcuts);
     }
@@ -63,7 +63,7 @@ public class AppLauncherUI : MonoBehaviour
         if (shortcuts.Count == 0)
         {
             statusText.text = "No shortcuts (.lnk files) were found on the User or Public desktops.";
-            Debug.Log(statusText.text);
+            RobitLogger.Log(statusText.text);
             return;
         }
 
@@ -86,11 +86,11 @@ public class AppLauncherUI : MonoBehaviour
             // Debug: Check if texture is valid
             if (shortcut.Icon == null)
             {
-                Debug.LogError($"[AppLauncherUI] Icon texture is NULL for '{shortcut.Name}'");
+                RobitLogger.LogError($"[AppLauncherUI] Icon texture is NULL for '{shortcut.Name}'");
             }
             else
             {
-                Debug.Log($"[AppLauncherUI] Setting icon for '{shortcut.Name}': {shortcut.Icon.width}x{shortcut.Icon.height}, format={shortcut.Icon.format}, isReadable={shortcut.Icon.isReadable}");
+                RobitLogger.Log($"[AppLauncherUI] Setting icon for '{shortcut.Name}': {shortcut.Icon.width}x{shortcut.Icon.height}, format={shortcut.Icon.format}, isReadable={shortcut.Icon.isReadable}");
                 iconImage.texture = shortcut.Icon;
                 
                 // Force the RawImage to refresh
@@ -98,7 +98,7 @@ public class AppLauncherUI : MonoBehaviour
                 iconImage.enabled = false;
                 iconImage.enabled = true;
                 
-                Debug.Log($"[AppLauncherUI] RawImage texture assigned: {(iconImage.texture != null ? "YES" : "NO")}, RawImage enabled: {iconImage.enabled}, GameObject active: {iconImage.gameObject.activeInHierarchy}");
+                RobitLogger.Log($"[AppLauncherUI] RawImage texture assigned: {(iconImage.texture != null ? "YES" : "NO")}, RawImage enabled: {iconImage.enabled}, GameObject active: {iconImage.gameObject.activeInHierarchy}");
             }
 
             // Add a listener to the button to launch the app
@@ -151,3 +151,4 @@ public class AppLauncherUI : MonoBehaviour
         return appCard;
     }
 }
+

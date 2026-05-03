@@ -22,7 +22,8 @@ public class SaveIconSample : MonoBehaviour {
             File.WriteAllBytes(path, icoData);
         }
 #else
-        Debug.LogWarning("SaveIconSample is editor-only and cannot show a save file dialog at runtime.");
+        RobitLogger.LogWarning("SaveIconSample is editor-only and cannot show a save file dialog at runtime.");
 #endif
     }
 }
+

@@ -7,3 +7,4 @@ public class MinimizeAction : KeyComboMacroAction
     protected override VirtualKeys[] Modifiers => new[] { VirtualKeys.LeftWindows };
     protected override VirtualKeys MainKey => VirtualKeys.Down;
 }
+

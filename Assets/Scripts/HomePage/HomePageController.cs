@@ -46,7 +46,7 @@ public class HomePageController : MonoBehaviour
         if (_zoomPicker == null)
         {
             _zoomPicker = gameObject.AddComponent<ZoomPickerController>();
-            Debug.LogWarning("[HomePageController] ZoomPickerController was missing on HomePageUI and was added at runtime.");
+            RobitLogger.LogWarning("[HomePageController] ZoomPickerController was missing on HomePageUI and was added at runtime.");
         }
 
         if (_homeBlur == null)
@@ -65,7 +65,7 @@ public class HomePageController : MonoBehaviour
     {
         if (uiDocument == null)
         {
-            Debug.LogError("[HomePageController] UIDocument not assigned.");
+            RobitLogger.LogError("[HomePageController] UIDocument not assigned.");
             return;
         }
 
@@ -153,7 +153,7 @@ public class HomePageController : MonoBehaviour
             _viewAppsBtn.pickingMode = PickingMode.Position;
             _viewAppsBtn.clicked += () =>
             {
-                Debug.Log("[HomePageController] View Apps clicked — loading HomeScene.");
+                RobitLogger.Log("[HomePageController] View Apps clicked — loading HomeScene.");
                 ToggleAppView();
             };
         }
@@ -210,7 +210,7 @@ public class HomePageController : MonoBehaviour
         // Start suppressing Windows popups
         _suppressor.StartSuppressing();
 
-        Debug.Log("[HomePageController] Opened.");
+        RobitLogger.Log("[HomePageController] Opened.");
     }
 
     /// Closes the home page dashboard.
@@ -249,7 +249,7 @@ public class HomePageController : MonoBehaviour
         else
             WindowManager.MakeTransparent();
 
-        Debug.Log("[HomePageController] Closed.");
+        RobitLogger.Log("[HomePageController] Closed.");
     }
 
     public bool IsOpen => _isOpen;
@@ -304,3 +304,4 @@ public class HomePageController : MonoBehaviour
     }
 
 }
+

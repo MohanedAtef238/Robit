@@ -7,3 +7,4 @@ public class UndoAction : KeyComboMacroAction
     protected override VirtualKeys[] Modifiers => new[] { VirtualKeys.Control };
     protected override VirtualKeys MainKey => VirtualKeys.Z;
 }
+
