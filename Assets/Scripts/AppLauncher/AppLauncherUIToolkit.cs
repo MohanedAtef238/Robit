@@ -24,7 +24,7 @@ public class AppLauncherUIToolkit : MonoBehaviour
     private Button backBtn;
 
     private List<ShortcutInfo> allShortcuts = new List<ShortcutInfo>();
-    private int currentPage;
+    private Robit.Logic.IPaginationLogic pagination;
     private bool isTransitioning;
     private bool panelVisible;
     private Coroutine spinnerCoroutine;
@@ -101,6 +101,7 @@ public class AppLauncherUIToolkit : MonoBehaviour
             backBtn.clicked += () => UnityEngine.SceneManagement.SceneManager.LoadScene("OverlayScene");
             
         pageIndicator.style.display = DisplayStyle.None;
+        pagination = new Robit.Logic.PaginationLogic(ItemsPerPage);
         return true;
     }
 
@@ -189,10 +190,10 @@ public class AppLauncherUIToolkit : MonoBehaviour
 
         statusText.style.display = DisplayStyle.None;
         pageIndicator.style.display = DisplayStyle.Flex;
-        currentPage = 0;
+        pagination.CurrentPage = 0;
         cardsContainer.Clear();
 
-        List<VisualElement> pageCards = CreatePageElements(currentPage);
+        List<VisualElement> pageCards = CreatePageElements(pagination.CurrentPage);
         for (int i = 0; i < pageCards.Count; i++)
         {
             cardsContainer.Add(pageCards[i]);
@@ -218,13 +219,12 @@ public class AppLauncherUIToolkit : MonoBehaviour
             return;
         }
 
-        int targetPage = currentPage + delta;
-        if (targetPage < 0 || targetPage >= GetPageCount())
+        if (!pagination.CanChangePage(delta, allShortcuts.Count))
         {
             return;
         }
 
-        StartCoroutine(TransitionToPage(targetPage));
+        StartCoroutine(TransitionToPage(pagination.CurrentPage + delta));
     }
 
     private IEnumerator TransitionToPage(int targetPage)
@@ -249,9 +249,9 @@ public class AppLauncherUIToolkit : MonoBehaviour
         yield return new WaitForSeconds(ExitDuration);
 
         cardsContainer.Clear();
-        currentPage = targetPage;
+        pagination.CurrentPage = targetPage;
 
-        List<VisualElement> nextCards = CreatePageElements(currentPage);
+        List<VisualElement> nextCards = CreatePageElements(pagination.CurrentPage);
         for (int i = 0; i < nextCards.Count; i++)
         {
             cardsContainer.Add(nextCards[i]);
@@ -275,8 +275,9 @@ public class AppLauncherUIToolkit : MonoBehaviour
     private List<VisualElement> CreatePageElements(int pageIndex)
     {
         List<VisualElement> pageCards = new List<VisualElement>();
-        int startIndex = pageIndex * ItemsPerPage;
-        int endIndex = Mathf.Min(startIndex + ItemsPerPage, allShortcuts.Count);
+        var range = pagination.GetPageRange(allShortcuts.Count, pageIndex);
+        int startIndex = range.startIndex;
+        int endIndex = range.endIndex;
 
         for (int i = startIndex; i < endIndex; i++)
         {
@@ -322,15 +323,15 @@ public class AppLauncherUIToolkit : MonoBehaviour
 
     private void UpdateNavigation()
     {
-        int pageCount = GetPageCount();
-        pageIndicator.text = $"{currentPage + 1} / {pageCount}";
-        navLeft.SetEnabled(!isTransitioning && currentPage > 0);
-        navRight.SetEnabled(!isTransitioning && currentPage < pageCount - 1);
+        int pageCount = pagination.GetPageCount(allShortcuts.Count);
+        pageIndicator.text = $"{pagination.CurrentPage + 1} / {pageCount}";
+        navLeft.SetEnabled(!isTransitioning && pagination.CurrentPage > 0);
+        navRight.SetEnabled(!isTransitioning && pagination.CurrentPage < pageCount - 1);
     }
 
     private int GetPageCount()
     {
-        return Mathf.Max(1, Mathf.CeilToInt(allShortcuts.Count / (float)ItemsPerPage));
+        return pagination.GetPageCount(allShortcuts.Count);
     }
 
     void OnAppCardClick(string path, string workingDirectory)

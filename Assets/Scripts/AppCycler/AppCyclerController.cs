@@ -39,7 +39,7 @@ public class AppCyclerController : MonoBehaviour
     private CyclerState state = CyclerState.Tucked;
 
     private List<ShortcutInfo> shortcuts = new();
-    private int selectedIndex;
+    private Robit.Logic.ICyclerLogic cyclerLogic;
     private bool shortcutsReady;
 
     // ── lifecycle ────────────────────────────────────────────────────
@@ -111,6 +111,7 @@ public class AppCyclerController : MonoBehaviour
         // Center label click → switch to app and merge back
         labelBtn.clicked += OnLabelClicked;
 
+        cyclerLogic = new Robit.Logic.CyclerLogic();
         SetTucked();
     }
 
@@ -134,7 +135,7 @@ public class AppCyclerController : MonoBehaviour
             return;
         }
 
-        selectedIndex = 0;
+        cyclerLogic.Reset();
         Peek();
         OnIdleClicked();
     }
@@ -193,7 +194,7 @@ public class AppCyclerController : MonoBehaviour
             return;
         }
 
-        selectedIndex = 0;
+        cyclerLogic.Reset();
         state = CyclerState.Expanded;
 
         // Ensure peeked so the dock is fully visible
@@ -219,7 +220,7 @@ public class AppCyclerController : MonoBehaviour
         // Label starts hidden
         labelBtn.RemoveFromClassList("cycler-label-container--visible");
         labelBtn.AddToClassList("cycler-label-container--hidden");
-        appNameLabel.text = shortcuts[selectedIndex].Name;
+        appNameLabel.text = shortcuts[cyclerLogic.SelectedIndex].Name;
 
         // Trigger split after one frame so transitions pick up the class change
         expanded.schedule.Execute(() =>
@@ -244,9 +245,9 @@ public class AppCyclerController : MonoBehaviour
     private void CycleSelection(int direction)
     {
         if (shortcuts.Count == 0) return;
-        selectedIndex = ((selectedIndex + direction) % shortcuts.Count + shortcuts.Count) % shortcuts.Count;
-        appNameLabel.text = shortcuts[selectedIndex].Name;
-        RobitLogger.Log($"[AppCycler] Selected: {shortcuts[selectedIndex].Name}");
+        cyclerLogic.Cycle(direction, shortcuts.Count);
+        appNameLabel.text = shortcuts[cyclerLogic.SelectedIndex].Name;
+        RobitLogger.Log($"[AppCycler] Selected: {shortcuts[cyclerLogic.SelectedIndex].Name}");
     }
 
     // ── center click → switch & merge ───────────────────────────────
@@ -255,7 +256,7 @@ public class AppCyclerController : MonoBehaviour
     {
         if (shortcuts.Count == 0) return;
 
-        var selected = shortcuts[selectedIndex];
+        var selected = shortcuts[cyclerLogic.SelectedIndex];
         RobitLogger.Log($"[AppCycler] Launching: {selected.Name} at {selected.TargetPath}");
         MergeToIdle();
 

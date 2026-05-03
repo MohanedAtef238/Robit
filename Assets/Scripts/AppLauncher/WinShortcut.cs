@@ -60,6 +60,15 @@ namespace LnkParser
             {
                 this.ParseTargetIDList(istream);
             }
+            else
+            {
+                // Ensure we skip the full 76-byte ShellLinkHeader even if IDList is missing
+                if (istream.CanSeek)
+                {
+                    istream.Seek(76, SeekOrigin.Begin);
+                }
+            }
+
             if ((linkFlags & Constants.LinkFlags.HasLinkInfo) == Constants.LinkFlags.HasLinkInfo)
             {
                 this.ParseLinkInfo(istream);

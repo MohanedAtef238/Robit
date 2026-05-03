@@ -18,9 +18,11 @@ public class Transparency : MonoBehaviour
     #if !UNITY_EDITOR
     private bool isTransparencyEnabled = true;
     #endif
+    #if UNITY_EDITOR
     private string debugHitInfo = "none";
     private Vector2 debugCursorPos;
     private bool debugOverUI = false;
+    #endif
     
     private const float TOGGLE_COOLDOWN = 0.1f;
     #if !UNITY_EDITOR
@@ -34,8 +36,10 @@ public class Transparency : MonoBehaviour
     private PointerEventData _pointerEventData;
     private EventSystem _lastKnownEventSystem;
     private readonly List<RaycastResult> _raycastResults = new List<RaycastResult>(8);
+#if !UNITY_EDITOR
     private int _lastRawX = -1;
     private int _lastRawY = -1;
+#endif
     private GUIStyle _debugStyle;
     private static readonly ProfilerMarker _updateMarker = new ProfilerMarker("Transparency.Update");
     private static readonly ProfilerMarker _pickMarker = new ProfilerMarker("Transparency.IsPointerOverUI");
@@ -172,7 +176,9 @@ public class Transparency : MonoBehaviour
         #if !UNITY_EDITOR
         if (!isTransparencyEnabled)
         {
+            #if UNITY_EDITOR
             debugHitInfo = "DISABLED";
+            #endif
             return;
         }
         
@@ -191,9 +197,11 @@ public class Transparency : MonoBehaviour
         Vector2 unityScreenPos = new Vector2(clientPos.X, Screen.height - clientPos.Y);
         bool overUI = IsPointerOverUI(unityScreenPos, out string hitInfo);
         
+        #if UNITY_EDITOR
         debugCursorPos = unityScreenPos;
         debugHitInfo = hitInfo;
         debugOverUI = overUI;
+        #endif
         
         if (Time.time - lastToggleTime < TOGGLE_COOLDOWN)
             return;

@@ -1,39 +1,36 @@
+using System;
+using System.Collections.Generic;
+
+/// <summary>
 /// Factory that creates the correct IMacroAction instance from a MacroActionType enum value.
+/// Uses a self-registration pattern to keep cyclomatic complexity low (constant 3).
+/// </summary>
 public static class MacroActionFactory
 {
+    private static readonly Dictionary<MacroActionType, Func<IMacroAction>> _registry = new();
+
+    /// <summary>
+    /// Registers a factory function for a specific MacroActionType.
+    /// Called by individual Action classes in their static constructors.
+    /// </summary>
+    public static void Register(MacroActionType type, Func<IMacroAction> factory)
+    {
+        _registry[type] = factory;
+    }
+
+    /// <summary>
+    /// Creates an instance of the requested action type.
+    /// Complexity: 3 (null check, TryGetValue, throw).
+    /// </summary>
     public static IMacroAction Create(MacroActionType type)
     {
-        return type switch
-        {
-            MacroActionType.None            => null,
-            MacroActionType.Back            => new BackAction(),
-            MacroActionType.Forward         => new ForwardAction(),
-            MacroActionType.Refresh         => new RefreshAction(),
-            MacroActionType.NewTab          => new NewTabAction(),
-            MacroActionType.CloseTab        => new CloseTabAction(),
-            MacroActionType.SwitchWindow    => new SwitchWindowAction(),
-            MacroActionType.ZoomIn          => new ZoomInAction(),
-            MacroActionType.ZoomOut         => new ZoomOutAction(),
-            MacroActionType.Screenshot      => new ScreenshotAction(),
-            MacroActionType.PageUp          => new PageUpAction(),
-            MacroActionType.PageDown        => new PageDownAction(),
-            MacroActionType.ReturnToDesktop => new ReturnToDesktopAction(),
-            MacroActionType.SnapLeft        => new SnapLeftAction(),
-            MacroActionType.SnapRight       => new SnapRightAction(),
-            MacroActionType.MaximizeRestore => new MaximizeRestoreAction(),
-            MacroActionType.Minimize        => new MinimizeAction(),
-            MacroActionType.CloseWindow     => new CloseWindowAction(),
-            MacroActionType.Undo            => new UndoAction(),
-            MacroActionType.Redo            => new RedoAction(),
-            MacroActionType.MuteToggle      => new MuteToggleAction(),
-            MacroActionType.FindOnPage      => new FindOnPageAction(),
-            MacroActionType.LockScreen      => new LockScreenAction(),
-            MacroActionType.HomeDashboard   => new HomePageAction(),
-            MacroActionType.AppCycler       => new AppCyclerAction(),
-            MacroActionType.Settings        => new SettingsAction(),
-            MacroActionType.Calibration     => new CalibrationAction(),
-            _ => throw new System.ArgumentException($"Unknown MacroActionType: {type}")
-        };
+        if (type == MacroActionType.None)
+            return null;
+
+        if (_registry.TryGetValue(type, out var factory))
+            return factory();
+
+        throw new ArgumentException($"No factory registered for {type}. Did you forget the static constructor or [Preserve] attribute?");
     }
 }
 

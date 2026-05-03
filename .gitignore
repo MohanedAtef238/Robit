@@ -92,3 +92,4 @@ crashlytics-build.properties
 /CodeCoverage
 /Assets/Screenshots
 Assets/Screenshots.meta
+/.testagent

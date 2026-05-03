@@ -23,6 +23,7 @@ public class ClockWidgetController : MonoBehaviour
     private float currentMinuteAngle;
     private float currentHourAngle;
 
+    private IClockLogic clockLogic = new ClockLogic();
     private const string WEATHER_API_KEY = "5df624a0199e71b2c8377b7bff309ae0";
 
     public void Initialize(VisualElement root)
@@ -49,15 +50,10 @@ public class ClockWidgetController : MonoBehaviour
     // ── Analog Clock ───────────────────────────────────────────────────────
     private void UpdateClockSmooth()
     {
-        DateTime now = DateTime.Now;
-        float minute = now.Minute + now.Second / 60f;
-        float hour = (now.Hour % 12) + minute / 60f;
+        var angles = clockLogic.CalculateAngles(DateTime.Now);
 
-        float targetMinuteAngle = minute * 6f;
-        float targetHourAngle = hour * 30f;
-
-        currentMinuteAngle = Mathf.LerpAngle(currentMinuteAngle, targetMinuteAngle, Time.deltaTime * 8f);
-        currentHourAngle = Mathf.LerpAngle(currentHourAngle, targetHourAngle, Time.deltaTime * 8f);
+        currentMinuteAngle = Mathf.LerpAngle(currentMinuteAngle, angles.minuteAngle, Time.deltaTime * 8f);
+        currentHourAngle = Mathf.LerpAngle(currentHourAngle, angles.hourAngle, Time.deltaTime * 8f);
 
         minuteHand.style.rotate = new Rotate(new Angle(currentMinuteAngle));
         hourHand.style.rotate = new Rotate(new Angle(currentHourAngle));
@@ -66,14 +62,10 @@ public class ClockWidgetController : MonoBehaviour
     private void UpdateDigitalClock()
     {
         DateTime now = DateTime.Now;
-        string hour = now.Hour % 12 == 0 ? "12" : (now.Hour % 12).ToString("00");
-        string minute = now.Minute.ToString("00");
-        string amPm = now.Hour >= 12 ? "PM" : "AM";
-
         if (digitalClockLabel != null)
-            digitalClockLabel.text = $"{hour}:{minute}";
+            digitalClockLabel.text = clockLogic.GetDigitalTime(now);
         if (digitalClockM != null)
-            digitalClockM.text = amPm;
+            digitalClockM.text = clockLogic.GetAmPm(now);
     }
 
     // ── Weather ────────────────────────────────────────────────────────────
@@ -92,32 +84,19 @@ public class ClockWidgetController : MonoBehaviour
             yield break;
         }
 
-        string json = request.downloadHandler.text;
-
-        if (json.Contains("\"cod\":401"))
+        var result = WeatherParser.Parse(request.downloadHandler.text, isMetric: true);
+        
+        if (!result.Success)
         {
-            RobitLogger.LogWarning("[ClockWidget] Invalid weather API key.");
-            if (statusLabel != null) statusLabel.text = "API Key Error";
+            RobitLogger.LogWarning($"[ClockWidget] Weather error: {result.ErrorMessage}");
+            if (statusLabel != null) statusLabel.text = result.ErrorMessage;
             yield break;
         }
 
-        var data = JsonUtility.FromJson<WeatherResponse>(json);
-        if (data?.main == null || data.weather == null || data.weather.Length == 0)
-        {
-            RobitLogger.LogWarning("[ClockWidget] Failed to parse weather data.");
-            if (statusLabel != null) statusLabel.text = "Parse Error";
-            yield break;
-        }
-
-        if (locationLabel != null) locationLabel.text = string.IsNullOrEmpty(data.name) ? fallbackCity : data.name;
-        if (degreeLabel != null) degreeLabel.text = Mathf.RoundToInt(data.main.temp).ToString();
+        if (locationLabel != null) locationLabel.text = result.CityName;
+        if (degreeLabel != null) degreeLabel.text = result.Temperature.ToString();
         if (celsiusLabel != null) celsiusLabel.text = "°C";
-        if (statusLabel != null) statusLabel.text = data.weather[0].description;
+        if (statusLabel != null) statusLabel.text = result.Description;
     }
-
-    // ── JSON DTOs ──────────────────────────────────────────────────────────
-    [Serializable] public class WeatherResponse { public string name; public Weather[] weather; public Main main; }
-    [Serializable] public class Weather { public string description; public string icon; }
-    [Serializable] public class Main { public float temp; }
 }
 

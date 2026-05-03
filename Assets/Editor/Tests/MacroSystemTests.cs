@@ -1,10 +1,22 @@
 using NUnit.Framework;
 using UnityEngine;
+using System.Linq;
 
 namespace Robit.Tests
 {
     public class MacroSystemTests
     {
+        [SetUp]
+        public void EnsureRegistrations()
+        {
+            // Force all static constructors before any test in this class runs
+            var types = System.Reflection.Assembly.GetAssembly(typeof(BackAction))
+                .GetTypes()
+                .Where(t => typeof(IMacroAction).IsAssignableFrom(t) 
+                            && !t.IsInterface && !t.IsAbstract);
+            foreach (var t in types)
+                System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(t.TypeHandle);
+        }
         [Test]
         public void MacroActionFactory_ReturnsCorrectAction_ForUndo()
         {

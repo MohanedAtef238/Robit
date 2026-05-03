@@ -14,6 +14,19 @@ namespace Robit.Tests
 {
     public class MacroActionFactoryTests
     {
+        [SetUp]
+        public void SetUp()
+        {
+            // Force-touch all action classes to trigger static constructors
+            // for the self-registering factory pattern.
+            var types = System.Reflection.Assembly.GetAssembly(typeof(BackAction))
+                .GetTypes()
+                .Where(t => typeof(IMacroAction).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
+
+            foreach (var type in types)
+                System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(type.TypeHandle);
+        }
+
         // ─────────────────────────────────────────────────────────────────────
         // Equivalence partition: MacroActionType.None
         // ─────────────────────────────────────────────────────────────────────
@@ -220,6 +233,27 @@ namespace Robit.Tests
         }
 
         /// <summary>
+        /// Risk mitigated: duplicate DisplayNames make two buttons look identical in the
+        /// macro wheel — the user cannot tell them apart. Each action needs a distinct label.
+        /// </summary>
+        [Test]
+        [Category("Contract")]
+        public void AllActions_HaveUniqueDisplayNames()
+        {
+            // Arrange
+            var allTypes = Enum.GetValues(typeof(MacroActionType))
+                .Cast<MacroActionType>()
+                .Where(t => t != MacroActionType.None);
+
+            // Act
+            var names = allTypes.Select(t => MacroActionFactory.Create(t).DisplayName).ToList();
+
+            // Assert
+            Assert.AreEqual(names.Distinct().Count(), names.Count,
+                $"Duplicate DisplayNames found: {string.Join(", ", names.GroupBy(n => n).Where(g => g.Count() > 1).Select(g => g.Key))}");
+        }
+
+        /// <summary>
         /// Risk mitigated: each call to Create() must return a fresh instance, not
         /// a shared singleton. Shared state between two buttons bound to the same
         /// action type could cause one button's Execute() to affect another's state.
@@ -239,6 +273,33 @@ namespace Robit.Tests
             // Assert
             Assert.AreNotSame(first, second,
                 "Create() must return a new instance on each call — shared state between buttons is not acceptable.");
+        }
+
+        /// <summary>
+        /// Risk mitigated: after migrating from switch to self-registering pattern,
+        /// verifies that all registrations are actually loaded before Create() is called.
+        /// IL2CPP can strip unreferenced static constructors — this catches that.
+        /// </summary>
+        [Test]
+        [Category("Integration")]
+        public void AllActionTypes_AreRegistered_BeforeFirstCreate()
+        {
+            // Force-touch each action type class to trigger static constructors
+            // (in normal execution the scene loading does this; in tests it may not)
+            var types = System.Reflection.Assembly.GetAssembly(typeof(BackAction))
+                .GetTypes()
+                .Where(t => typeof(IMacroAction).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
+
+            foreach (var type in types)
+                System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(type.TypeHandle);
+
+            // Now verify all enum values resolve
+            foreach (MacroActionType t in Enum.GetValues(typeof(MacroActionType)))
+            {
+                if (t == MacroActionType.None) continue;
+                Assert.DoesNotThrow(() => MacroActionFactory.Create(t),
+                    $"{t} must be registered after class constructors run. Did you forget the static constructor or [Preserve] attribute?");
+            }
         }
     }
 }

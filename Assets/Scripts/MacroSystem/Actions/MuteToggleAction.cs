@@ -1,7 +1,11 @@
 using UnityEngine;
+using UnityEngine.Scripting;
 
 public class MuteToggleAction : IMacroAction
 {
+    [Preserve]
+    static MuteToggleAction() => MacroActionFactory.Register(MacroActionType.MuteToggle, () => new MuteToggleAction());
+
     public string ActionId => "mute_toggle";
     public string DisplayName => "Mute";
 

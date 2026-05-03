@@ -5,10 +5,11 @@ using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 using System.IO;
 using Robit.LauncherSystem;
+using System.Runtime.CompilerServices;
 
 public class AppLauncher : MonoBehaviour
 {
-    public static AppLauncher Instance;
+    internal static AppLauncher Instance;
     private IProcess currentProcess;
     private IProcessRunner _processRunner = new WindowsProcessRunner();
     private ISceneLoader _sceneLoader = new UnitySceneLoader();
@@ -25,7 +26,9 @@ public class AppLauncher : MonoBehaviour
         QualitySettings.vSyncCount = 0;
     }
 
-    public void Awake()
+    protected void Awake() => Initialize();
+
+    internal void Initialize()
     {
         if (Instance == null)
         {

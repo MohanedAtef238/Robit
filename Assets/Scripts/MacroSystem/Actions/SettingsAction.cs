@@ -1,8 +1,12 @@
 using UnityEngine;
+using UnityEngine.Scripting;
 
 /// Macro action that opens the Settings overlay.
 public class SettingsAction : IMacroAction
 {
+    [Preserve]
+    static SettingsAction() => MacroActionFactory.Register(MacroActionType.Settings, () => new SettingsAction());
+
     public string ActionId => "settings";
     public string DisplayName => "Settings";
 
