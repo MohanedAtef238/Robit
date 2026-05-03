@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Robit — Architecture Dashboard</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --bg-alt: #161b22;
+      --text: #e6edf3;
+      --border: #30363d;
+      --accent: #58a6ff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 { margin-bottom: 0.5rem; }
+    .subtitle { color: var(--accent); margin-bottom: 2rem; font-size: 0.95rem; }
+    .diagram-section {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .diagram-section h2 {
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .mermaid { text-align: center; margin: 1rem 0; }
+    .description { margin-top: 1rem; font-size: 0.9rem; color: #8b949e; }
+    nav {
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2rem;
+      z-index: 10;
+    }
+    nav a {
+      color: var(--accent);
+      text-decoration: none;
+      margin-right: 1.5rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    nav a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>Robit Architecture Dashboard</h1>
+  <p class="subtitle">System Design & Integration Flows</p>
+
+  <nav>
+    <a href="#system-context">1. System Context</a>
+    <a href="#app-launch">2. App Launch Flow</a>
+  </nav>
+
+  <!-- Diagram 1: System Context -->
+  <section class="diagram-section" id="system-context">
+    <h2>1. System Context Diagram</h2>
+    <pre class="mermaid">
+graph TB
+    subgraph "User Environment"
+        User((User))
+    end
+
+    subgraph "Robit (Unity Mock OS)"
+        Core["Robit Core Assembly"]
+        UI["UI Toolkit (UXML/USS)"]
+        Interop["Win32 Interop Layer"]
+    end
+
+    subgraph "Windows Operating System"
+        Kernel["Windows Kernel / User32 / Shell32"]
+        FileSystem["NTFS File System"]
+        ExternalApps["External Processes (.exe)"]
+    end
+
+    User -- "Interacts with" --> UI
+    UI -- "Triggers" --> Core
+    Core -- "Calls" --> Interop
+    Interop -- "P/Invoke" --> Kernel
+    Core -- "Scans" --> FileSystem
+    Core -- "Launches" --> ExternalApps
+    Kernel -- "Manages Window" --> Robit
+    </pre>
+    <div class="description">
+      Shows the high-level relationship between Robit, the user, and the underlying Windows architecture.
+    </div>
+  </section>
+
+  <!-- Diagram 2: App Launch Flow -->
+  <section class="diagram-section" id="app-launch">
+    <h2>2. App Launch Flow</h2>
+    <pre class="mermaid">
+sequenceDiagram
+    participant U as User
+    participant R as Robit Core
+    participant I as Win32 Interop
+    participant W as Windows OS
+    
+    U->>R: Click App Shortcut
+    R->>I: SetWindowTransparency(Low)
+    I->>W: UpdateLayeredWindow
+    R->>I: LaunchProcess(App.exe)
+    I->>W: ShellExecute
+    W->>U: Show External App
+    Note over R,W: Robit remains active in background
+    </pre>
+    <div class="description">
+      Detailed sequence of events when a user launches a desktop application through the Robit interface.
+    </div>
+  </section>
+
+  <!-- Load Mermaid Library -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+      startOnLoad: true, 
+      theme: 'dark',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html>

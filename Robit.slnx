@@ -5,6 +5,5 @@
   <Project Path="Mediapipe.Runtime.Tests.csproj" />
   <Project Path="Robit.Editor.csproj" />
   <Project Path="Mediapipe.Holistic.Runtime.csproj" />
-  <Project Path="Robit.Tests.PlayMode.csproj" />
   <Project Path="Nicrom.Editor.csproj" />
 </Solution>

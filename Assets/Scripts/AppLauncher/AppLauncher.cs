@@ -9,10 +9,13 @@ public class AppLauncher : MonoBehaviour
 {
     public static AppLauncher Instance;
     private Process currentProcess;
+    private IProcessRunner _processRunner = new WindowsProcessRunner();
+    private ISceneLoader _sceneLoader = new UnitySceneLoader();
 
-    /// Desktop shortcuts discovered by DesktopParser in MainScene.
-    /// Populated before scene transition so AppCyclerController can read it in OverlayScene.
     public List<ShortcutInfo> CachedShortcuts { get; set; } = new();
+
+    public IProcessRunner ProcessRunner { get => _processRunner; set => _processRunner = value; }
+    public ISceneLoader SceneLoader { get => _sceneLoader; set => _sceneLoader = value; }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void ApplyFPSCap()
@@ -42,19 +45,12 @@ public class AppLauncher : MonoBehaviour
         {
             if (currentProcess != null && !currentProcess.HasExited)
             {
-                currentProcess.CloseMainWindow();
-                currentProcess.Dispose();
+                _processRunner.Close(currentProcess);
             }
 
-            ProcessStartInfo startInfo = new ProcessStartInfo(path);
-            if (!string.IsNullOrEmpty(workingDirectory) && Directory.Exists(workingDirectory))
-            {
-                startInfo.WorkingDirectory = workingDirectory;
-            }
-
-            currentProcess = Process.Start(startInfo);
+            currentProcess = _processRunner.Start(path, workingDirectory);
             
-            SceneManager.LoadScene("OverlayScene"); 
+            _sceneLoader.LoadScene("OverlayScene"); 
         }
         catch (System.Exception e)
         {
@@ -91,8 +87,7 @@ public class AppLauncher : MonoBehaviour
         {
             try
             {
-                currentProcess.CloseMainWindow();
-                currentProcess.Dispose();
+                _processRunner.Close(currentProcess);
             }
             catch (Exception e)
             {
@@ -114,7 +109,7 @@ public class AppLauncher : MonoBehaviour
     private System.Collections.IEnumerator GoHomeRoutine()
     {   
         yield return null;
-        SceneManager.LoadScene("MainScene");
+        _sceneLoader.LoadScene("MainScene");
         UnityEngine.Debug.Log("[AppLauncher] Returning to Home.");
     }
 

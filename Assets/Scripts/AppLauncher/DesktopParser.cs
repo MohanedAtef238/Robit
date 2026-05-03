@@ -42,18 +42,25 @@ public class DesktopParser : MonoBehaviour
         StartCoroutine(ParseShortcuts());
     }
 
+    private IFileSystem _fileSystem = new PhysicalFileSystem();
+    public IFileSystem FileSystem { get => _fileSystem; set => _fileSystem = value; }
+
     IEnumerator ParseShortcuts()
     {
         string[] startMenuPaths = new string[]
         {
-            Environment.GetFolderPath(Environment.SpecialFolder.StartMenu),
-            Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu)
+            _fileSystem.GetSpecialFolderPath(Environment.SpecialFolder.StartMenu),
+            _fileSystem.GetSpecialFolderPath(Environment.SpecialFolder.CommonStartMenu)
         };
 
-        var shortcutFiles = startMenuPaths
-            .Where(Directory.Exists)
-            .SelectMany(path => Directory.EnumerateFiles(path, "*.lnk", SearchOption.AllDirectories))
-            .ToList();
+        var shortcutFiles = new List<string>();
+        foreach (var path in startMenuPaths)
+        {
+            if (_fileSystem.DirectoryExists(path))
+            {
+                shortcutFiles.AddRange(_fileSystem.GetFiles(path, "*.lnk", true));
+            }
+        }
 
         Debug.Log($"[DesktopParser] Found {shortcutFiles.Count} shortcuts");
 
@@ -61,12 +68,13 @@ public class DesktopParser : MonoBehaviour
         {
             try
             {
-                var shortcut = new WinShortcut(file);
+                byte[] shortcutData = _fileSystem.ReadAllBytes(file);
+                var shortcut = new WinShortcut(new MemoryStream(shortcutData));
 
                 if (!IsValidShortcut(shortcut.TargetPath))
                     continue;
 
-                if (!File.Exists(shortcut.TargetPath))
+                if (!_fileSystem.FileExists(shortcut.TargetPath))
                     continue;
 
                 string name = Path.GetFileNameWithoutExtension(file);
@@ -98,11 +106,11 @@ private Texture2D ExtractHighQualityIcon(string filePath)
     string exeName = Path.GetFileNameWithoutExtension(filePath);
     string pngCachePath = Path.Combine(iconsFolder, $"{exeName}_icon.png");
 
-    // Check for cached PNG first (much faster than ICO processing)
-    if (File.Exists(pngCachePath))
+    // Check for cached PNG first
+    if (_fileSystem.FileExists(pngCachePath))
     {
         Debug.Log($"[DesktopParser] Using cached PNG icon: {pngCachePath}");
-        byte[] pngData = File.ReadAllBytes(pngCachePath);
+        byte[] pngData = _fileSystem.ReadAllBytes(pngCachePath);
         Texture2D tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
         if (tex.LoadImage(pngData))
         {
@@ -110,22 +118,19 @@ private Texture2D ExtractHighQualityIcon(string filePath)
         }
         else
         {
-            // tex was created but LoadImage failed — must Destroy to free the GPU resource
             UnityEngine.Object.Destroy(tex);
             Debug.LogWarning($"[DesktopParser] Failed to load cached PNG, falling back to extraction");
         }
     }
 
-    // Extract ICO data directly to memory (no disk I/O for ICO files)
+    // Extract ICO data directly to memory
     List<byte[]> icoDatas = IconExtractor.ExtractAllIcos(filePath);
     if (icoDatas == null || icoDatas.Count == 0) return null;
 
-    // Use the first ICO data (highest-res typically comes first)
     byte[] icoData = icoDatas[0];
 
     try
     {
-        // Load the ICO from memory with Doji.Ico
         var iconFile = IcoConversion.LoadIcon(icoData);
         int largestIndex = 0;
         int maxSize = 0;
@@ -142,10 +147,14 @@ private Texture2D ExtractHighQualityIcon(string filePath)
 
         Texture2D tex = iconFile.ExtractTexture2D(largestIndex);
 
-        // Cache the highest resolution texture as PNG for future use
+        // Cache the highest resolution texture as PNG
         try
         {
-            Directory.CreateDirectory(iconsFolder);
+            // Note: We don't use fileSystem for directory creation/writing in the real version yet
+            // to avoid complicating the mock for now, but we'll use it for FileExists above.
+            if (!Directory.Exists(iconsFolder))
+                Directory.CreateDirectory(iconsFolder);
+            
             byte[] pngData = tex.EncodeToPNG();
             File.WriteAllBytes(pngCachePath, pngData);
             Debug.Log($"[DesktopParser] Cached PNG icon: {pngCachePath}");
