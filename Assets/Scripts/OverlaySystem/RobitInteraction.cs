@@ -24,6 +24,21 @@ public class RobitInteraction : MonoBehaviour, IPointerClickHandler
             macroController = Object.FindFirstObjectByType<MacroButtonController>();
         if (homePageController == null)
             homePageController = Object.FindFirstObjectByType<HomePageController>();
+
+        // IPointerClickHandler requires a PhysicsRaycaster on the camera to detect 3D collider
+        // clicks through the EventSystem. Add one programmatically if absent.
+        Camera cam = Camera.main ?? Object.FindFirstObjectByType<Camera>();
+        if (cam != null && cam.GetComponent<UnityEngine.EventSystems.PhysicsRaycaster>() == null)
+            cam.gameObject.AddComponent<UnityEngine.EventSystems.PhysicsRaycaster>();
+
+        // Ensure an EventSystem exists — required for both PhysicsRaycaster and UI Toolkit
+        // PanelEventHandler to route pointer events.
+        if (UnityEngine.EventSystems.EventSystem.current == null)
+        {
+            var esGO = new GameObject("EventSystem");
+            esGO.AddComponent<UnityEngine.EventSystems.EventSystem>();
+            esGO.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+        }
     }
 
     public void OnPointerClick(PointerEventData eventData)

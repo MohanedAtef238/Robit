@@ -24,7 +24,7 @@ public class AppLauncherUIToolkit : MonoBehaviour
     private Button backBtn;
 
     private List<ShortcutInfo> allShortcuts = new List<ShortcutInfo>();
-    private Robit.Logic.IPaginationLogic pagination;
+    private IPaginationLogic pagination;
     private bool isTransitioning;
     private bool panelVisible;
     private Coroutine spinnerCoroutine;
@@ -60,6 +60,7 @@ public class AppLauncherUIToolkit : MonoBehaviour
         WindowManager.Initialize();
         WindowManager.SetClickThrough(false);
         WindowManager.SetAcrylicBlur(true);
+        FindFirstObjectByType<Transparency>()?.RefreshUIDocumentCache();
 
         var cam = Camera.main;
         if (cam != null)
@@ -72,6 +73,8 @@ public class AppLauncherUIToolkit : MonoBehaviour
     private bool BindUIElements()
     {
         uiDocument = GetComponent<UIDocument>();
+        pagination = new PaginationLogic(ItemsPerPage);
+
         if (uiDocument == null || uiDocument.rootVisualElement == null)
         {
             RobitLogger.LogError("[AppLauncherUIToolkit] UIDocument or root is null");
@@ -98,10 +101,10 @@ public class AppLauncherUIToolkit : MonoBehaviour
 
         backBtn = rootParams.Q<Button>("back-btn");
         if (backBtn != null)
-            backBtn.clicked += () => UnityEngine.SceneManagement.SceneManager.LoadScene("OverlayScene");
+            backBtn.RegisterCallback<PointerDownEvent>(_ => UnityEngine.SceneManagement.SceneManager.LoadScene("OverlayScene"));
             
         pageIndicator.style.display = DisplayStyle.None;
-        pagination = new Robit.Logic.PaginationLogic(ItemsPerPage);
+        pagination = new PaginationLogic(ItemsPerPage);
         return true;
     }
 
@@ -276,8 +279,8 @@ public class AppLauncherUIToolkit : MonoBehaviour
     {
         List<VisualElement> pageCards = new List<VisualElement>();
         var range = pagination.GetPageRange(allShortcuts.Count, pageIndex);
-        int startIndex = range.startIndex;
-        int endIndex = range.endIndex;
+        int startIndex = range.start;
+        int endIndex = range.end;
 
         for (int i = startIndex; i < endIndex; i++)
         {
@@ -308,7 +311,7 @@ public class AppLauncherUIToolkit : MonoBehaviour
             VisualElement triggerTracker = cardInstance.Q<VisualElement>("tracker");
             if (triggerTracker != null)
             {
-                triggerTracker.RegisterCallback<ClickEvent>(_ =>
+                triggerTracker.RegisterCallback<PointerDownEvent>(_ =>
                 {
                     OnAppCardClick(shortcut.TargetPath, shortcut.WorkingDirectory);
                 });

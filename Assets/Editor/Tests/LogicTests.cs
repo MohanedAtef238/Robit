@@ -1,5 +1,5 @@
 using NUnit.Framework;
-using Robit.Logic;
+using System.Collections.Generic;
 
 namespace Robit.Tests.Logic
 {
@@ -90,6 +90,94 @@ namespace Robit.Tests.Logic
         {
             _logic.Cycle(1, 0);
             Assert.AreEqual(0, _logic.SelectedIndex);
+        }
+    }
+
+    [TestFixture]
+    public class CyclerStateManagerTests
+    {
+        private CyclerStateManager _stateManager;
+
+        [SetUp]
+        public void Setup()
+        {
+            _stateManager = new CyclerStateManager();
+        }
+
+        [Test]
+        public void InitialState_IsTucked()
+        {
+            Assert.AreEqual(CyclerState.Tucked, _stateManager.CurrentState);
+        }
+
+        [Test]
+        public void Transitions_ValidPaths()
+        {
+            // Tucked -> Peeked
+            Assert.IsTrue(_stateManager.TryTransition(CyclerState.Peeked));
+            Assert.AreEqual(CyclerState.Peeked, _stateManager.CurrentState);
+
+            // Peeked -> Expanded
+            Assert.IsTrue(_stateManager.TryTransition(CyclerState.Expanded));
+            Assert.AreEqual(CyclerState.Expanded, _stateManager.CurrentState);
+
+            // Expanded -> Peeked
+            Assert.IsTrue(_stateManager.TryTransition(CyclerState.Peeked));
+            Assert.AreEqual(CyclerState.Peeked, _stateManager.CurrentState);
+
+            // Peeked -> Tucked
+            Assert.IsTrue(_stateManager.TryTransition(CyclerState.Tucked));
+            Assert.AreEqual(CyclerState.Tucked, _stateManager.CurrentState);
+        }
+
+        [Test]
+        public void Transitions_InvalidPaths()
+        {
+            // Tucked -> Expanded (Should fail)
+            Assert.IsFalse(_stateManager.TryTransition(CyclerState.Expanded));
+            Assert.AreEqual(CyclerState.Tucked, _stateManager.CurrentState);
+
+            // Peeked -> (Is valid to Tucked/Expanded, so move to Peeked first)
+            _stateManager.TryTransition(CyclerState.Peeked);
+            
+            // Peeked -> Peeked (Should fail or be ignored, we defined it as only Tucked or Expanded)
+            Assert.IsFalse(_stateManager.TryTransition(CyclerState.Peeked));
+        }
+    }
+
+    [TestFixture]
+    public class AppCardLogicTests
+    {
+        private AppCardLogic _logic;
+
+        [SetUp]
+        public void Setup()
+        {
+            _logic = new AppCardLogic();
+        }
+
+        [Test]
+        public void GenerateCardModels_ConvertsShortcuts()
+        {
+            var shortcuts = new List<ShortcutInfo>
+            {
+                new ShortcutInfo { Name = "App1", TargetPath = "C:/App1.exe" },
+                new ShortcutInfo { Name = "App2", TargetPath = "C:/App2.exe", Icon = null }
+            };
+
+            var result = _logic.GenerateCardModels(shortcuts);
+
+            Assert.AreEqual(2, result.Count);
+            Assert.AreEqual("App1", result[0].Name);
+            Assert.AreEqual("C:/App1.exe", result[0].TargetPath);
+            Assert.IsFalse(result[1].HasIcon);
+        }
+
+        [Test]
+        public void GenerateCardModels_HandlesNull()
+        {
+            var result = _logic.GenerateCardModels(null);
+            Assert.AreEqual(0, result.Count);
         }
     }
 }

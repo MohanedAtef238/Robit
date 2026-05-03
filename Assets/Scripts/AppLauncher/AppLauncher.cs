@@ -7,7 +7,7 @@ using System.IO;
 using Robit.LauncherSystem;
 using System.Runtime.CompilerServices;
 
-public class AppLauncher : MonoBehaviour
+public class AppLauncher : MonoBehaviour, IAppLauncher
 {
     internal static AppLauncher Instance;
     private IProcess currentProcess;

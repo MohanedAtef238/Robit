@@ -1,7 +1,7 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/Scripts/AppLauncher/DesktopCard.uss?fileID=7433441132597879392&amp;guid=3ca87a7b6b0882a40ab01b8b56b03ad6&amp;type=3#DesktopCard"/>
     <ui:Button name="back-btn" text="‹ Back" class="nav-button" style="position: absolute; top: 24px; left: 24px; width: 130px; height: 52px; border-top-left-radius: 26px; border-top-right-radius: 26px; border-bottom-right-radius: 26px; border-bottom-left-radius: 26px; font-size: 22px;"/>
-    <ui:VisualElement name="app-launcher-root" class="app-launcher-root">
+    <ui:VisualElement name="app-launcher-root" class="app-launcher-root" picking-mode="Ignore">
         <ui:Label name="status-text" text="Initializing Desktop..." class="status-text"/>
         <ui:VisualElement name="carousel-shell" class="carousel-shell">
             <ui:Button name="nav-left" text="‹" class="nav-button nav-left"/>

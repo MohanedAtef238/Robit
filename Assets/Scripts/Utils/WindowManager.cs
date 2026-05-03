@@ -176,8 +176,6 @@ public static class WindowManager
         IntPtr hWnd = GetWindowHandle();
         if (hWnd == IntPtr.Zero) return;
 
-        // While acrylic blur is active, WS_EX_LAYERED is intentionally stripped so the accent policy composites correctly over the DWM extended frame.
-        if (_acrylicActive) return;
         
         uint currentStyle = GetExtendedStyle(hWnd);
         uint newStyle = currentStyle | Win32Interop.WS_EX_LAYERED;
@@ -187,8 +185,14 @@ public static class WindowManager
         else
             newStyle &= ~Win32Interop.WS_EX_TRANSPARENT;
         
-        SetExtendedStyle(hWnd, newStyle);
-        Win32Interop.SetWindowPos(hWnd, IntPtr.Zero, 0, 0, 0, 0, Win32Interop.SWP_NOSIZE | Win32Interop.SWP_NOMOVE | Win32Interop.SWP_FRAMECHANGED | Win32Interop.SWP_SHOWWINDOW);
+        if (newStyle != currentStyle)
+        {
+            SetExtendedStyle(hWnd, newStyle);
+            // SWP_NOACTIVATE prevents Windows from treating the style refresh as a window
+            // activation event, which would otherwise consume the first click as an
+            // "activate-this-window" click and never deliver it to Unity.
+            Win32Interop.SetWindowPos(hWnd, IntPtr.Zero, 0, 0, 0, 0, Win32Interop.SWP_NOSIZE | Win32Interop.SWP_NOMOVE | Win32Interop.SWP_FRAMECHANGED | Win32Interop.SWP_NOACTIVATE);
+        }
         #endif
     }
 

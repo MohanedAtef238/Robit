@@ -35,11 +35,9 @@ public class AppCyclerController : MonoBehaviour
     private Label         appNameLabel;
 
     // ── state ────────────────────────────────────────────────────────
-    private enum CyclerState { Tucked, Peeked, Expanded }
-    private CyclerState state = CyclerState.Tucked;
-
     private List<ShortcutInfo> shortcuts = new();
-    private Robit.Logic.ICyclerLogic cyclerLogic;
+    private ICyclerLogic cyclerLogic;
+    private ICyclerStateManager stateManager;
     private bool shortcutsReady;
 
     // ── lifecycle ────────────────────────────────────────────────────
@@ -86,6 +84,33 @@ public class AppCyclerController : MonoBehaviour
     void OnEnable()
     {
         uiDoc = GetComponent<UIDocument>();
+        if (uiDoc == null) { RobitLogger.LogError("[AppCycler] UIDocument component missing."); return; }
+
+        // rootVisualElement is never null, but its UXML children are only populated after
+        // UIDocument.OnEnable() runs. If Script Execution Order puts us before UIDocument,
+        // the Q<> calls below would all return null. Defer one frame in that case.
+        if (uiDoc.rootVisualElement?.Q<VisualElement>("cycler-hit-area") != null)
+            BindUI();
+        else
+            StartCoroutine(BindWhenReady());
+    }
+
+    private System.Collections.IEnumerator BindWhenReady()
+    {
+        yield return null; // wait one frame
+        if (uiDoc != null && uiDoc.rootVisualElement != null)
+            BindUI();
+        else
+            RobitLogger.LogError("[AppCycler] UIDocument root still null after one frame — callbacks not registered.");
+    }
+
+    private void BindUI()
+    {
+        // Initialise logic objects FIRST so they are never null if callback registration
+        // throws partway through (preventing Open() / OnIdleClicked() NullReferenceExceptions).
+        cyclerLogic  = new CyclerLogic();
+        stateManager = new CyclerStateManager();
+
         var root = uiDoc.rootVisualElement;
 
         hitArea      = root.Q<VisualElement>("cycler-hit-area");
@@ -97,22 +122,45 @@ public class AppCyclerController : MonoBehaviour
         labelBtn     = root.Q<Button>("cycler-label-btn");
         appNameLabel = root.Q<Label>("cycler-app-name");
 
+        // Fail fast with a clear message so Unity console shows exactly what is missing.
+        if (hitArea == null || dock == null || idleBtn == null || expanded == null ||
+            leftBtn == null || rightBtn == null || labelBtn == null || appNameLabel == null)
+        {
+            RobitLogger.LogError($"[AppCycler] BindUI failed — UXML element(s) missing: " +
+                $"hitArea={hitArea != null}, dock={dock != null}, idleBtn={idleBtn != null}, " +
+                $"expanded={expanded != null}, leftBtn={leftBtn != null}, rightBtn={rightBtn != null}, " +
+                $"labelBtn={labelBtn != null}, appNameLabel={appNameLabel != null}");
+            return;
+        }
+
+        RobitLogger.Log("[AppCycler] BindUI — all elements found, registering callbacks.");
+
         // Hover detection on the hit area — peek / tuck
         hitArea.RegisterCallback<PointerEnterEvent>(OnHitAreaEnter);
         hitArea.RegisterCallback<PointerLeaveEvent>(OnHitAreaLeave);
 
-        // Idle circle click → split open
-        idleBtn.clicked += OnIdleClicked;
-
-        // Arrow clicks → cycle
+        // Use Button.clicked (full press+release gesture) — this matches the pre-HEAD behaviour
+        // that worked reliably.  PointerDownEvent fires on press alone, which in a click-through
+        // overlay can race with the WS_EX_TRANSPARENT toggle and miss the delivery window.
+        idleBtn.clicked  += OnIdleClicked;
         leftBtn.clicked  += () => CycleSelection(-1);
         rightBtn.clicked += () => CycleSelection(+1);
-
-        // Center label click → switch to app and merge back
         labelBtn.clicked += OnLabelClicked;
 
-        cyclerLogic = new Robit.Logic.CyclerLogic();
-        SetTucked();
+        // Clicking the dock/expanded background while open collapses the cycler.
+        // evt.target check ensures arrow/label click bubbles do NOT accidentally collapse.
+        dock.RegisterCallback<PointerDownEvent>(evt =>
+        {
+            if (stateManager.CurrentState != CyclerState.Expanded) return;
+            var t = evt.target as VisualElement;
+            if (t == dock || t == expanded)
+                MergeToIdle();
+        });
+
+        // UXML already sets the correct initial visual state (tucked class, expanded hidden).
+        // SetTucked() is intentionally NOT called here because the state machine starts in
+        // Tucked and TryTransition(Tucked→Tucked) fails, returning early and skipping visuals.
+        FindFirstObjectByType<Transparency>()?.RefreshUIDocumentCache();
     }
 
     void OnDisable()
@@ -150,20 +198,20 @@ public class AppCyclerController : MonoBehaviour
 
     private void OnHitAreaEnter(PointerEnterEvent _)
     {
-        if (state == CyclerState.Tucked)
+        if (stateManager.CurrentState == CyclerState.Tucked)
             Peek();
     }
 
     private void OnHitAreaLeave(PointerLeaveEvent _)
     {
         // Only tuck if we haven't expanded yet
-        if (state == CyclerState.Peeked)
+        if (stateManager.CurrentState == CyclerState.Peeked)
             SetTucked();
     }
 
     private void SetTucked()
     {
-        state = CyclerState.Tucked;
+        if (!stateManager.TryTransition(CyclerState.Tucked)) return;
         dock.RemoveFromClassList("cycler-dock--peeked");
         dock.AddToClassList("cycler-dock--tucked");
         // Animate scale back to normal
@@ -177,7 +225,7 @@ public class AppCyclerController : MonoBehaviour
 
     private void Peek()
     {
-        state = CyclerState.Peeked;
+        if (!stateManager.TryTransition(CyclerState.Peeked)) return;
         dock.RemoveFromClassList("cycler-dock--tucked");
         dock.AddToClassList("cycler-dock--peeked");
         // Animate scale up
@@ -194,8 +242,15 @@ public class AppCyclerController : MonoBehaviour
             return;
         }
 
+        // If the user tapped directly without a prior hover (e.g. the window was
+        // click-through until this very frame), PointerEnterEvent may not have fired
+        // and the state machine is still Tucked.  Bridge through Peeked automatically
+        // so the Tucked → Peeked → Expanded path always succeeds on a direct click.
+        if (stateManager.CurrentState == CyclerState.Tucked)
+            Peek();
+
         cyclerLogic.Reset();
-        state = CyclerState.Expanded;
+        if (!stateManager.TryTransition(CyclerState.Expanded)) return;
 
         // Ensure peeked so the dock is fully visible
         dock.RemoveFromClassList("cycler-dock--tucked");
@@ -312,7 +367,7 @@ public class AppCyclerController : MonoBehaviour
                 TransitionElement(idleBtn, splitDurationMs);
                 idleBtn.style.scale = new Scale(Vector2.one);
                 idleBtn.style.opacity = 1f;
-                state = CyclerState.Peeked;
+                stateManager.TryTransition(CyclerState.Peeked);
             }).StartingIn(16);
         }).StartingIn((long)mergeDurationMs);
     }

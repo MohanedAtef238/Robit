@@ -12,7 +12,7 @@ public class AppCyclerAction : IMacroAction
 
     public void Execute()
     {
-        var controller = Object.FindFirstObjectByType<AppCyclerController>();
+        var controller = UnityEngine.Object.FindFirstObjectByType<AppCyclerController>();
         if (controller != null)
         {
             controller.Open();

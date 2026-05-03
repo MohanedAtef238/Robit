@@ -212,6 +212,10 @@ public class Transparency : MonoBehaviour
             RobitLogger.Log($"[Transparency] Click-through OFF. Hit: {hitInfo}");
             #endif
             SetClickThrough(false);
+            // FocusWindow is safe to call here because SetClickThrough now uses SWP_NOACTIVATE,
+            // so the style change itself no longer triggers a window-activation event.
+            // FocusWindow brings Unity to the foreground so the subsequent click is delivered
+            // directly as WM_LBUTTONDOWN rather than going through WM_MOUSEACTIVATE first.
             WindowManager.FocusWindow();
             lastToggleTime = Time.time;
         }

@@ -7,7 +7,10 @@ public class AppLauncherUI : MonoBehaviour
 {
     public DesktopParser desktopParser;
     public RectTransform cardContainer;
-    public Text statusText; // Public reference to the new status text UI element
+    public Text statusText;
+    private IAppCardLogic cardLogic;
+
+    void Awake() => cardLogic = new AppCardLogic();
 
     IEnumerator Start()
     {
@@ -70,10 +73,15 @@ public class AppLauncherUI : MonoBehaviour
         // If we found shortcuts, clear the status message
         statusText.text = "";
 
-        foreach (var shortcut in shortcuts)
+        var models = cardLogic.GenerateCardModels(shortcuts);
+
+        for (int i = 0; i < models.Count; i++)
         {
+            var model = models[i];
+            var shortcut = shortcuts[i]; // Need the original for the Texture2D reference
+
             GameObject cardInstance = CreateAppCard(cardContainer);
-            cardInstance.name = shortcut.Name + " Card";
+            cardInstance.name = model.Name + " Card";
 
             // Get the UI components from the dynamically created card
             RawImage iconImage = cardInstance.transform.Find("Icon").GetComponent<RawImage>();
@@ -81,28 +89,23 @@ public class AppLauncherUI : MonoBehaviour
             Button button = cardInstance.GetComponent<Button>();
 
             // Set the card's details
-            nameText.text = shortcut.Name;
+            nameText.text = model.Name;
             
             // Debug: Check if texture is valid
-            if (shortcut.Icon == null)
+            if (!model.HasIcon)
             {
-                RobitLogger.LogError($"[AppLauncherUI] Icon texture is NULL for '{shortcut.Name}'");
+                RobitLogger.LogError($"[AppLauncherUI] Icon texture is NULL for '{model.Name}'");
             }
             else
             {
-                RobitLogger.Log($"[AppLauncherUI] Setting icon for '{shortcut.Name}': {shortcut.Icon.width}x{shortcut.Icon.height}, format={shortcut.Icon.format}, isReadable={shortcut.Icon.isReadable}");
                 iconImage.texture = shortcut.Icon;
-                
-                // Force the RawImage to refresh
                 iconImage.SetNativeSize();
                 iconImage.enabled = false;
                 iconImage.enabled = true;
-                
-                RobitLogger.Log($"[AppLauncherUI] RawImage texture assigned: {(iconImage.texture != null ? "YES" : "NO")}, RawImage enabled: {iconImage.enabled}, GameObject active: {iconImage.gameObject.activeInHierarchy}");
             }
 
             // Add a listener to the button to launch the app
-            button.onClick.AddListener(() => OnAppCardClick(shortcut.TargetPath, shortcut.WorkingDirectory));
+            button.onClick.AddListener(() => OnAppCardClick(model.TargetPath, model.WorkingDirectory));
         }
     }
 
