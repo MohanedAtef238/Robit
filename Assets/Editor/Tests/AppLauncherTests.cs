@@ -2,6 +2,7 @@ using NUnit.Framework;
 using UnityEngine;
 using System.Collections.Generic;
 using Robit.LauncherSystem;
+using UnityEngine.TestTools;
 
 namespace Robit.Tests
 {
@@ -18,6 +19,12 @@ namespace Robit.Tests
             _launcherObject = new GameObject("AppLauncher");
             _launcher = _launcherObject.AddComponent<AppLauncher>();
             
+            // Manually trigger Awake in EditMode if it's not already called
+            if (AppLauncher.Instance == null)
+            {
+                _launcher.Awake();
+            }
+
             _mockRunner = new MockProcessRunner();
             _mockLoader = new MockSceneLoader();
             
@@ -37,13 +44,14 @@ namespace Robit.Tests
         {
             // Arrange
             var secondObject = new GameObject("AppLauncherDuplicate");
-            secondObject.AddComponent<AppLauncher>();
+            var secondLauncher = secondObject.AddComponent<AppLauncher>();
 
-            // Act - Unity destroys the object at the end of the frame, 
-            // but we can check the Instance reference immediately.
+            // Act - Trigger Awake on the second instance
+            secondLauncher.Awake();
             
             // Assert
             Assert.AreEqual(_launcher, AppLauncher.Instance);
+            Assert.IsTrue(secondObject == null || secondObject.Equals(null), "Second object should have been destroyed.");
         }
 
         [Test]
@@ -66,6 +74,7 @@ namespace Robit.Tests
         {
             // Arrange
             _mockRunner.ShouldFail = true;
+            LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("Failed to launch application.*Mock Launch Failure"));
 
             // Act
             _launcher.LaunchApplication("fail.exe", "");

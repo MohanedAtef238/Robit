@@ -25,16 +25,26 @@ public class AppLauncher : MonoBehaviour
         QualitySettings.vSyncCount = 0;
     }
 
-    private void Awake()
+    public void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            if (Application.isPlaying)
+            {
+                DontDestroyOnLoad(gameObject);
+            }
         }
-        else
+        else if (Instance != this)
         {   
-            Destroy(gameObject);
+            if (Application.isPlaying)
+            {
+                Destroy(gameObject);
+            }
+            else
+            {
+                DestroyImmediate(gameObject);
+            }
         }
     }
 
