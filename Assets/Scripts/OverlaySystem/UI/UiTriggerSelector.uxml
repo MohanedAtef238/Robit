@@ -1,0 +1,229 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Scripts/AppLauncher/DesktopCard.uss?fileID=7433441132597879392&amp;guid=3ca87a7b6b0882a40ab01b8b56b03ad6&amp;type=3#DesktopCard"/>
+    <Style src="project://database/Assets/Scripts/OverlaySystem/UI/UiTriggerSelector.uss?fileID=7433441132597879392&amp;guid=9d1f3be5b9d642d8af67f7a2e6d3c5b1&amp;type=3#UiTriggerSelector"/>
+    <ui:VisualElement name="ui-trigger-selector" class="selector-root" style="display: none;">
+        <ui:VisualElement class="selector-backdrop"/>
+        <ui:VisualElement class="selector-shell">
+            <ui:Label text="SELECT TARGET" class="selector-title"/>
+            <ui:Label name="ui-trigger-subtitle" text="Choose an index to invoke" class="selector-subtitle"/>
+            <ui:VisualElement class="selector-grid">
+                <ui:VisualElement name="option-1" class="container selector-option">
+                    <ui:VisualElement name="option-1-card" class="card">
+                        <ui:VisualElement class="card-glare" />
+                        <ui:VisualElement class="scan-line" />
+                        <ui:VisualElement class="card-glow-bg" />
+                        <ui:VisualElement class="cyber-lines">
+                            <ui:VisualElement class="line line-1" />
+                            <ui:VisualElement class="line line-2" />
+                            <ui:VisualElement class="line line-3" />
+                            <ui:VisualElement class="line line-4" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="corner-elements">
+                            <ui:VisualElement class="corner corner-1" />
+                            <ui:VisualElement class="corner corner-2" />
+                            <ui:VisualElement class="corner corner-3" />
+                            <ui:VisualElement class="corner corner-4" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="card-content">
+                            <ui:VisualElement class="card-particles">
+                                <ui:VisualElement class="particle p-1"/>
+                                <ui:VisualElement class="particle p-2"/>
+                                <ui:VisualElement class="particle p-3"/>
+                                <ui:VisualElement class="particle p-4"/>
+                                <ui:VisualElement class="particle p-5"/>
+                                <ui:VisualElement class="particle p-6"/>
+                            </ui:VisualElement>
+                            <ui:VisualElement class="glowing-elements">
+                                <ui:VisualElement class="glow glow-1"/>
+                                <ui:VisualElement class="glow glow-2"/>
+                                <ui:VisualElement class="glow glow-3"/>
+                            </ui:VisualElement>
+                            <ui:Label name="option-1-title" class="title selector-number" text="1" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="option-1-tracker" class="tracker" />
+                </ui:VisualElement>
+                <ui:VisualElement name="option-2" class="container selector-option">
+                    <ui:VisualElement class="card">
+                        <ui:VisualElement class="card-glare" />
+                        <ui:VisualElement class="scan-line" />
+                        <ui:VisualElement class="card-glow-bg" />
+                        <ui:VisualElement class="cyber-lines">
+                            <ui:VisualElement class="line line-1" />
+                            <ui:VisualElement class="line line-2" />
+                            <ui:VisualElement class="line line-3" />
+                            <ui:VisualElement class="line line-4" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="corner-elements">
+                            <ui:VisualElement class="corner corner-1" />
+                            <ui:VisualElement class="corner corner-2" />
+                            <ui:VisualElement class="corner corner-3" />
+                            <ui:VisualElement class="corner corner-4" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="card-content">
+                            <ui:VisualElement class="card-particles">
+                                <ui:VisualElement class="particle p-1"/>
+                                <ui:VisualElement class="particle p-2"/>
+                                <ui:VisualElement class="particle p-3"/>
+                                <ui:VisualElement class="particle p-4"/>
+                                <ui:VisualElement class="particle p-5"/>
+                                <ui:VisualElement class="particle p-6"/>
+                            </ui:VisualElement>
+                            <ui:VisualElement class="glowing-elements">
+                                <ui:VisualElement class="glow glow-1"/>
+                                <ui:VisualElement class="glow glow-2"/>
+                                <ui:VisualElement class="glow glow-3"/>
+                            </ui:VisualElement>
+                            <ui:Label name="option-2-title" class="title selector-number" text="2" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="option-2-tracker" class="tracker" />
+                </ui:VisualElement>
+                <ui:VisualElement name="option-3" class="container selector-option">
+                    <ui:VisualElement class="card">
+                        <ui:VisualElement class="card-glare" />
+                        <ui:VisualElement class="scan-line" />
+                        <ui:VisualElement class="card-glow-bg" />
+                        <ui:VisualElement class="cyber-lines">
+                            <ui:VisualElement class="line line-1" />
+                            <ui:VisualElement class="line line-2" />
+                            <ui:VisualElement class="line line-3" />
+                            <ui:VisualElement class="line line-4" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="corner-elements">
+                            <ui:VisualElement class="corner corner-1" />
+                            <ui:VisualElement class="corner corner-2" />
+                            <ui:VisualElement class="corner corner-3" />
+                            <ui:VisualElement class="corner corner-4" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="card-content">
+                            <ui:VisualElement class="card-particles">
+                                <ui:VisualElement class="particle p-1"/>
+                                <ui:VisualElement class="particle p-2"/>
+                                <ui:VisualElement class="particle p-3"/>
+                                <ui:VisualElement class="particle p-4"/>
+                                <ui:VisualElement class="particle p-5"/>
+                                <ui:VisualElement class="particle p-6"/>
+                            </ui:VisualElement>
+                            <ui:VisualElement class="glowing-elements">
+                                <ui:VisualElement class="glow glow-1"/>
+                                <ui:VisualElement class="glow glow-2"/>
+                                <ui:VisualElement class="glow glow-3"/>
+                            </ui:VisualElement>
+                            <ui:Label name="option-3-title" class="title selector-number" text="3" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="option-3-tracker" class="tracker" />
+                </ui:VisualElement>
+                <ui:VisualElement name="option-4" class="container selector-option">
+                    <ui:VisualElement class="card">
+                        <ui:VisualElement class="card-glare" />
+                        <ui:VisualElement class="scan-line" />
+                        <ui:VisualElement class="card-glow-bg" />
+                        <ui:VisualElement class="cyber-lines">
+                            <ui:VisualElement class="line line-1" />
+                            <ui:VisualElement class="line line-2" />
+                            <ui:VisualElement class="line line-3" />
+                            <ui:VisualElement class="line line-4" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="corner-elements">
+                            <ui:VisualElement class="corner corner-1" />
+                            <ui:VisualElement class="corner corner-2" />
+                            <ui:VisualElement class="corner corner-3" />
+                            <ui:VisualElement class="corner corner-4" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="card-content">
+                            <ui:VisualElement class="card-particles">
+                                <ui:VisualElement class="particle p-1"/>
+                                <ui:VisualElement class="particle p-2"/>
+                                <ui:VisualElement class="particle p-3"/>
+                                <ui:VisualElement class="particle p-4"/>
+                                <ui:VisualElement class="particle p-5"/>
+                                <ui:VisualElement class="particle p-6"/>
+                            </ui:VisualElement>
+                            <ui:VisualElement class="glowing-elements">
+                                <ui:VisualElement class="glow glow-1"/>
+                                <ui:VisualElement class="glow glow-2"/>
+                                <ui:VisualElement class="glow glow-3"/>
+                            </ui:VisualElement>
+                            <ui:Label name="option-4-title" class="title selector-number" text="4" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="option-4-tracker" class="tracker" />
+                </ui:VisualElement>
+                <ui:VisualElement name="option-5" class="container selector-option">
+                    <ui:VisualElement class="card">
+                        <ui:VisualElement class="card-glare" />
+                        <ui:VisualElement class="scan-line" />
+                        <ui:VisualElement class="card-glow-bg" />
+                        <ui:VisualElement class="cyber-lines">
+                            <ui:VisualElement class="line line-1" />
+                            <ui:VisualElement class="line line-2" />
+                            <ui:VisualElement class="line line-3" />
+                            <ui:VisualElement class="line line-4" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="corner-elements">
+                            <ui:VisualElement class="corner corner-1" />
+                            <ui:VisualElement class="corner corner-2" />
+                            <ui:VisualElement class="corner corner-3" />
+                            <ui:VisualElement class="corner corner-4" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="card-content">
+                            <ui:VisualElement class="card-particles">
+                                <ui:VisualElement class="particle p-1"/>
+                                <ui:VisualElement class="particle p-2"/>
+                                <ui:VisualElement class="particle p-3"/>
+                                <ui:VisualElement class="particle p-4"/>
+                                <ui:VisualElement class="particle p-5"/>
+                                <ui:VisualElement class="particle p-6"/>
+                            </ui:VisualElement>
+                            <ui:VisualElement class="glowing-elements">
+                                <ui:VisualElement class="glow glow-1"/>
+                                <ui:VisualElement class="glow glow-2"/>
+                                <ui:VisualElement class="glow glow-3"/>
+                            </ui:VisualElement>
+                            <ui:Label name="option-5-title" class="title selector-number" text="5" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="option-5-tracker" class="tracker" />
+                </ui:VisualElement>
+                <ui:VisualElement name="option-6" class="container selector-option">
+                    <ui:VisualElement class="card">
+                        <ui:VisualElement class="card-glare" />
+                        <ui:VisualElement class="scan-line" />
+                        <ui:VisualElement class="card-glow-bg" />
+                        <ui:VisualElement class="cyber-lines">
+                            <ui:VisualElement class="line line-1" />
+                            <ui:VisualElement class="line line-2" />
+                            <ui:VisualElement class="line line-3" />
+                            <ui:VisualElement class="line line-4" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="corner-elements">
+                            <ui:VisualElement class="corner corner-1" />
+                            <ui:VisualElement class="corner corner-2" />
+                            <ui:VisualElement class="corner corner-3" />
+                            <ui:VisualElement class="corner corner-4" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="card-content">
+                            <ui:VisualElement class="card-particles">
+                                <ui:VisualElement class="particle p-1"/>
+                                <ui:VisualElement class="particle p-2"/>
+                                <ui:VisualElement class="particle p-3"/>
+                                <ui:VisualElement class="particle p-4"/>
+                                <ui:VisualElement class="particle p-5"/>
+                                <ui:VisualElement class="particle p-6"/>
+                            </ui:VisualElement>
+                            <ui:VisualElement class="glowing-elements">
+                                <ui:VisualElement class="glow glow-1"/>
+                                <ui:VisualElement class="glow glow-2"/>
+                                <ui:VisualElement class="glow glow-3"/>
+                            </ui:VisualElement>
+                            <ui:Label name="option-6-title" class="title selector-number" text="6" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="option-6-tracker" class="tracker" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
