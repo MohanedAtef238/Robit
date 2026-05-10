@@ -46,7 +46,7 @@
     justify-content: center;
     align-content: center;
     align-items: center;
-    
+    max-width: 1500px;
 }
 
 .page-indicator {
@@ -89,9 +89,9 @@
 /* The outer container. We add 30px margin to space cards out to prevent misclicks */
 .container {
     position: relative;
-    width: 190px;
-    height: 254px;
-    margin: 30px; 
+    width: 280px;
+    height: 380px;
+    margin: 45px; 
     transition-duration: 200ms;
     opacity: 1;
     scale: 1;
@@ -141,7 +141,7 @@
 }
 
 #prompt {
-    bottom: 100px;
+    bottom: 140px;
     position: absolute;
     width: 100%;
     font-size: 16px;
@@ -160,9 +160,9 @@
 
 .icon-container {
     position: absolute;
-    top: 40px;
+    top: 60px;
     width: 100%;
-    height: 80px;
+    height: 120px;
     align-items: center;
     justify-content: center;
     opacity: 1;
@@ -179,7 +179,7 @@
     transition-duration: 300ms;
     transition-timing-function: ease-in-out;
     position: absolute;
-    font-size: 24px;
+    font-size: 32px;
     -unity-font-style: bold;
     letter-spacing: 4px;
     -unity-text-align: middle-center;
@@ -198,7 +198,7 @@
 
 .subtitle {
     position: absolute;
-    bottom: 40px;
+    bottom: 60px;
     width: 100%;
     -unity-text-align: middle-center;
     font-size: 12px;
@@ -228,9 +228,9 @@
 
 .glow {
     position: absolute;
-    width: 100px;
-    height: 100px;
-    border-radius: 50px;
+    width: 140px;
+    height: 140px;
+    border-radius: 70px;
     background-color: rgba(120, 60, 240, 0.15); /* Substituted radial gradient */
 }
 
@@ -272,8 +272,8 @@
 /* Corner Elements */
 .corner-elements .corner {
     position: absolute;
-    width: 15px;
-    height: 15px;
+    width: 25px;
+    height: 25px;
     border-color: rgba(92, 103, 255, 0.3);
     border-width: 2px;
     transition-duration: 300ms;

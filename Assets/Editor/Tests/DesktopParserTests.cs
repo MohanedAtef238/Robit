@@ -46,10 +46,10 @@ namespace Robit.Tests
         public IEnumerator ParseShortcuts_HandlesEmptyDirectories()
         {
             // Arrange
-            _mockFS.Directories.Add("/mock/StartMenu");
-            _mockFS.Directories.Add("/mock/CommonStartMenu");
-            _mockFS.SpecialFolders[System.Environment.SpecialFolder.StartMenu] = "/mock/StartMenu";
-            _mockFS.SpecialFolders[System.Environment.SpecialFolder.CommonStartMenu] = "/mock/CommonStartMenu";
+            _mockFS.Directories.Add("/mock/Desktop");
+            _mockFS.Directories.Add("/mock/CommonDesktop");
+            _mockFS.SpecialFolders[System.Environment.SpecialFolder.Desktop] = "/mock/Desktop";
+            _mockFS.SpecialFolders[System.Environment.SpecialFolder.CommonDesktopDirectory] = "/mock/CommonDesktop";
 
             // Act
             IEnumerator routine = (IEnumerator)_parser.GetType()
@@ -106,13 +106,13 @@ namespace Robit.Tests
         public IEnumerator ParseShortcuts_WhenValidLnkFound_AddsShortcut()
         {
             // Arrange
-            string startMenu = "/mock/StartMenu";
-            _mockFS.Directories.Add(startMenu);
-            _mockFS.SpecialFolders[System.Environment.SpecialFolder.StartMenu] = startMenu;
-            _mockFS.SpecialFolders[System.Environment.SpecialFolder.CommonStartMenu] = "/mock/Empty";
+            string desktop = "/mock/Desktop";
+            _mockFS.Directories.Add(desktop);
+            _mockFS.SpecialFolders[System.Environment.SpecialFolder.Desktop] = desktop;
+            _mockFS.SpecialFolders[System.Environment.SpecialFolder.CommonDesktopDirectory] = "/mock/Empty";
 
             // Create a mock .lnk file that points to a valid .exe
-            string lnkPath = Path.Combine(startMenu, "MyApp.lnk");
+            string lnkPath = Path.Combine(desktop, "MyApp.lnk");
             string targetExe = "C:/Apps/MyApp.exe";
             
             // Build a .lnk with real LinkInfo containing the target path
@@ -138,11 +138,12 @@ namespace Robit.Tests
         public IEnumerator ParseShortcuts_WhenTargetMissing_SkipsShortcut()
         {
             // Arrange
-            string startMenu = "/mock/StartMenu";
-            _mockFS.Directories.Add(startMenu);
-            _mockFS.SpecialFolders[System.Environment.SpecialFolder.StartMenu] = startMenu;
+            string desktop = "/mock/Desktop";
+            _mockFS.Directories.Add(desktop);
+            _mockFS.SpecialFolders[System.Environment.SpecialFolder.Desktop] = desktop;
+            _mockFS.SpecialFolders[System.Environment.SpecialFolder.CommonDesktopDirectory] = "/mock/Empty";
 
-            string lnkPath = Path.Combine(startMenu, "Missing.lnk");
+            string lnkPath = Path.Combine(desktop, "Missing.lnk");
             string targetExe = "C:/Apps/Missing.exe";
             byte[] lnkBytes = BuildLnkWithTargetPath(targetExe);
             _mockFS.Files[lnkPath] = lnkBytes;

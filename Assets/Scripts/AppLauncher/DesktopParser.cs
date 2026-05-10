@@ -47,14 +47,14 @@ public class DesktopParser : MonoBehaviour
 
     IEnumerator ParseShortcuts()
     {
-        string[] startMenuPaths = new string[]
+        string[] desktopPaths = new string[]
         {
-            _fileSystem.GetSpecialFolderPath(Environment.SpecialFolder.StartMenu),
-            _fileSystem.GetSpecialFolderPath(Environment.SpecialFolder.CommonStartMenu)
+            _fileSystem.GetSpecialFolderPath(Environment.SpecialFolder.Desktop),
+            _fileSystem.GetSpecialFolderPath(Environment.SpecialFolder.CommonDesktopDirectory)
         };
 
         var shortcutFiles = new List<string>();
-        foreach (var path in startMenuPaths)
+        foreach (var path in desktopPaths)
         {
             if (_fileSystem.DirectoryExists(path))
             {
@@ -68,25 +68,40 @@ public class DesktopParser : MonoBehaviour
         {
             try
             {
-                byte[] shortcutData = _fileSystem.ReadAllBytes(file);
-                var shortcut = new WinShortcut(new MemoryStream(shortcutData));
+                string targetPath = null;
+                string workingDirectory = null;
 
-                if (!IsValidShortcut(shortcut.TargetPath))
+                try
+                {
+                    byte[] shortcutData = _fileSystem.ReadAllBytes(file);
+                    var shortcut = new WinShortcut(new MemoryStream(shortcutData));
+                    targetPath = shortcut.TargetPath;
+                    workingDirectory = shortcut.WorkingDirectory;
+                }
+                catch
+                {
+                    // WinShortcut can't parse ItemIDList-based shortcuts (modern installers,
+                    // GPU-Z, Unity Hub, etc.). Fall back to the Windows Shell IShellLink COM API
+                    // which resolves all .lnk types including those without LocalBasePath.
+                    targetPath = ShellLinkResolver.Resolve(file, out workingDirectory);
+                }
+
+                if (!IsValidShortcut(targetPath))
                     continue;
 
-                if (!_fileSystem.FileExists(shortcut.TargetPath))
+                if (!_fileSystem.FileExists(targetPath))
                     continue;
 
                 string name = Path.GetFileNameWithoutExtension(file);
 
-                Texture2D icon = ExtractHighQualityIcon(shortcut.TargetPath);
+                Texture2D icon = ExtractHighQualityIcon(targetPath);
 
                 if (icon == null)
                 {
                     RobitLogger.LogWarning($"[DesktopParser] Icon failed: {name}");
                 }
 
-                AddShortcut(name, shortcut.TargetPath, icon);
+                AddShortcut(name, targetPath, icon);
             }
             catch (Exception e)
             {

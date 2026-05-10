@@ -1,7 +1,7 @@
-using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.Scripting;
 
-/// Macro action that opens the App Cycler dock for cycling through desktop windows.
+/// Macro action that loads the App Launcher scene for selecting desktop shortcuts.
 public class AppCyclerAction : IMacroAction
 {
     [Preserve]
@@ -12,15 +12,7 @@ public class AppCyclerAction : IMacroAction
 
     public void Execute()
     {
-        var controller = UnityEngine.Object.FindFirstObjectByType<AppCyclerController>();
-        if (controller != null)
-        {
-            controller.Open();
-        }
-        else
-        {
-            RobitLogger.LogWarning("[AppCyclerAction] No AppCyclerController found in scene.");
-        }
+        SceneManager.LoadScene("HomeScene");
     }
 }
 

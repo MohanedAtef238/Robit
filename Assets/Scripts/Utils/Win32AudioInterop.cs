@@ -17,6 +17,12 @@ public static class Win32AudioInterop
     private static readonly Guid IID_IAudioEndpointVolume =
         new Guid("5CDF2C82-841E-4546-9722-0CF74078229A");
 
+    private static IMMDeviceEnumerator _enumerator;
+    private static IAudioEndpointVolume   _volume;
+    private static readonly object        _comLock = new();
+
+    private const int AUDCLNT_E_DEVICE_INVALIDATED = unchecked((int)0x88890004);
+
     // ── Enums ──────────────────────────────────────────────────────────────
     private enum EDataFlow { eRender = 0, eCapture = 1, eAll = 2 }
     private enum ERole { eConsole = 0, eMultimedia = 1, eCommunications = 2 }
@@ -66,18 +72,40 @@ public static class Win32AudioInterop
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
-    private static IAudioEndpointVolume GetEndpointVolume()
-    {
-        var type = Type.GetTypeFromCLSID(CLSID_MMDeviceEnumerator);
-        if (type == null)
-            throw new PlatformNotSupportedException("MMDeviceEnumerator COM class not found.");
 
-        var enumerator = (IMMDeviceEnumerator)Activator.CreateInstance(type);
-        enumerator.GetDefaultAudioEndpoint(EDataFlow.eRender, ERole.eMultimedia, out var device);
+    private static IAudioEndpointVolume GetOrAcquireEndpointVolume()
+    {
+        if (_volume != null) return _volume;
+
+        var type = Type.GetTypeFromCLSID(CLSID_MMDeviceEnumerator);
+        if (type == null) throw new PlatformNotSupportedException("MMDeviceEnumerator not found.");
+
+        _enumerator = (IMMDeviceEnumerator)Activator.CreateInstance(type);
+        _enumerator.GetDefaultAudioEndpoint(EDataFlow.eRender, ERole.eMultimedia, out var device);
 
         var iid = IID_IAudioEndpointVolume;
         device.Activate(ref iid, 1 /* CLSCTX_INPROC_SERVER */, IntPtr.Zero, out var iface);
-        return (IAudioEndpointVolume)iface;
+        _volume = (IAudioEndpointVolume)iface;
+
+        // Clean up the intermediate device; Activate adds a reference to the resulting interface.
+        Marshal.ReleaseComObject(device);
+        return _volume;
+    }
+
+    private static void HandleStaleDeviceUnderLock()
+    {
+        if (_volume != null) Marshal.ReleaseComObject(_volume);
+        if (_enumerator != null) Marshal.ReleaseComObject(_enumerator);
+        _volume = null;
+        _enumerator = null;
+    }
+
+    public static void Shutdown()
+    {
+        lock (_comLock)
+        {
+            HandleStaleDeviceUnderLock();
+        }
     }
 
     // ── Public API ──────────────────────────────────────────────────────────
@@ -85,64 +113,94 @@ public static class Win32AudioInterop
     /// Returns the current system master volume as a float in [0, 1].
     public static float GetVolume()
     {
-        try
+        lock (_comLock)
         {
-            var vol = GetEndpointVolume();
-            vol.GetMasterVolumeLevelScalar(out float level);
-            return level;
-        }
-        catch (Exception e)
-        {
-            RobitLogger.LogWarning($"[Win32AudioInterop] GetVolume failed: {e.Message}");
-            return 0.5f;
+            try
+            {
+                var vol = GetOrAcquireEndpointVolume();
+                int hr = vol.GetMasterVolumeLevelScalar(out float level);
+                if (hr == AUDCLNT_E_DEVICE_INVALIDATED)
+                {
+                    HandleStaleDeviceUnderLock();
+                    return GetVolume(); // Retry once with fresh acquisition
+                }
+                return level;
+            }
+            catch (Exception e)
+            {
+                RobitLogger.LogWarning($"[Win32AudioInterop] GetVolume failed: {e.Message}");
+                return 0.5f;
+            }
         }
     }
 
-    /// Sets the system master volume. Value should be in [0, 1].
-    public static void SetVolume(float level)
+    /// Sets the system master volume. volume should be in [0, 1].
+    public static void SetVolume(float volume)
     {
-        try
+        lock (_comLock)
         {
-            level = Mathf.Clamp01(level);
-            var vol = GetEndpointVolume();
-            var guid = Guid.Empty;
-            vol.SetMasterVolumeLevelScalar(level, ref guid);
-        }
-        catch (Exception e)
-        {
-            RobitLogger.LogWarning($"[Win32AudioInterop] SetVolume failed: {e.Message}");
+            try
+            {
+                var vol = GetOrAcquireEndpointVolume();
+                var guid = Guid.Empty;
+                int hr = vol.SetMasterVolumeLevelScalar(Mathf.Clamp01(volume), ref guid);
+                if (hr == AUDCLNT_E_DEVICE_INVALIDATED)
+                {
+                    HandleStaleDeviceUnderLock();
+                    SetVolume(volume);
+                }
+            }
+            catch (Exception e)
+            {
+                RobitLogger.LogWarning($"[Win32AudioInterop] SetVolume failed: {e.Message}");
+            }
         }
     }
 
-    /// Returns true if the system audio is muted.
+    /// Returns true if the system master volume is muted.
     public static bool GetMute()
     {
-        try
+        lock (_comLock)
         {
-            var vol = GetEndpointVolume();
-            vol.GetMute(out bool muted);
-            return muted;
-        }
-        catch (Exception e)
-        {
-            RobitLogger.LogWarning($"[Win32AudioInterop] GetMute failed: {e.Message}");
-            return false;
+            try
+            {
+                var vol = GetOrAcquireEndpointVolume();
+                int hr = vol.GetMute(out bool mute);
+                if (hr == AUDCLNT_E_DEVICE_INVALIDATED)
+                {
+                    HandleStaleDeviceUnderLock();
+                    return GetMute();
+                }
+                return mute;
+            }
+            catch (Exception e)
+            {
+                RobitLogger.LogWarning($"[Win32AudioInterop] GetMute failed: {e.Message}");
+                return false;
+            }
         }
     }
 
-    /// Sets the system mute state.
+    /// Sets the system master volume mute state.
     public static void SetMute(bool mute)
     {
-        try
+        lock (_comLock)
         {
-            var vol = GetEndpointVolume();
-            var guid = Guid.Empty;
-            vol.SetMute(mute, ref guid);
-        }
-        catch (Exception e)
-        {
-            RobitLogger.LogWarning($"[Win32AudioInterop] SetMute failed: {e.Message}");
+            try
+            {
+                var vol = GetOrAcquireEndpointVolume();
+                var guid = Guid.Empty;
+                int hr = vol.SetMute(mute, ref guid);
+                if (hr == AUDCLNT_E_DEVICE_INVALIDATED)
+                {
+                    HandleStaleDeviceUnderLock();
+                    SetMute(mute);
+                }
+            }
+            catch (Exception e)
+            {
+                RobitLogger.LogWarning($"[Win32AudioInterop] SetMute failed: {e.Message}");
+            }
         }
     }
 }
-
