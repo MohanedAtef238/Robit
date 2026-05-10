@@ -6,7 +6,7 @@ using System.Collections.Generic;
 [RequireComponent(typeof(UIDocument))]
 public class AppLauncherUIToolkit : MonoBehaviour
 {
-    private const int ItemsPerPage = 12;
+    private const int ItemsPerPage = 8;
     private const float ExitStepDelay = 0.03f;
     private const float ExitDuration = 0.18f;
     private const float EnterStepDelay = 0.045f;
@@ -58,8 +58,9 @@ public class AppLauncherUIToolkit : MonoBehaviour
     private void SetupWindow()
     {
         WindowManager.Initialize();
-        WindowManager.SetClickThrough(false);
         WindowManager.SetAcrylicBlur(true);
+        WindowManager.SetClickThrough(false);
+        WindowManager.FocusWindow();
         FindFirstObjectByType<Transparency>()?.RefreshUIDocumentCache();
 
         var cam = Camera.main;
@@ -94,14 +95,14 @@ public class AppLauncherUIToolkit : MonoBehaviour
             return false;
         }
 
-        navLeft.clicked += () => TryChangePage(-1);
-        navRight.clicked += () => TryChangePage(1);
+        navLeft.clicked += OnNavLeftClicked;
+        navRight.clicked += OnNavRightClicked;
         navLeft.SetEnabled(false);
         navRight.SetEnabled(false);
 
         backBtn = rootParams.Q<Button>("back-btn");
         if (backBtn != null)
-            backBtn.RegisterCallback<PointerDownEvent>(_ => UnityEngine.SceneManagement.SceneManager.LoadScene("OverlayScene"));
+            backBtn.RegisterCallback<PointerDownEvent>(OnBackClicked, TrickleDown.TrickleDown);
             
         pageIndicator.style.display = DisplayStyle.None;
         pagination = new PaginationLogic(ItemsPerPage);
@@ -130,6 +131,11 @@ public class AppLauncherUIToolkit : MonoBehaviour
     private IEnumerator Start()
     {
         SetupWindow();
+
+        // UIDocument populates its visual tree on the first layout pass, which
+        // happens at the end of the first frame. Querying before that yields nulls
+        // and BindUIElements returns false, silently aborting the entire coroutine.
+        yield return null;
 
         if (!BindUIElements()) yield break;
 
@@ -341,6 +347,21 @@ public class AppLauncherUIToolkit : MonoBehaviour
     {
         RobitLogger.Log($"[AppLauncherUIToolkit] Launching '{path}'");
         AppLauncher.Instance.LaunchApplication(path, workingDirectory);
+    }
+
+    private void OnNavLeftClicked() => TryChangePage(-1);
+    private void OnNavRightClicked() => TryChangePage(1);
+    private void OnBackClicked(PointerDownEvent evt)
+    {
+        WindowManager.SetAcrylicBlur(false);
+        UnityEngine.SceneManagement.SceneManager.LoadScene("OverlayScene");
+    }
+
+    private void OnDestroy()
+    {
+        if (navLeft != null) navLeft.clicked -= OnNavLeftClicked;
+        if (navRight != null) navRight.clicked -= OnNavRightClicked;
+        if (backBtn != null) backBtn.UnregisterCallback<PointerDownEvent>(OnBackClicked, TrickleDown.TrickleDown);
     }
 }
 

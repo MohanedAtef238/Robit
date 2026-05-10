@@ -172,6 +172,9 @@ public class Transparency : MonoBehaviour
     // Polls cursor position and toggles click-through based on UI/3D hits
     void Update()
     {
+        // Guard against execution during shutdown/domain reload
+        if (Application.isEditor && !Application.isPlaying) return;
+
         using var _um = _updateMarker.Auto();
         #if !UNITY_EDITOR
         if (!isTransparencyEnabled)
