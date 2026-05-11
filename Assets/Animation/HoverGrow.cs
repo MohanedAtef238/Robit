@@ -1,38 +1,37 @@
 using UnityEngine;
-using UnityEngine.EventSystems;
+using UnityEngine.UIElements;
+using System.Collections.Generic;
 
-public class HoverGrowUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+[RequireComponent(typeof(UIDocument))]
+public class UIStyleManager : MonoBehaviour
 {
-    [Header("Scale Settings")]
-    public float hoverScale = 1.05f;     // How big it grows
-    public float speed = 10f;            // How fast it scales
-
-    private Vector3 originalScale;
-    private Vector3 targetScale;
-
-    void Start()
+    // List only the names that aren't nested inside each other
+    private readonly List<string> targetNames = new List<string>
     {
-        originalScale = transform.localScale;
-        targetScale = originalScale;
-    }
+        "clockWidget", "reminder", "sliders", "dialogueBox",
+        "mick", "keyboard", "exit", "refresh"
+    };
 
-    void Update()
+    private void Start()
     {
-        transform.localScale = Vector3.Lerp(
-            transform.localScale,
-            targetScale,
-            Time.deltaTime * speed
-        );
-    }
+        var root = GetComponent<UIDocument>().rootVisualElement;
 
-    public void OnPointerEnter(PointerEventData eventData)
-    {
-        targetScale = originalScale * hoverScale;
-    }
+        foreach (string n in targetNames)
+        {
+            VisualElement target = root.Q(n);
+            if (target != null)
+            {
+                // Assign the USS class we wrote in Step 1
+                target.AddToClassList("hover-scaler");
 
-    public void OnPointerExit(PointerEventData eventData)
-    {
-        targetScale = originalScale;
+                // Ensure the mouse can "see" the element
+                target.pickingMode = PickingMode.Position;
+
+                // Stop internal children from confusing the hover state
+                target.Query<VisualElement>().ForEach(c => {
+                    if (c != target) c.pickingMode = PickingMode.Ignore;
+                });
+            }
+        }
     }
 }
-

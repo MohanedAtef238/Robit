@@ -1,0 +1,16 @@
+/* This is the class we will give to your widgets */
+.hover-scaler {
+    /* How long the growth takes */
+    transition-duration: 0.2s;
+    /* Which property to animate */
+    transition-property: scale;
+    /* Optional: adds a slight "bounce" feel */
+    transition-timing-function: ease-out-back;
+    /* Ensures it grows from the center, not the corner */
+    transform-origin: center;
+}
+
+/* This triggers automatically when the mouse is over the element */
+.hover-scaler:hover {
+    scale: 1.1 1.1;
+}

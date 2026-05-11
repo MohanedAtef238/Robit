@@ -8,158 +8,94 @@ public class GeminiChatWidget : MonoBehaviour
 {
     [SerializeField] private UIDocument uiDocument;
 
-    private TextField inputDialogueField;
-    private Label outputDialogueLabel;
-    private Button inputButton;
+    private TextField _inputField;
+    private Label _outputLabel;
+    private Button _inputButton;
+    private bool _isDisplayingOutput = false;
 
-    private const string API_KEY = "AIzaSyAy7qQunp79ix0ZeidTrqPrcCR4JZ3oE8I";
-    private const string GEMINI_MODEL = "models/gemini-2.5-flash-lite";
+    private const string API_KEY = "AIzaSyAwe47o5MO4EYYTLr3qq2KxGx86pTMN5qQ";
 
-    void Start()
+    private const string API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:generateContent";
+
+    void OnEnable()
     {
-        if (uiDocument == null)
-        {
-            RobitLogger.LogError("UIDocument not assigned!");
-            return;
-        }
-
         var root = uiDocument.rootVisualElement;
+        _inputField = root.Q<TextField>("inputDialogueField");
+        _outputLabel = root.Q<Label>("outputDialogueLabel");
+        _inputButton = root.Q<Button>("inputButton");
 
-        inputDialogueField = root.Q<TextField>("inputDialogueField");
-        outputDialogueLabel = root.Q<Label>("outputDialogueLabel");
-        inputButton = root.Q<Button>("inputButton");
+        _inputButton.clicked += OnMainButtonClick;
 
-        if (inputDialogueField == null || outputDialogueLabel == null || inputButton == null)
+        // Allow Enter key to trigger the same logic
+        _inputField.RegisterCallback<KeyDownEvent>(evt => {
+            if (evt.keyCode == KeyCode.Return) OnMainButtonClick();
+        });
+
+        ResetUI();
+    }
+
+    void OnMainButtonClick()
+    {
+        if (_isDisplayingOutput)
         {
-            RobitLogger.LogError("One or more UI elements not found! Check names in UI Builder.");
-            return;
+            ResetUI();
         }
-
-        // Initialize visibility
-        inputDialogueField.style.display = DisplayStyle.Flex;
-        outputDialogueLabel.style.display = DisplayStyle.None;
-
-        // Toggle visibility when input field is clicked
-        inputDialogueField.RegisterCallback<PointerDownEvent>(evt =>
+        else
         {
-            ToggleUI(showInput: true);
-        });
+            string prompt = _inputField.value.Trim();
+            if (!string.IsNullOrEmpty(prompt)) SendPrompt(prompt);
+        }
+    }
 
-        // Toggle visibility when output label is clicked
-        outputDialogueLabel.RegisterCallback<PointerDownEvent>(evt =>
+    void ResetUI()
+    {
+        _isDisplayingOutput = false;
+        _inputField.style.display = DisplayStyle.Flex;
+        _outputLabel.style.display = DisplayStyle.None;
+        _inputField.value = "";
+        _inputField.Focus();
+    }
+
+    void SendPrompt(string prompt)
+    {
+        _isDisplayingOutput = true;
+        _inputField.style.display = DisplayStyle.None;
+        _outputLabel.style.display = DisplayStyle.Flex;
+        _outputLabel.text = "Thinking...";
+
+        StartCoroutine(PostRequest(prompt));
+    }
+
+    IEnumerator PostRequest(string prompt)
+    {
+        // A cleaner way to build the JSON to avoid formatting errors
+        string json = "{\"contents\":[{\"parts\":[{\"text\":\"" + prompt.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n") + "\"}]}]}";
+
+        using (UnityWebRequest req = new UnityWebRequest($"{API_URL}?key={API_KEY}", "POST"))
         {
-            ToggleUI(showInput: true); // clicking output label shows input
-        });
+            byte[] bodyRaw = Encoding.UTF8.GetBytes(json);
+            req.uploadHandler = new UploadHandlerRaw(bodyRaw);
+            req.downloadHandler = new DownloadHandlerBuffer();
+            req.SetRequestHeader("Content-Type", "application/json");
 
-        // Button click to send
-        inputButton.clicked += OnSendClicked;
+            yield return req.SendWebRequest();
 
-        // Enter key sends
-        inputDialogueField.RegisterCallback<KeyDownEvent>(evt =>
-        {
-            if (evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter)
+            if (req.result == UnityWebRequest.Result.Success)
             {
-                OnSendClicked();
-                evt.StopPropagation();
+                var response = JsonUtility.FromJson<GeminiResponse>(req.downloadHandler.text);
+                _outputLabel.text = response.candidates[0].content.parts[0].text;
             }
-        });
-    }
-
-    // -----------------------------
-    // Toggle input/output visibility
-    // -----------------------------
-    void ToggleUI(bool showInput)
-    {
-        inputDialogueField.style.display = showInput ? DisplayStyle.Flex : DisplayStyle.None;
-        outputDialogueLabel.style.display = showInput ? DisplayStyle.None : DisplayStyle.Flex;
-
-        if (showInput)
-        {
-            inputDialogueField.value = ""; // Clear previous text
-            inputDialogueField.Focus();
-        }
-    }
-
-    void OnSendClicked()
-    {
-        string userText = inputDialogueField.value.Trim();
-        if (string.IsNullOrEmpty(userText)) return;
-
-        // Hide input and show output
-        ToggleUI(showInput: false);
-        outputDialogueLabel.text = "Thinking...";
-
-        StartCoroutine(GetGeminiReply(userText));
-    }
-
-    IEnumerator GetGeminiReply(string prompt)
-    {
-        string url = $"https://generativelanguage.googleapis.com/v1/{GEMINI_MODEL}:generateContent?key={API_KEY}";
-        string jsonBody = $@"
-        {{
-            ""contents"": [
-                {{
-                    ""parts"": [
-                        {{ ""text"": ""{EscapeJson(prompt)}"" }}
-                    ]
-                }}
-            ]
-        }}";
-
-        UnityWebRequest request = new UnityWebRequest(url, "POST");
-        byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonBody);
-        request.uploadHandler = new UploadHandlerRaw(bodyRaw);
-        request.downloadHandler = new DownloadHandlerBuffer();
-        request.SetRequestHeader("Content-Type", "application/json");
-
-        yield return request.SendWebRequest();
-
-        if (request.result != UnityWebRequest.Result.Success)
-        {
-            RobitLogger.LogError($"Gemini API Error: {request.result}\n{request.downloadHandler.text}");
-            outputDialogueLabel.text = "Error getting response. Check console.";
-            yield break;
-        }
-
-        string response = request.downloadHandler.text;
-        string reply = ParseGeminiResponse(response);
-        outputDialogueLabel.text = reply;
-    }
-
-    [System.Serializable]
-    public class GeminiResponse { public Candidate[] candidates; }
-    [System.Serializable]
-    public class Candidate { public Content content; }
-    [System.Serializable]
-    public class Content { public Part[] parts; }
-    [System.Serializable]
-    public class Part { public string text; }
-
-    string ParseGeminiResponse(string json)
-    {
-        try
-        {
-            var data = JsonUtility.FromJson<GeminiResponse>(json);
-            if (data != null &&
-                data.candidates != null &&
-                data.candidates.Length > 0 &&
-                data.candidates[0].content.parts.Length > 0)
+            else
             {
-                return data.candidates[0].content.parts[0].text;
+                // This will tell us exactly WHY it failed in the console
+                Debug.LogError($"API Error: {req.responseCode} - {req.downloadHandler.text}");
+                _outputLabel.text = "Error: Check the console for details.";
             }
         }
-        catch (System.Exception ex)
-        {
-            RobitLogger.LogWarning("Failed to parse Gemini response: " + ex);
-        }
-        return "No response";
     }
 
-    string EscapeJson(string text)
-    {
-        return text.Replace("\\", "\\\\")
-                   .Replace("\"", "\\\"")
-                   .Replace("\n", "\\n")
-                   .Replace("\r", "\\r");
-    }
+    [System.Serializable] public class GeminiResponse { public Candidate[] candidates; }
+    [System.Serializable] public class Candidate { public Content content; }
+    [System.Serializable] public class Content { public Part[] parts; }
+    [System.Serializable] public class Part { public string text; }
 }

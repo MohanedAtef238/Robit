@@ -1,0 +1,20 @@
+/* Base style for both buttons */
+#mick, #keyboard {
+    transition-property: scale, width, height;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-out-back;
+    transform-origin: center;
+}
+
+/* The "Large" state */
+.btn-focus {
+    scale: 1.2 1.2;
+    /* Optional: add a glow or border to the focused one */
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* The "Small" state */
+.btn-sub {
+    scale: 0.8 0.8;
+    opacity: 0.7;
+}

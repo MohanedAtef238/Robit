@@ -39,17 +39,29 @@ public class BouncyLifeCycle : MonoBehaviour
         {
             if (obj != null) originalObjectScales.Add(obj.localScale);
         }
+
+        // Start the random bobbing loop here
+        StartCoroutine(RandomBobBrain());
     }
 
-    void OnMouseDown()
+    private IEnumerator RandomBobBrain()
     {
-        if (!isAnimating)
+        while (true)
         {
-            StartCoroutine(BobRoutine());
+            // Wait for a random duration (e.g., between 2 and 6 seconds)
+            float waitTime = Random.Range(2f, 6f);
+            yield return new WaitForSeconds(waitTime);
+
+            if (!isAnimating)
+            {
+                // We "yield return" the routine so it waits for the 
+                // animation to finish before starting the next wait timer
+                yield return StartCoroutine(BobRoutine());
+            }
         }
     }
 
-    
+
 
     private Vector3 CalculateNewScale(float addedForward, float addedSqueeze, out Vector3 localDir)
     {

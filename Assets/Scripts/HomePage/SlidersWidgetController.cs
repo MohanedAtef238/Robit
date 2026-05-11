@@ -1,13 +1,17 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 
-/// Controls the volume and brightness sliders on the Home Page.
-/// Uses Win32 COM interop for system volume and Dxva2 for monitor brightness.
 public class SlidersWidgetController : MonoBehaviour
 {
-    [SerializeField] private Texture2D sunLowIcon;
-    [SerializeField] private Texture2D sunMedIcon;
-    [SerializeField] private Texture2D sunHighIcon;
+    [Header("Sun Scale Settings")]
+    [SerializeField] private float minSunScale = 0.6f;
+    [SerializeField] private float maxSunScale = 1.4f;
+
+    [Header("Sound Icon Sprites")]
+    [SerializeField] private Texture2D soundMuted;   // 0%
+    [SerializeField] private Texture2D soundLow;     // 1-33%
+    [SerializeField] private Texture2D soundMedium;  // 34-66%
+    [SerializeField] private Texture2D soundHigh;    // 67-100%
 
     private Slider soundSlider;
     private Slider brightnessSlider;
@@ -16,6 +20,7 @@ public class SlidersWidgetController : MonoBehaviour
     private Button soundDecBtn, soundIncBtn;
     private Button brightnessDecBtn, brightnessIncBtn;
     private VisualElement _sunIconEl;
+    private VisualElement _soundIconEl; // The speaker icon element
 
     private bool _initialized;
     private bool _brightnessSupported = true;
@@ -26,13 +31,23 @@ public class SlidersWidgetController : MonoBehaviour
         brightnessSlider = root.Q<Slider>("brightnessSlider");
         soundValueLabel = root.Q<Label>("soundValueLabel");
         brightnessValueLabel = root.Q<Label>("brightnessValueLabel");
+
         _sunIconEl = root.Q<VisualElement>("sunIcon");
+        _soundIconEl = root.Q<VisualElement>("soundIcon"); // Find the speaker icon
 
-        // Seed sliders with current system values
+        if (_sunIconEl != null)
+        {
+            _sunIconEl.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
+        }
+
+        // Initialize Sound
         float sysVolume = Win32AudioInterop.GetVolume();
-        soundSlider.value = sysVolume * 100f;
-        UpdateValueLabel(soundValueLabel, soundSlider.value);
+        float volPercent = sysVolume * 100f;
+        soundSlider.value = volPercent;
+        UpdateValueLabel(soundValueLabel, volPercent);
+        UpdateSoundIcon(volPercent); // Set initial speaker icon
 
+        // Initialize Brightness
         int sysBrightness = Win32BrightnessInterop.GetBrightness();
         if (sysBrightness < 0)
         {
@@ -40,7 +55,6 @@ public class SlidersWidgetController : MonoBehaviour
             brightnessSlider.value = 50;
             brightnessSlider.SetEnabled(false);
             if (brightnessValueLabel != null) brightnessValueLabel.text = "N/A";
-            RobitLogger.LogWarning("[SlidersWidget] Brightness control not supported on this display.");
         }
         else
         {
@@ -49,30 +63,14 @@ public class SlidersWidgetController : MonoBehaviour
             UpdateSunIcon(sysBrightness);
         }
 
-        // Wire arrow buttons (±5 per click)
-        soundDecBtn = root.Q<Button>("soundDecBtn");
-        soundIncBtn = root.Q<Button>("soundIncBtn");
-        brightnessDecBtn = root.Q<Button>("brightnessDecBtn");
-        brightnessIncBtn = root.Q<Button>("brightnessIncBtn");
+        SetupButtons(root);
 
-        soundDecBtn?.RegisterCallback<ClickEvent>(_ =>
-            soundSlider.value = Mathf.Clamp(soundSlider.value - 5f, 0f, 100f));
-        soundIncBtn?.RegisterCallback<ClickEvent>(_ =>
-            soundSlider.value = Mathf.Clamp(soundSlider.value + 5f, 0f, 100f));
-        brightnessDecBtn?.RegisterCallback<ClickEvent>(_ => {
-            if (_brightnessSupported)
-                brightnessSlider.value = Mathf.Clamp(brightnessSlider.value - 5f, 0f, 100f);
-        });
-        brightnessIncBtn?.RegisterCallback<ClickEvent>(_ => {
-            if (_brightnessSupported)
-                brightnessSlider.value = Mathf.Clamp(brightnessSlider.value + 5f, 0f, 100f);
-        });
-
-        // Register value-change callbacks
+        // Value Changed Callbacks
         soundSlider.RegisterValueChangedCallback(evt =>
         {
             Win32AudioInterop.SetVolume(evt.newValue / 100f);
             UpdateValueLabel(soundValueLabel, evt.newValue);
+            UpdateSoundIcon(evt.newValue); // Update speaker icon on slide
         });
 
         brightnessSlider.RegisterValueChangedCallback(evt =>
@@ -86,15 +84,65 @@ public class SlidersWidgetController : MonoBehaviour
         _initialized = true;
     }
 
-    /// Refreshes slider positions from current system state.
-    /// Called each time the home page is opened.
+    private void UpdateSoundIcon(float value)
+    {
+        if (_soundIconEl == null) return;
+
+        Texture2D targetTexture;
+
+        if (value <= 0f)
+            targetTexture = soundMuted;
+        else if (value <= 33f)
+            targetTexture = soundLow;
+        else if (value <= 66f)
+            targetTexture = soundMedium;
+        else
+            targetTexture = soundHigh;
+
+        if (targetTexture != null)
+            _soundIconEl.style.backgroundImage = new StyleBackground(targetTexture);
+    }
+
+    private void UpdateSunIcon(float value)
+    {
+        if (_sunIconEl == null) return;
+        float t = value / 100f;
+        float currentScale = Mathf.Lerp(minSunScale, maxSunScale, t);
+        _sunIconEl.style.scale = new StyleScale(new Scale(new Vector3(currentScale, currentScale, 1f)));
+    }
+
+    private void SetupButtons(VisualElement root)
+    {
+        soundDecBtn = root.Q<Button>("soundDecBtn");
+        soundIncBtn = root.Q<Button>("soundIncBtn");
+        brightnessDecBtn = root.Q<Button>("brightnessDecBtn");
+        brightnessIncBtn = root.Q<Button>("brightnessIncBtn");
+
+        soundDecBtn?.RegisterCallback<ClickEvent>(_ => soundSlider.value -= 5f);
+        soundIncBtn?.RegisterCallback<ClickEvent>(_ => soundSlider.value += 5f);
+
+        brightnessDecBtn?.RegisterCallback<ClickEvent>(_ => {
+            if (_brightnessSupported) brightnessSlider.value -= 5f;
+        });
+        brightnessIncBtn?.RegisterCallback<ClickEvent>(_ => {
+            if (_brightnessSupported) brightnessSlider.value += 5f;
+        });
+    }
+
+    private static void UpdateValueLabel(Label label, float value)
+    {
+        if (label != null) label.text = $"{Mathf.RoundToInt(value)}%";
+    }
+
     public void RefreshFromSystem()
     {
         if (!_initialized) return;
 
         float vol = Win32AudioInterop.GetVolume();
-        soundSlider.SetValueWithoutNotify(vol * 100f);
-        UpdateValueLabel(soundValueLabel, soundSlider.value);
+        float volPercent = vol * 100f;
+        soundSlider.SetValueWithoutNotify(volPercent);
+        UpdateValueLabel(soundValueLabel, volPercent);
+        UpdateSoundIcon(volPercent); // Sync icon on refresh
 
         if (_brightnessSupported)
         {
@@ -107,18 +155,4 @@ public class SlidersWidgetController : MonoBehaviour
             }
         }
     }
-
-    private static void UpdateValueLabel(Label label, float value)
-    {
-        if (label != null) label.text = $"{Mathf.RoundToInt(value)}%";
-    }
-
-    private void UpdateSunIcon(float value)
-    {
-        if (_sunIconEl == null) return;
-        Texture2D tex = value <= 33f ? sunLowIcon : (value <= 66f ? sunMedIcon : sunHighIcon);
-        if (tex != null)
-            _sunIconEl.style.backgroundImage = new StyleBackground(tex);
-    }
 }
-
