@@ -6,30 +6,6 @@ using UnityEngine.UIElements;
 [RequireComponent(typeof(UIDocument))]
 public class MacroButtonController : MonoBehaviour
 {
-    // ── Group definitions ───────────────────────────────────────────
-    // Each group has a display name and exactly 3 action types.
-    [System.Serializable]
-    public struct MacroGroup
-    {
-        public string name;
-        public MacroActionType action0;
-        public MacroActionType action1;
-        public MacroActionType action2;
-    }
-
-    private static readonly MacroGroup[] Groups = new[]
-    {
-        new MacroGroup { name = "System",    action0 = MacroActionType.HomeDashboard, action1 = MacroActionType.AppCycler,     action2 = MacroActionType.Settings },
-        new MacroGroup { name = "Navigate",  action0 = MacroActionType.Back,          action1 = MacroActionType.Forward,       action2 = MacroActionType.Refresh },
-        new MacroGroup { name = "Tabs",      action0 = MacroActionType.NewTab,        action1 = MacroActionType.CloseTab,      action2 = MacroActionType.None },
-        new MacroGroup { name = "Read",      action0 = MacroActionType.ZoomIn,        action1 = MacroActionType.ZoomOut,       action2 = MacroActionType.Screenshot },
-        new MacroGroup { name = "Scroll",    action0 = MacroActionType.PageUp,        action1 = MacroActionType.PageDown,      action2 = MacroActionType.None },
-        new MacroGroup { name = "Snap",      action0 = MacroActionType.SnapLeft,      action1 = MacroActionType.SnapRight,     action2 = MacroActionType.MaximizeRestore },
-        new MacroGroup { name = "Window",    action0 = MacroActionType.Minimize,      action1 = MacroActionType.CloseWindow,   action2 = MacroActionType.None },
-        new MacroGroup { name = "Edit",      action0 = MacroActionType.Undo,          action1 = MacroActionType.Redo,          action2 = MacroActionType.None },
-        new MacroGroup { name = "Tools",     action0 = MacroActionType.MuteToggle,    action1 = MacroActionType.FindOnPage,    action2 = MacroActionType.None },
-    };
-
     private const int SlotsPerPage = 3;
 
     // ── Inspector tunables ──────────────────────────────────────────
@@ -39,20 +15,16 @@ public class MacroButtonController : MonoBehaviour
     [SerializeField] private float radialRadius = 10f;
 
     [Header("Carousel Animation")]
-    [SerializeField] private float inDurationMs = 300f;
     [SerializeField] private float outDurationMs = 180f;
     [SerializeField] private float staggerMs = 60f;
 
     [Header("Group Label Animation")]
     [SerializeField] private float labelFadeInMs = 250f;
     [SerializeField] private float labelHoldMs = 900f;
-    [SerializeField] private float labelFadeOutMs = 350f;
     [SerializeField] private float labelOffsetY = -55f;
 
     [Header("Button Name Tooltip")]
-    [SerializeField] private float tooltipFadeInMs = 200f;
     [SerializeField] private float tooltipHoldMs = 800f;
-    [SerializeField] private float tooltipFadeOutMs = 300f;
     [SerializeField] private float tooltipDelayMs = 150f;
 
     [Header("Button Sizing")]
@@ -79,14 +51,14 @@ public class MacroButtonController : MonoBehaviour
     private MacroButton[] slotButtons = new MacroButton[SlotsPerPage];
     private IInputProvider inputProvider;
 
+    private MacroViewModel viewModel;
+
     // ── State ───────────────────────────────────────────────────────
-    private int _groupIndex;
     private Vector2 anchorPanelPos;
-    private bool _open;
-    private ScheduledItemHandle _labelFadeHandle;
+    private IVisualElementScheduledItem _labelHideSchedule;
     private Action[] _slotIconRefreshCbs = new Action[SlotsPerPage];
     private Label[] _slotTooltips = new Label[SlotsPerPage];
-    private ScheduledItemHandle[] _tooltipFadeHandles = new ScheduledItemHandle[SlotsPerPage];
+    private IVisualElementScheduledItem[] _tooltipHideSchedules = new IVisualElementScheduledItem[SlotsPerPage];
 
     private float MacroHalfSize => buttonSize * 0.5f;
     private float ArrowHalfSize => wheelArrowSize * 0.5f;
@@ -95,11 +67,7 @@ public class MacroButtonController : MonoBehaviour
     void OnEnable()
     {
         uiDocument = GetComponent<UIDocument>();
-        if (uiDocument == null || uiDocument.rootVisualElement == null)
-        {
-            RobitLogger.LogError("[MacroButtonController] UIDocument or root is null");
-            return;
-        }
+        if (uiDocument == null || uiDocument.rootVisualElement == null) return;
 
         inputProvider = new PointerInputProvider();
         var root = uiDocument.rootVisualElement;
@@ -107,49 +75,51 @@ public class MacroButtonController : MonoBehaviour
         buttonGrid = root.Q<VisualElement>("button-grid");
         groupLabel = root.Q<Label>("group-name-label");
 
-        // Grab the 3 reusable slot buttons
         for (int i = 0; i < SlotsPerPage; i++)
         {
             slotButtons[i] = root.Q<MacroButton>($"BtnSlot{i}");
-            if (slotButtons[i] == null)
-                RobitLogger.LogWarning($"[MacroButtonController] BtnSlot{i} not found in UXML");
         }
 
         prevBtn = root.Q<Button>("BtnWheelPrev");
         nextBtn = root.Q<Button>("BtnWheelNext");
-        if (prevBtn != null) prevBtn.clicked += OnPrevClicked;
-        if (nextBtn != null) nextBtn.clicked += OnNextClicked;
 
-        // Create per-slot tooltip labels
+        if (prevBtn != null) prevBtn.clicked += () => viewModel?.PrevGroup();
+        if (nextBtn != null) nextBtn.clicked += () => viewModel?.NextGroup();
+
         for (int i = 0; i < SlotsPerPage; i++)
         {
             var tip = new Label();
             tip.AddToClassList("button-tooltip");
+            tip.AddToClassList("label-state--hidden");
             tip.style.position = Position.Absolute;
-            tip.style.opacity = 0f;
             tip.style.display = DisplayStyle.None;
             tip.pickingMode = PickingMode.Ignore;
             buttonGrid.Add(tip);
             _slotTooltips[i] = tip;
-        }
-
-        // Register hover callbacks so tooltips re-appear on mouse-over
-        for (int i = 0; i < SlotsPerPage; i++)
-        {
+            
             int captured = i;
             slotButtons[i]?.RegisterCallback<PointerEnterEvent>(_ => OnSlotHoverEnter(captured));
             slotButtons[i]?.RegisterCallback<PointerLeaveEvent>(_ => OnSlotHoverLeave(captured));
         }
 
+        viewModel = new MacroViewModel();
+        viewModel.OnMenuToggled += OnMenuToggled;
+        viewModel.OnGroupChanged += OnGroupChanged;
+
         ApplyLayout();
         HideImmediate();
-        RobitLogger.Log($"[MacroButtonController] Ready -- {Groups.Length} groups, {Groups.Length * SlotsPerPage} total macros");
     }
 
     void OnDisable()
     {
-        _labelFadeHandle.Cancel();
-        foreach (var h in _tooltipFadeHandles) h.Cancel();
+        if (viewModel != null)
+        {
+            viewModel.OnMenuToggled -= OnMenuToggled;
+            viewModel.OnGroupChanged -= OnGroupChanged;
+        }
+
+        _labelHideSchedule?.Pause();
+        foreach (var h in _tooltipHideSchedules) h?.Pause();
 
         for (int i = 0; i < SlotsPerPage; i++)
         {
@@ -160,17 +130,13 @@ public class MacroButtonController : MonoBehaviour
                 _slotIconRefreshCbs[i] = null;
             }
         }
-        if (prevBtn != null) prevBtn.clicked -= OnPrevClicked;
-        if (nextBtn != null) nextBtn.clicked -= OnNextClicked;
     }
 
     // ── Public API ──────────────────────────────────────────────────
 
     public void ShowWithBounceAtWorldPosition(Vector3 worldPos, Vector2 panelOffset, Camera renderCamera = null)
     {
-        if (uiDocument == null || uiDocument.rootVisualElement == null) return;
-        _open = true;
-        _groupIndex = 0;
+        if (uiDocument == null || uiDocument.rootVisualElement == null || viewModel == null) return;
 
         var panel = uiDocument.rootVisualElement.panel;
         anchorPanelPos = RuntimePanelUtils.CameraTransformWorldToPanel(
@@ -182,54 +148,93 @@ public class MacroButtonController : MonoBehaviour
         anchorPanelPos.x = Mathf.Clamp(anchorPanelPos.x, margin, panelSize.width - margin);
         anchorPanelPos.y = Mathf.Clamp(anchorPanelPos.y, margin, panelSize.height - margin);
 
-        EnterRadialLayout();
-        macroContainer.schedule.Execute(RevealPage).StartingIn(16);
+        viewModel.Open();
     }
 
     public void HideWithShrink()
     {
-        if (!_open) return;
-        _open = false;
-        HideArrows();
-        _labelFadeHandle.Cancel();
+        viewModel?.Close();
+    }
+
+    private void OnMenuToggled(bool isOpen)
+    {
+        if (isOpen)
+        {
+            EnterRadialLayout();
+            macroContainer.schedule.Execute(() => RevealGroup(viewModel.GetCurrentGroup())).StartingIn(16);
+        }
+        else
+        {
+            HideArrows();
+            _labelHideSchedule?.Pause();
+            HideAllTooltips();
+
+            for (int i = 0; i < SlotsPerPage; i++)
+            {
+                var btn = slotButtons[i];
+                if (btn == null || btn.style.display == DisplayStyle.None) continue;
+                
+                btn.style.transitionDelay = new List<TimeValue> { new(0, TimeUnit.Millisecond) };
+                btn.RemoveFromClassList("macro-state--visible");
+                btn.AddToClassList("macro-state--hidden");
+            }
+
+            if (groupLabel != null) 
+            {
+                groupLabel.RemoveFromClassList("label-state--visible");
+                groupLabel.AddToClassList("label-state--hidden");
+            }
+
+            macroContainer?.schedule.Execute(() =>
+            {
+                if (!viewModel.IsOpen) macroContainer.style.display = DisplayStyle.None;
+            }).StartingIn((long)outDurationMs + 40);
+        }
+    }
+
+    private void OnGroupChanged(int groupIndex)
+    {
         HideAllTooltips();
 
         for (int i = 0; i < SlotsPerPage; i++)
         {
             var btn = slotButtons[i];
             if (btn == null || btn.style.display == DisplayStyle.None) continue;
-            ApplyTransitions(btn, 0, (long)outDurationMs);
-            btn.style.scale = new Scale(Vector2.zero);
-            btn.style.opacity = 0f;
-            btn.style.rotate = new Rotate(new Angle(-1080f));
+            
+            btn.style.transitionDelay = new List<TimeValue> { new(0, TimeUnit.Millisecond) };
+            btn.RemoveFromClassList("macro-state--visible");
+            btn.AddToClassList("macro-state--hidden");
         }
 
-        if (groupLabel != null) groupLabel.style.opacity = 0f;
-
-        macroContainer?.schedule.Execute(() =>
+        macroContainer.schedule.Execute(() =>
         {
-            if (!_open) macroContainer.style.display = DisplayStyle.None;
-        }).StartingIn((long)outDurationMs + 40);
+            if (viewModel != null && viewModel.IsOpen)
+            {
+                RevealGroup(viewModel.GetCurrentGroup());
+            }
+        }).StartingIn((long)outDurationMs + 20);
     }
 
     public void HideImmediate()
     {
-        _open = false;
-        _labelFadeHandle.Cancel();
+        _labelHideSchedule?.Pause();
         HideAllTooltips();
         for (int i = 0; i < SlotsPerPage; i++)
         {
             var btn = slotButtons[i];
             if (btn == null) continue;
             btn.Unbind();
-            ClearTransitions(btn);
-            btn.style.rotate = new Rotate(new Angle(0f));
-            btn.style.scale = new Scale(Vector2.zero);
-            btn.style.opacity = 0f;
+            
+            btn.RemoveFromClassList("macro-state--visible");
+            btn.AddToClassList("macro-state--hidden");
             btn.style.display = DisplayStyle.None;
         }
         HideArrows();
-        if (groupLabel != null) groupLabel.style.opacity = 0f;
+        if (groupLabel != null) 
+        {
+            groupLabel.RemoveFromClassList("label-state--visible");
+            groupLabel.AddToClassList("label-state--hidden");
+        }
         if (macroContainer != null) macroContainer.style.display = DisplayStyle.None;
     }
 
@@ -270,20 +275,21 @@ public class MacroButtonController : MonoBehaviour
             var btn = slotButtons[i];
             if (btn == null) continue;
             btn.Unbind();
-            ClearTransitions(btn);
+            
             btn.style.position = Position.Absolute;
             btn.style.left = -MacroHalfSize;
             btn.style.top = -MacroHalfSize;
-            btn.style.rotate = new Rotate(new Angle(0f));
-            btn.style.scale = new Scale(Vector2.zero);
-            btn.style.opacity = 0f;
+            
+            btn.RemoveFromClassList("macro-state--visible");
+            btn.AddToClassList("macro-state--hidden");
             btn.style.display = DisplayStyle.None;
         }
         HideArrows();
         if (groupLabel != null)
         {
             groupLabel.style.position = Position.Absolute;
-            groupLabel.style.opacity = 0f;
+            groupLabel.RemoveFromClassList("label-state--visible");
+            groupLabel.AddToClassList("label-state--hidden");
         }
     }
 
@@ -301,12 +307,10 @@ public class MacroButtonController : MonoBehaviour
 
     private Vector2 ContentOffset(int contentSlot) => ArcSlotOffset(contentSlot + 1, MacroHalfSize);
 
-    // ── Bind group actions to the 3 slot buttons ────────────────────
+    // ── Bind group actions ────────────────────
 
-    private void BindGroup(int groupIdx)
+    private void BindGroup(MacroGroup group)
     {
-        if (groupIdx < 0 || groupIdx >= Groups.Length) return;
-        var group = Groups[groupIdx];
         MacroActionType[] actions = { group.action0, group.action1, group.action2 };
 
         for (int i = 0; i < SlotsPerPage; i++)
@@ -314,7 +318,6 @@ public class MacroButtonController : MonoBehaviour
             var btn = slotButtons[i];
             if (btn == null) continue;
 
-            // Remove any mute-refresh callback left from a previous bind
             if (_slotIconRefreshCbs[i] != null)
             {
                 btn.clicked -= _slotIconRefreshCbs[i];
@@ -323,7 +326,6 @@ public class MacroButtonController : MonoBehaviour
 
             btn.Unbind();
 
-            // None = empty placeholder slot — hide it entirely
             if (actions[i] == MacroActionType.None)
             {
                 btn.style.display = DisplayStyle.None;
@@ -333,7 +335,6 @@ public class MacroButtonController : MonoBehaviour
             btn.Bind(MacroActionFactory.Create(actions[i]), inputProvider);
             SetButtonIcon(btn, actions[i]);
 
-            // MuteToggle: the mute state changes on click, so refresh the icon 50 ms later
             if (actions[i] == MacroActionType.MuteToggle)
             {
                 var capturedBtn = btn;
@@ -349,8 +350,7 @@ public class MacroButtonController : MonoBehaviour
 
     // ── Icon management ─────────────────────────────────────────────
 
-    private static readonly System.Collections.Generic.Dictionary<MacroActionType, string> actionIconMap = 
-        new System.Collections.Generic.Dictionary<MacroActionType, string>
+    private static readonly Dictionary<MacroActionType, string> actionIconMap = new Dictionary<MacroActionType, string>
     {
         { MacroActionType.Back, "icon-back" },
         { MacroActionType.Forward, "icon-forward" },
@@ -390,7 +390,6 @@ public class MacroButtonController : MonoBehaviour
         var icon = btn.Q<VisualElement>(className: "btn-icon");
         if (icon == null) return;
 
-        // Remove any existing icon-* classes
         var toRemove = new List<string>();
         foreach (var cls in icon.GetClasses())
             if (cls.StartsWith("icon-"))
@@ -403,179 +402,82 @@ public class MacroButtonController : MonoBehaviour
 
         icon.AddToClassList(iconClass);
 
-        // Flip horizontally for actions that mirror an existing icon asset
         bool flipX = actionType == MacroActionType.Forward || actionType == MacroActionType.SnapRight;
         icon.style.scale = new Scale(new Vector2(flipX ? -1f : 1f, 1f));
     }
 
-    // ── Group label flash (rewritable -- cancels previous fade) ─────
+    // ── Group label flash ───────────────────────────────────────────
 
     private void FlashGroupName(string groupName)
     {
         if (groupLabel == null) return;
 
-        // Cancel any in-progress animation (prevents text layering on fast scroll)
-        _labelFadeHandle.Cancel();
+        _labelHideSchedule?.Pause();
 
-        // Immediately rewrite text and reset opacity
-        ClearTransitions(groupLabel);
         groupLabel.text = groupName;
-        groupLabel.style.opacity = 0f;
-
-        // Position above the arc centre
         groupLabel.style.position = Position.Absolute;
         groupLabel.style.left = -80f;
         groupLabel.style.top = labelOffsetY;
         groupLabel.style.width = 160f;
 
-        // Fade in
-        groupLabel.schedule.Execute(() =>
-        {
-            groupLabel.style.transitionProperty = new List<StylePropertyName> { new("opacity") };
-            groupLabel.style.transitionDuration = new List<TimeValue> { new((long)labelFadeInMs, TimeUnit.Millisecond) };
-            groupLabel.style.transitionTimingFunction = new List<EasingFunction> { new(EasingMode.EaseOut) };
-            groupLabel.style.transitionDelay = new List<TimeValue> { new(0, TimeUnit.Millisecond) };
-            groupLabel.style.opacity = 1f;
-        }).StartingIn(16);
+        groupLabel.RemoveFromClassList("label-state--hidden");
+        groupLabel.AddToClassList("label-state--visible");
 
-        // Schedule fade out after hold period
-        IVisualElementScheduledItem handle = null;
-        handle = groupLabel.schedule.Execute(() =>
+        _labelHideSchedule = groupLabel.schedule.Execute(() =>
         {
-            // If a newer flash replaced us, don't fade out
-            if (_labelFadeHandle.IsCurrentItem(handle))
-            {
-                groupLabel.style.transitionDuration = new List<TimeValue> { new((long)labelFadeOutMs, TimeUnit.Millisecond) };
-                groupLabel.style.transitionTimingFunction = new List<EasingFunction> { new(EasingMode.EaseIn) };
-                groupLabel.style.opacity = 0f;
-            }
+            groupLabel.RemoveFromClassList("label-state--visible");
+            groupLabel.AddToClassList("label-state--hidden");
         }).StartingIn((long)(labelFadeInMs + labelHoldMs));
-
-        _labelFadeHandle.Set(handle);
     }
 
     // ── Reveal current group ────────────────────────────────────────
 
-    private void RevealPage()
+    private void RevealGroup(MacroGroup group)
     {
-        if (Groups.Length == 0) return;
+        BindGroup(group);
 
-        BindGroup(_groupIndex);
-
-        // Reset all slot buttons
         for (int i = 0; i < SlotsPerPage; i++)
         {
             var btn = slotButtons[i];
             if (btn == null) continue;
-            ClearTransitions(btn);
+            
             btn.style.left = -MacroHalfSize;
             btn.style.top = -MacroHalfSize;
-            btn.style.rotate = new Rotate(new Angle(0f));
-            btn.style.scale = new Scale(Vector2.zero);
-            btn.style.opacity = 0f;
+            btn.RemoveFromClassList("macro-state--visible");
+            btn.AddToClassList("macro-state--hidden");
             btn.style.display = DisplayStyle.None;
         }
 
-        // Show arrows if more than 1 group
-        if (Groups.Length > 1)
+        if (MacroViewModel.Groups.Length > 1)
         {
             PlaceArrow(prevBtn, 0);
             PlaceArrow(nextBtn, SlotsPerPage + 1);
         }
 
-        // Fan buttons in with stagger
-        var revealGroup = Groups[_groupIndex];
-        MacroActionType[] revealActions = { revealGroup.action0, revealGroup.action1, revealGroup.action2 };
+        MacroActionType[] actions = { group.action0, group.action1, group.action2 };
         for (int s = 0; s < SlotsPerPage; s++)
         {
-            if (revealActions[s] == MacroActionType.None) continue;
+            if (actions[s] == MacroActionType.None) continue;
             var btn = slotButtons[s];
             if (btn == null) continue;
+            
             Vector2 dest = ContentOffset(s);
-            long dly = (long)(staggerMs * s);
-
             btn.style.left = dest.x;
             btn.style.top = dest.y;
-            btn.style.rotate = new Rotate(new Angle(1080f));
             btn.style.display = DisplayStyle.Flex;
+
+            int captured = s;
             btn.schedule.Execute(() =>
             {
-                ApplyTransitions(btn, dly, (long)inDurationMs);
-                btn.style.scale = new Scale(Vector2.one);
-                btn.style.opacity = 1f;
-                btn.style.rotate = new Rotate(new Angle(0f));
+                long dly = (long)(staggerMs * captured);
+                btn.style.transitionDelay = new List<TimeValue> { new(dly, TimeUnit.Millisecond) };
+                btn.RemoveFromClassList("macro-state--hidden");
+                btn.AddToClassList("macro-state--visible");
             }).StartingIn(16);
         }
 
-        // Show group name + per-button tooltips
-        FlashGroupName(Groups[_groupIndex].name);
-        FlashButtonTooltips();
-    }
-
-    // ── Page to next/previous group ─────────────────────────────────
-
-    private void PageToGroup(int direction)
-    {
-        if (Groups.Length <= 1 || !_open) return;
-
-        int n = Groups.Length;
-        _groupIndex = ((_groupIndex + direction) % n + n) % n;
-
-        // Hide tooltips immediately on page change
-        HideAllTooltips();
-
-        // EXIT: spin all 3 buttons out in place
-        for (int i = 0; i < SlotsPerPage; i++)
-        {
-            var btn = slotButtons[i];
-            if (btn == null) continue;
-
-            ApplyTransitions(btn, 0, (long)outDurationMs);
-            btn.style.scale = new Scale(Vector2.zero);
-            btn.style.opacity = 0f;
-            btn.style.rotate = new Rotate(new Angle(-1080f));
-        }
-
-        // After exit animation, rebind and enter new group
-        macroContainer.schedule.Execute(() =>
-        {
-            if (!_open) return;
-
-            BindGroup(_groupIndex);
-
-            var pageGroup = Groups[_groupIndex];
-            MacroActionType[] pageActions = { pageGroup.action0, pageGroup.action1, pageGroup.action2 };
-
-            for (int i = 0; i < SlotsPerPage; i++)
-            {
-                var btn = slotButtons[i];
-                if (btn == null || pageActions[i] == MacroActionType.None) continue;
-
-                Vector2 entryDest = ContentOffset(i);
-
-                ClearTransitions(btn);
-                btn.style.position = Position.Absolute;
-                btn.style.left = entryDest.x;
-                btn.style.top = entryDest.y;
-                btn.style.rotate = new Rotate(new Angle(1080f));
-                btn.style.scale = new Scale(Vector2.zero);
-                btn.style.opacity = 0f;
-                btn.style.display = DisplayStyle.Flex;
-
-                int captured = i;
-                btn.schedule.Execute(() =>
-                {
-                    long dly = (long)(staggerMs * captured);
-                    ApplyTransitions(slotButtons[captured], dly, (long)inDurationMs);
-                    slotButtons[captured].style.rotate = new Rotate(new Angle(0f));
-                    slotButtons[captured].style.scale = new Scale(Vector2.one);
-                    slotButtons[captured].style.opacity = 1f;
-                }).StartingIn(16);
-            }
-
-            FlashGroupName(Groups[_groupIndex].name);
-            FlashButtonTooltips();
-        }).StartingIn((long)outDurationMs + 20);
+        FlashGroupName(group.name);
+        FlashButtonTooltips(group);
     }
 
     // ── Button tooltips ─────────────────────────────────────────────
@@ -584,7 +486,7 @@ public class MacroButtonController : MonoBehaviour
     {
         for (int i = 0; i < SlotsPerPage; i++)
         {
-            _tooltipFadeHandles[i].Cancel();
+            _tooltipHideSchedules[i]?.Pause();
             SetTooltipVisible(i, false);
         }
     }
@@ -593,13 +495,15 @@ public class MacroButtonController : MonoBehaviour
     {
         if (_slotTooltips[index] == null) return;
         _slotTooltips[index].style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
-        if (!visible) _slotTooltips[index].style.opacity = 0f;
+        if (!visible) 
+        {
+            _slotTooltips[index].RemoveFromClassList("label-state--visible");
+            _slotTooltips[index].AddToClassList("label-state--hidden");
+        }
     }
 
-    private void FlashButtonTooltips()
+    private void FlashButtonTooltips(MacroGroup group)
     {
-        if (Groups.Length == 0) return;
-        var group = Groups[_groupIndex];
         MacroActionType[] actions = { group.action0, group.action1, group.action2 };
 
         for (int s = 0; s < SlotsPerPage; s++)
@@ -607,86 +511,61 @@ public class MacroButtonController : MonoBehaviour
             var tip = _slotTooltips[s];
             if (tip == null) continue;
 
-            // Cancel any running fade for this slot
-            _tooltipFadeHandles[s].Cancel();
+            _tooltipHideSchedules[s]?.Pause();
 
-            // Skip placeholder slots
             if (actions[s] == MacroActionType.None)
             {
                 SetTooltipVisible(s, false);
                 continue;
             }
 
-            ClearTransitions(tip);
             tip.text = MacroActionFactory.Create(actions[s]).DisplayName;
-            tip.style.opacity = 0f;
-
-            // Position above the button's arc slot
+            
             Vector2 btnPos = ContentOffset(s);
             tip.style.left = btnPos.x - 20f;
             tip.style.top = btnPos.y - (22f + 20f);
             tip.style.width = buttonSize + 40f;
             SetTooltipVisible(s, true);
 
-            long slotDelay = (long)(tooltipDelayMs + staggerMs * s);
             int captured = s;
-
-            // Fade in after staggered delay
             tip.schedule.Execute(() =>
             {
                 var t = _slotTooltips[captured];
-                t.style.transitionProperty = new List<StylePropertyName> { new("opacity") };
-                t.style.transitionDuration = new List<TimeValue> { new((long)tooltipFadeInMs, TimeUnit.Millisecond) };
-                t.style.transitionTimingFunction = new List<EasingFunction> { new(EasingMode.EaseOut) };
-                t.style.transitionDelay = new List<TimeValue> { new(0, TimeUnit.Millisecond) };
-                t.style.opacity = 1f;
-            }).StartingIn(slotDelay);
+                t.RemoveFromClassList("label-state--hidden");
+                t.AddToClassList("label-state--visible");
+            }).StartingIn((long)(tooltipDelayMs + staggerMs * captured));
 
-            // Schedule fade out
-            IVisualElementScheduledItem fadeHandle = null;
-            fadeHandle = tip.schedule.Execute(() =>
+            _tooltipHideSchedules[s] = tip.schedule.Execute(() =>
             {
-                if (_tooltipFadeHandles[captured].IsCurrentItem(fadeHandle))
-                {
-                    var t = _slotTooltips[captured];
-                    t.style.transitionDuration = new List<TimeValue> { new((long)tooltipFadeOutMs, TimeUnit.Millisecond) };
-                    t.style.transitionTimingFunction = new List<EasingFunction> { new(EasingMode.EaseIn) };
-                    t.style.opacity = 0f;
-                }
-            }).StartingIn(slotDelay + (long)(tooltipFadeInMs + tooltipHoldMs));
-
-            _tooltipFadeHandles[s].Set(fadeHandle);
+                var t = _slotTooltips[captured];
+                t.RemoveFromClassList("label-state--visible");
+                t.AddToClassList("label-state--hidden");
+            }).StartingIn((long)(tooltipDelayMs + staggerMs * captured + labelFadeInMs + tooltipHoldMs));
         }
     }
 
     private void OnSlotHoverEnter(int slot)
     {
         var tip = _slotTooltips[slot];
-        if (tip == null || !_open) return;
+        if (tip == null || viewModel == null || !viewModel.IsOpen) return;
 
-        var group = Groups[_groupIndex];
+        var group = viewModel.GetCurrentGroup();
         MacroActionType[] actions = { group.action0, group.action1, group.action2 };
         if (actions[slot] == MacroActionType.None) return;
 
-        // Cancel any running fade-out for this slot to make sure animations dont conflict
-        _tooltipFadeHandles[slot].Cancel();
-        ClearTransitions(tip);
+        _tooltipHideSchedules[slot]?.Pause();
 
-        // Refresh text and position (in case auto-dismiss already cleared it)
         tip.text = MacroActionFactory.Create(actions[slot]).DisplayName;
         Vector2 btnPos = ContentOffset(slot);
         tip.style.left = btnPos.x - 20f;
-        tip.style.top = btnPos.y - (22f + 20f);  // 22px tip + 20px gap above button top
+        tip.style.top = btnPos.y - (22f + 20f);  
         tip.style.width = buttonSize + 40f;
         tip.style.display = DisplayStyle.Flex;
 
         tip.schedule.Execute(() =>
         {
-            tip.style.transitionProperty = new List<StylePropertyName> { new("opacity") };
-            tip.style.transitionDuration = new List<TimeValue> { new((long)tooltipFadeInMs, TimeUnit.Millisecond) };
-            tip.style.transitionTimingFunction = new List<EasingFunction> { new(EasingMode.EaseOut) };
-            tip.style.transitionDelay = new List<TimeValue> { new(0, TimeUnit.Millisecond) };
-            tip.style.opacity = 1f;
+            tip.RemoveFromClassList("label-state--hidden");
+            tip.AddToClassList("label-state--visible");
         }).StartingIn(16);
     }
 
@@ -695,18 +574,11 @@ public class MacroButtonController : MonoBehaviour
         var tip = _slotTooltips[slot];
         if (tip == null) return;
 
-        UnityEngine.UIElements.IVisualElementScheduledItem handle = null;
-        handle = tip.schedule.Execute(() =>
+        _tooltipHideSchedules[slot] = tip.schedule.Execute(() =>
         {
-            if (_tooltipFadeHandles[slot].IsCurrentItem(handle))
-            {
-                tip.style.transitionDuration = new List<TimeValue> { new((long)tooltipFadeOutMs, TimeUnit.Millisecond) };
-                tip.style.transitionTimingFunction = new List<EasingFunction> { new(EasingMode.EaseIn) };
-                tip.style.opacity = 0f;
-            }
+            tip.RemoveFromClassList("label-state--visible");
+            tip.AddToClassList("label-state--hidden");
         }).StartingIn(50);
-
-        _tooltipFadeHandles[slot].Set(handle);
     }
 
     // ── Arrows ──────────────────────────────────────────────────────
@@ -732,11 +604,6 @@ public class MacroButtonController : MonoBehaviour
         if (prevBtn != null) prevBtn.style.display = DisplayStyle.None;
         if (nextBtn != null) nextBtn.style.display = DisplayStyle.None;
     }
-
-    // ── Paging callbacks ────────────────────────────────────────────
-
-    private void OnPrevClicked() => PageToGroup(-1);
-    private void OnNextClicked() => PageToGroup(+1);
 
     // ── Layout ──────────────────────────────────────────────────────
 
@@ -806,37 +673,4 @@ public class MacroButtonController : MonoBehaviour
         uiDocument = saved;
     }
 #endif
-
-    // ── USS transitions ─────────────────────────────────────────────
-
-    private void ApplyTransitions(VisualElement el, long delayMs, long durationMs)
-    {
-        el.style.transitionProperty = new List<StylePropertyName>
-            { new("left"), new("top"), new("scale"), new("opacity"), new("rotate") };
-        el.style.transitionDuration = new List<TimeValue> { new(durationMs, TimeUnit.Millisecond) };
-        el.style.transitionTimingFunction = new List<EasingFunction> { new(EasingMode.EaseOutCubic) };
-        el.style.transitionDelay = new List<TimeValue> { new(delayMs, TimeUnit.Millisecond) };
-    }
-
-    private static void ClearTransitions(VisualElement el)
-    {
-        el.style.transitionProperty = StyleKeyword.Null;
-        el.style.transitionDuration = StyleKeyword.Null;
-        el.style.transitionTimingFunction = StyleKeyword.Null;
-        el.style.transitionDelay = StyleKeyword.Null;
-    }
-
-    private struct ScheduledItemHandle
-    {
-        private UnityEngine.UIElements.IVisualElementScheduledItem _item;
-
-        public void Set(UnityEngine.UIElements.IVisualElementScheduledItem item) => _item = item;
-        public void Cancel() { _item?.Pause(); _item = null; }
-        public void Resume() => _item?.Resume();
-        public bool IsActive => _item != null;
-
-        public bool IsCurrentItem(UnityEngine.UIElements.IVisualElementScheduledItem candidate)
-            => _item != null && ReferenceEquals(_item, candidate);
-    }
 }
-

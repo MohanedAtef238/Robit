@@ -29,6 +29,26 @@ public class UIBubbleEntry : MonoBehaviour
         }
     }
 
+    public void ReplayAnimation()
+    {
+        StopAllCoroutines();
+        StartCoroutine(AnimateElements());
+    }
+
+    public void ResetAnimation()
+    {
+        StopAllCoroutines();
+        _hasAnimated = false;
+        if (uiDocument != null && uiDocument.rootVisualElement != null)
+        {
+            var elements = uiDocument.rootVisualElement.Query(className: "bubble-element").ToList();
+            foreach (var el in elements)
+            {
+                el.RemoveFromClassList("bubble-active");
+            }
+        }
+    }
+
     private IEnumerator AnimateElements()
     {
         _hasAnimated = true;
@@ -41,7 +61,8 @@ public class UIBubbleEntry : MonoBehaviour
             el.RemoveFromClassList("bubble-active");
         }
 
-        // Short frame buffer
+        // Wait two frames to allow UI Toolkit to register display changes and layout passes
+        yield return null;
         yield return null;
 
         foreach (var el in elements)

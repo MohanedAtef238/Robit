@@ -210,6 +210,12 @@ public class HomePageController : MonoBehaviour
         // Start suppressing Windows popups
         _suppressor.StartSuppressing();
 
+        var bubbleAnim = GetComponent<UIBubbleEntry>();
+        if (bubbleAnim != null)
+        {
+            bubbleAnim.ReplayAnimation();
+        }
+
         RobitLogger.Log("[HomePageController] Opened.");
     }
 
@@ -227,6 +233,13 @@ public class HomePageController : MonoBehaviour
         // Hide tint overlay
         if (_tintOverlay != null)
             _tintOverlay.style.display = DisplayStyle.None;
+
+        // Reset bubble animations
+        var bubbleAnim = GetComponent<UIBubbleEntry>();
+        if (bubbleAnim != null)
+        {
+            bubbleAnim.ResetAnimation();
+        }
 
         // Also hide the dialogue bubble
         HideDialogue();

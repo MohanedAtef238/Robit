@@ -283,3 +283,26 @@
     margin: 0;
     align-self: center;
 }
+
+/* ── Declarative MVVM States ── */
+
+.macro-state--hidden {
+    opacity: 0;
+    scale: 0;
+    rotate: -1080deg;
+}
+
+.macro-state--visible {
+    opacity: 1;
+    scale: 1;
+    rotate: 0deg;
+}
+
+.label-state--hidden {
+    opacity: 0;
+}
+
+.label-state--visible {
+    opacity: 1;
+}
+

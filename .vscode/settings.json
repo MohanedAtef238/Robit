@@ -67,5 +67,28 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "Robit.slnx"
+    "dotnet.defaultSolution": "Robit.slnx",
+    "dotrush.roslyn.projectOrSolutionFiles": [
+        "c:\\Users\\Mohaned\\Mock_OS\\Robit\\Mock_OS_Unity.sln",
+        "c:\\Users\\Mohaned\\Mock_OS\\Robit\\Mock_OS_Unity.slnx",
+        "c:\\Users\\Mohaned\\Mock_OS\\Robit\\Mock_OS.sln",
+        "c:\\Users\\Mohaned\\Mock_OS\\Robit\\My project.sln",
+        "c:\\Users\\Mohaned\\Mock_OS\\Robit\\Robit-main.slnx",
+        "c:\\Users\\Mohaned\\Mock_OS\\Robit\\Robit.slnx",
+        "c:\\Users\\Mohaned\\Mock_OS\\Robit\\Robit.AppCycler.csproj",
+        "c:\\Users\\Mohaned\\Mock_OS\\Robit\\Robit.AppLauncher.csproj",
+        "c:\\Users\\Mohaned\\Mock_OS\\Robit\\Robit.csproj",
+        "c:\\Users\\Mohaned\\Mock_OS\\Robit\\Robit.Editor.csproj",
+        "c:\\Users\\Mohaned\\Mock_OS\\Robit\\Robit.HomePage.csproj",
+        "c:\\Users\\Mohaned\\Mock_OS\\Robit\\Robit.MacroSystem.csproj",
+        "c:\\Users\\Mohaned\\Mock_OS\\Robit\\Robit.OverlaySystem.csproj",
+        "c:\\Users\\Mohaned\\Mock_OS\\Robit\\Robit.PlayModeTests.csproj",
+        "c:\\Users\\Mohaned\\Mock_OS\\Robit\\Robit.Runtime.csproj",
+        "c:\\Users\\Mohaned\\Mock_OS\\Robit\\Robit.Settings.csproj",
+        "c:\\Users\\Mohaned\\Mock_OS\\Robit\\Robit.Tests.csproj",
+        "c:\\Users\\Mohaned\\Mock_OS\\Robit\\Robit.Tests.EditMode.csproj",
+        "c:\\Users\\Mohaned\\Mock_OS\\Robit\\Robit.Tests.PlayMode.csproj",
+        "c:\\Users\\Mohaned\\Mock_OS\\Robit\\Robit.UIDocuments.csproj",
+        "c:\\Users\\Mohaned\\Mock_OS\\Robit\\Robit.Utils.csproj"
+    ]
 }
