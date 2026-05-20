@@ -3,39 +3,33 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
-[DefaultExecutionOrder(-890)]
-public class EmgPredictionRunner : MonoBehaviour
+[DefaultExecutionOrder(-880)]
+public class UiAutomationRunner : MonoBehaviour
 {
-    public static EmgPredictionRunner Instance { get; private set; }
+    public static UiAutomationRunner Instance { get; private set; }
 
-    [Header("Python Setup")]
-    [SerializeField] private string relativeWorkingDirectory = @"D:/Projects/emg-work";
-    [SerializeField] private string relativePythonPath = @"D:/Projects/emg-work/.venv/Scripts/python.exe";
-    [SerializeField] private string relativeScriptPath = "InputBridge/unity_emg_bridge.py";
+    [Header("UI Automation Setup")]
+    [SerializeField] private string relativeWorkingDirectory = @"D:/Projects/Robit Ui Automation System/Robit-UI-Automation";
+    [SerializeField] private string executablePath = "dotnet";
+    [SerializeField] private string arguments = "run";
     [SerializeField] private bool autoStartOnAwake = true;
-
-    [Header("Debug")]
-    [SerializeField] private bool simulateEmgWithSpaceKey = true;
 
     [Header("Runtime Env Overrides")]
     [SerializeField] private bool loadOverridesFromEnvFile = true;
-    [SerializeField] private string envFileName = "emg.env";
+    [SerializeField] private string envFileName = "uiautomation.env";
     [SerializeField] private bool logResolvedPaths = true;
 
-    private Process emgProcess;
-    private bool pythonEmgActive;
-    private bool simulatedEmgActive;
+    private Process automationProcess;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Bootstrap()
     {
-        if (FindFirstObjectByType<EmgPredictionRunner>() != null)
+        if (FindFirstObjectByType<UiAutomationRunner>() != null)
             return;
 
-        var go = new GameObject("EmgPredictionRunner");
-        go.AddComponent<EmgPredictionRunner>();
+        var go = new GameObject("UiAutomationRunner");
+        go.AddComponent<UiAutomationRunner>();
     }
 
     private void Awake()
@@ -50,66 +44,41 @@ public class EmgPredictionRunner : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
         if (autoStartOnAwake)
-            StartEmgPrediction();
+            StartAutomationServer();
     }
 
-    private void Update()
-    {
-        if (!simulateEmgWithSpaceKey || Keyboard.current == null)
-            return;
-
-        bool isPressed = Keyboard.current.spaceKey.isPressed;
-        if (simulatedEmgActive == isPressed)
-            return;
-
-        simulatedEmgActive = isPressed;
-        ApplyEffectiveEmgState();
-    }
-
-    public void StartEmgPrediction()
+    public void StartAutomationServer()
     {
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
-        if (emgProcess != null && !emgProcess.HasExited)
+        if (automationProcess != null && !automationProcess.HasExited)
         {
-            RobitLogger.Log("[EmgPredictionRunner] EMG prediction is already running.");
+            RobitLogger.Log("[UiAutomationRunner] UI Automation server is already running.");
             return;
         }
 
         string workingDirectoryConfig = relativeWorkingDirectory;
-        string pythonPathConfig = relativePythonPath;
-        string scriptPathConfig = relativeScriptPath;
-        LoadEnvOverrides(ref workingDirectoryConfig, ref pythonPathConfig, ref scriptPathConfig);
+        string exePathConfig = executablePath;
+        string argsConfig = arguments;
+        LoadEnvOverrides(ref workingDirectoryConfig, ref exePathConfig, ref argsConfig);
 
         if (!TryResolvePath(workingDirectoryConfig, expectFile: false, out string workingDirectory, out string workingDetails))
         {
-            RobitLogger.LogWarning("[EmgPredictionRunner] Working directory could not be resolved (EMG unavailable).\n" + workingDetails);
-            return;
-        }
-
-        if (!TryResolvePath(pythonPathConfig, expectFile: true, out string pythonExe, out string pythonDetails))
-        {
-            RobitLogger.LogWarning("[EmgPredictionRunner] Python executable could not be resolved (EMG unavailable).\n" + pythonDetails);
-            return;
-        }
-
-        if (!TryResolvePath(scriptPathConfig, expectFile: true, out string scriptPath, out string scriptDetails))
-        {
-            RobitLogger.LogWarning("[EmgPredictionRunner] EMG bridge script could not be resolved.\n" + scriptDetails);
+            RobitLogger.LogWarning("[UiAutomationRunner] Working directory could not be resolved (UI Automation unavailable).\n" + workingDetails);
             return;
         }
 
         if (logResolvedPaths)
         {
-            RobitLogger.Log("[EmgPredictionRunner] Using paths:\n" +
+            RobitLogger.Log("[UiAutomationRunner] Using paths:\n" +
                             $" - WorkingDir: {workingDirectory}\n" +
-                            $" - PythonExe : {pythonExe}\n" +
-                            $" - Script    : {scriptPath}");
+                            $" - Executable: {exePathConfig}\n" +
+                            $" - Arguments : {argsConfig}");
         }
 
         var startInfo = new ProcessStartInfo
         {
-            FileName = pythonExe,
-            Arguments = $"\"{scriptPath}\"",
+            FileName = exePathConfig,
+            Arguments = argsConfig,
             WorkingDirectory = workingDirectory,
             UseShellExecute = false,
             RedirectStandardOutput = true,
@@ -117,40 +86,40 @@ public class EmgPredictionRunner : MonoBehaviour
             CreateNoWindow = true,
         };
 
-        emgProcess = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
-        emgProcess.OutputDataReceived += OnOutputDataReceived;
-        emgProcess.ErrorDataReceived += OnErrorDataReceived;
-        emgProcess.Exited += OnProcessExited;
+        automationProcess = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
+        automationProcess.OutputDataReceived += OnOutputDataReceived;
+        automationProcess.ErrorDataReceived += OnErrorDataReceived;
+        automationProcess.Exited += OnProcessExited;
 
         try
         {
-            emgProcess.Start();
-            emgProcess.BeginOutputReadLine();
-            emgProcess.BeginErrorReadLine();
-            RobitLogger.Log("[EmgPredictionRunner] Started EMG bridge.");
+            automationProcess.Start();
+            automationProcess.BeginOutputReadLine();
+            automationProcess.BeginErrorReadLine();
+            RobitLogger.Log("[UiAutomationRunner] Started UI Automation server.");
         }
         catch (Exception ex)
         {
-            RobitLogger.LogError($"[EmgPredictionRunner] Failed to start EMG bridge: {ex.Message}");
+            RobitLogger.LogError($"[UiAutomationRunner] Failed to start UI Automation server: {ex.Message}");
         }
 #else
-        RobitLogger.LogWarning("[EmgPredictionRunner] This runner currently supports Windows builds only.");
+        RobitLogger.LogWarning("[UiAutomationRunner] This runner currently supports Windows builds only.");
 #endif
     }
 
-    public void StopEmgPrediction()
+    public void StopAutomationServer()
     {
-        if (emgProcess == null)
+        if (automationProcess == null)
             return;
 
         try
         {
-            if (!emgProcess.HasExited)
-                emgProcess.Kill();
+            if (!automationProcess.HasExited)
+                automationProcess.Kill();
         }
         catch (Exception ex)
         {
-            RobitLogger.LogWarning($"[EmgPredictionRunner] Failed to stop EMG process: {ex.Message}");
+            RobitLogger.LogWarning($"[UiAutomationRunner] Failed to stop UI Automation process: {ex.Message}");
         }
         finally
         {
@@ -160,7 +129,7 @@ public class EmgPredictionRunner : MonoBehaviour
 
     private void OnApplicationQuit()
     {
-        StopEmgPrediction();
+        StopAutomationServer();
     }
 
     private void OnDestroy()
@@ -168,7 +137,7 @@ public class EmgPredictionRunner : MonoBehaviour
         if (Instance == this)
             Instance = null;
 
-        StopEmgPrediction();
+        StopAutomationServer();
     }
 
     private void OnOutputDataReceived(object sender, DataReceivedEventArgs e)
@@ -176,16 +145,7 @@ public class EmgPredictionRunner : MonoBehaviour
         if (string.IsNullOrWhiteSpace(e.Data))
             return;
 
-        string line = e.Data.Trim();
-        if (line.StartsWith("EMG:", StringComparison.OrdinalIgnoreCase))
-        {
-            string payload = line.Substring(4).Trim();
-            pythonEmgActive = payload == "1" || payload.Equals("true", StringComparison.OrdinalIgnoreCase);
-            ApplyEffectiveEmgState();
-            return;
-        }
-
-        RobitLogger.Log($"[EmgPredictionRunner][PY] {line}");
+        RobitLogger.Log($"[UiAutomationRunner][Server] {e.Data.Trim()}");
     }
 
     private void OnErrorDataReceived(object sender, DataReceivedEventArgs e)
@@ -193,35 +153,27 @@ public class EmgPredictionRunner : MonoBehaviour
         if (string.IsNullOrWhiteSpace(e.Data))
             return;
 
-        RobitLogger.LogWarning($"[EmgPredictionRunner][PY-ERR] {e.Data}");
+        RobitLogger.LogWarning($"[UiAutomationRunner][Server-ERR] {e.Data.Trim()}");
     }
 
     private void OnProcessExited(object sender, EventArgs e)
     {
-        pythonEmgActive = false;
-        ApplyEffectiveEmgState();
-        RobitLogger.Log("[EmgPredictionRunner] EMG process exited.");
-    }
-
-    private void ApplyEffectiveEmgState()
-    {
-        bool isActive = pythonEmgActive || simulatedEmgActive;
-        VirtualInputState.Instance.SetEmgPrediction(isActive, isActive ? 1f : 0f);
+        RobitLogger.Log("[UiAutomationRunner] UI Automation process exited.");
     }
 
     private void CleanupProcessHandlers()
     {
-        if (emgProcess == null)
+        if (automationProcess == null)
             return;
 
-        emgProcess.OutputDataReceived -= OnOutputDataReceived;
-        emgProcess.ErrorDataReceived -= OnErrorDataReceived;
-        emgProcess.Exited -= OnProcessExited;
-        emgProcess.Dispose();
-        emgProcess = null;
+        automationProcess.OutputDataReceived -= OnOutputDataReceived;
+        automationProcess.ErrorDataReceived -= OnErrorDataReceived;
+        automationProcess.Exited -= OnProcessExited;
+        automationProcess.Dispose();
+        automationProcess = null;
     }
 
-    private void LoadEnvOverrides(ref string workingDirectoryConfig, ref string pythonPathConfig, ref string scriptPathConfig)
+    private void LoadEnvOverrides(ref string workingDirectoryConfig, ref string exePathConfig, ref string argsConfig)
     {
         if (!loadOverridesFromEnvFile)
             return;
@@ -229,21 +181,21 @@ public class EmgPredictionRunner : MonoBehaviour
         if (!TryResolveEnvFilePath(envFileName, out string envPath, out string details))
         {
             if (logResolvedPaths)
-                RobitLogger.Log("[EmgPredictionRunner] Env file not found. Using inspector values.\n" + details);
+                RobitLogger.Log("[UiAutomationRunner] Env file not found. Using inspector values.\n" + details);
             return;
         }
 
         Dictionary<string, string> values = ParseEnvFile(envPath);
-        if (values.TryGetValue("EMG_WORKING_DIR", out string wd) && !string.IsNullOrWhiteSpace(wd))
+        if (values.TryGetValue("UI_AUTO_WORKING_DIR", out string wd) && !string.IsNullOrWhiteSpace(wd))
             workingDirectoryConfig = wd.Trim();
 
-        if (values.TryGetValue("EMG_PYTHON_PATH", out string py) && !string.IsNullOrWhiteSpace(py))
-            pythonPathConfig = py.Trim();
+        if (values.TryGetValue("UI_AUTO_EXE_PATH", out string exe) && !string.IsNullOrWhiteSpace(exe))
+            exePathConfig = exe.Trim();
 
-        if (values.TryGetValue("EMG_SCRIPT_PATH", out string script) && !string.IsNullOrWhiteSpace(script))
-            scriptPathConfig = script.Trim();
+        if (values.TryGetValue("UI_AUTO_ARGS", out string args) && !string.IsNullOrWhiteSpace(args))
+            argsConfig = args.Trim();
 
-        RobitLogger.Log($"[EmgPredictionRunner] Loaded env overrides from: {envPath}");
+        RobitLogger.Log($"[UiAutomationRunner] Loaded env overrides from: {envPath}");
     }
 
     private static Dictionary<string, string> ParseEnvFile(string envPath)
@@ -287,7 +239,7 @@ public class EmgPredictionRunner : MonoBehaviour
         string foundPath = null;
         var attempts = new List<string>();
 
-        string fileName = string.IsNullOrWhiteSpace(configuredEnvFileName) ? "emg.env" : configuredEnvFileName.Trim().Trim('"');
+        string fileName = string.IsNullOrWhiteSpace(configuredEnvFileName) ? "uiautomation.env" : configuredEnvFileName.Trim().Trim('"');
 
         void TryPath(string candidate)
         {

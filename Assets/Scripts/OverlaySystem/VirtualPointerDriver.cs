@@ -1,6 +1,6 @@
 using System;
+using NativeWebSocket;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 [DefaultExecutionOrder(-850)]
 public class VirtualPointerDriver : MonoBehaviour
@@ -9,22 +9,37 @@ public class VirtualPointerDriver : MonoBehaviour
 
     [Header("Cursor Output")]
     [SerializeField] private bool moveWindowsCursor = true;
-    [SerializeField] private bool mirrorCursorInsideUnity = true;
+    [SerializeField] private bool mirrorCursorInsideUnity = false;
     [SerializeField] private float minPixelDelta = 1f;
 
-    [Header("EMG Mouse Mapping")]
+    [Header("Smoothing")]
+    [SerializeField] private bool useSmoothing = true;
+    [SerializeField] private float smoothingSpeed = 15f;
+
+    [Header("Input Mapping")]
     [SerializeField] private bool mapEmgToLeftMouseButton = true;
+    [SerializeField] private bool clickOnReleaseOnly = false;
+    [Tooltip("Minimum time in seconds the EMG must be active to count as a click (prevents noise)")]
+    [SerializeField] private float minClickHoldTime = 0.05f;
+    [Tooltip("Maximum time to be considered a 'click'. Longer stays become a 'drag'.")]
+    [SerializeField] private float maxClickDuration = 0.5f;
 
-    [Header("Unity Cursor Look")]
-    [SerializeField] private float cursorSize = 28f;
-    [SerializeField] private Color cursorRingColor = new(0.18f, 0.95f, 0.88f, 0.95f);
-    [SerializeField] private Color cursorFillColor = new(1f, 1f, 1f, 0.10f);
-    [SerializeField] private Color cursorDotColor = new(1f, 1f, 1f, 0.95f);
+    [Header("World Cursor Tracking")]
+    [SerializeField] private GameObject cursorInstance;
+    [SerializeField] private float cursorDistance = 5f;
 
+    [Header("UI Automation Websocket")]
+    [SerializeField] private string wsUrl = "ws://127.0.0.1:8181";
+    [SerializeField] private float dragToMessageTime = 2f;
+    private WebSocket websocket;
+    private bool messageSentForCurrentDrag;
+
+    private Vector2 smoothedGazePosition;
+    private bool isGazeInitialized;
     private Vector2 lastCursorPosition = new(float.MinValue, float.MinValue);
     private bool lastEmgActive;
-    private UIDocument attachedDocument;
-    private VisualElement cursorRoot;
+    private float emgStartTime;
+    private Camera mainCamera;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Bootstrap()
@@ -46,19 +61,67 @@ public class VirtualPointerDriver : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        
+        ConnectWebSocket();
+    }
+
+    private async void ConnectWebSocket()
+    {
+        websocket = new WebSocket(wsUrl);
+        websocket.OnOpen += () => Debug.Log("[VirtualPointerDriver] WebSocket Connected");
+        websocket.OnError += e => Debug.LogError("[VirtualPointerDriver] WebSocket Error: " + e);
+        websocket.OnClose += _ => Debug.Log("[VirtualPointerDriver] WebSocket Closed");
+        
+        await websocket.Connect();
+    }
+
+    private async void OnDestroy()
+    {
+        if (websocket != null)
+        {
+            await websocket.Close();
+        }
     }
 
     private void Update()
     {
+        websocket?.DispatchMessageQueue();
+
         VirtualInputState inputState = VirtualInputState.Instance;
 
-        if (moveWindowsCursor && inputState.HasGazePosition)
-            UpdateWindowsCursor(inputState.GazePosition);
+        if (inputState.HasGazePosition)
+        {
+            Vector2 targetPos = inputState.GazePosition;
+            if (useSmoothing)
+            {
+                if (!isGazeInitialized)
+                {
+                    smoothedGazePosition = targetPos;
+                    isGazeInitialized = true;
+                }
+                else
+                {
+                    smoothedGazePosition = Vector2.Lerp(smoothedGazePosition, targetPos, Time.deltaTime * smoothingSpeed);
+                }
+            }
+            else
+            {
+                smoothedGazePosition = targetPos;
+            }
 
-        if (mirrorCursorInsideUnity && inputState.HasGazePosition)
-            UpdateUnityCursor(inputState.GazePosition);
+            if (moveWindowsCursor)
+                UpdateWindowsCursor(smoothedGazePosition);
+
+            if (mirrorCursorInsideUnity)
+                UpdateUnityCursor(smoothedGazePosition);
+            else
+                HideUnityCursor();
+        }
         else
+        {
+            isGazeInitialized = false;
             HideUnityCursor();
+        }
 
         if (mapEmgToLeftMouseButton)
             UpdateMouseButton(inputState.IsEmgActive);
@@ -80,30 +143,94 @@ public class VirtualPointerDriver : MonoBehaviour
 
     private void UpdateUnityCursor(Vector2 rawPosition)
     {
-        EnsureCursorAttached();
-        if (cursorRoot == null)
+        if (cursorInstance == null)
             return;
 
-        Vector2 panelPosition = ConvertScreenToOverlayPosition(rawPosition);
-        float halfSize = cursorSize * 0.5f;
-        cursorRoot.style.left = panelPosition.x - halfSize;
-        cursorRoot.style.top = panelPosition.y - halfSize;
-        cursorRoot.style.display = DisplayStyle.Flex;
+        // Resolve camera lazily to handle scene changes or re-instantiated cameras
+        if (mainCamera == null)
+            mainCamera = Camera.main;
+
+        if (mainCamera == null)
+            return;
+
+        Vector2 overlayPos = ConvertScreenToOverlayPosition(rawPosition);
+        
+        // Convert top-left (Windows Client) to bottom-left (Unity Screen)
+        Vector3 screenPos = new Vector3(overlayPos.x, Screen.height - overlayPos.y, cursorDistance);
+        
+        cursorInstance.transform.position = mainCamera.ScreenToWorldPoint(screenPos);
+        cursorInstance.SetActive(true);
     }
 
     private void HideUnityCursor()
     {
-        if (cursorRoot != null)
-            cursorRoot.style.display = DisplayStyle.None;
+        if (cursorInstance != null)
+            cursorInstance.SetActive(false);
     }
 
     private void UpdateMouseButton(bool emgActive)
     {
-        if (emgActive == lastEmgActive)
-            return;
+        if (emgActive != lastEmgActive)
+        {
+            if (emgActive)
+            {
+                // Signal Started
+                emgStartTime = Time.time;
+                messageSentForCurrentDrag = false;
+                
+                if (!clickOnReleaseOnly)
+                {
+                    SendMouseButton(Win32Interop.MouseEventFlags.LeftDown);
+                }
+            }
+            else
+            {
+                // Signal Ended
+                float duration = Time.time - emgStartTime;
 
-        lastEmgActive = emgActive;
-        SendMouseButton(emgActive ? Win32Interop.MouseEventFlags.LeftDown : Win32Interop.MouseEventFlags.LeftUp);
+                if (clickOnReleaseOnly)
+                {
+                    // Only fire if it was held long enough to not be noise, 
+                    // but short enough to be a intentional "tap"
+                    if (duration >= minClickHoldTime && !messageSentForCurrentDrag)
+                    {
+                        SendMouseButton(Win32Interop.MouseEventFlags.LeftDown);
+                        SendMouseButton(Win32Interop.MouseEventFlags.LeftUp);
+                    }
+                }
+                else
+                {
+                    if (!messageSentForCurrentDrag)
+                    {
+                        SendMouseButton(Win32Interop.MouseEventFlags.LeftUp);
+                    }
+                }
+            }
+
+            lastEmgActive = emgActive;
+        }
+        else if (emgActive)
+        {
+            if (!messageSentForCurrentDrag && Time.time - emgStartTime >= dragToMessageTime)
+            {
+                messageSentForCurrentDrag = true;
+                SendGetClosest();
+                if (!clickOnReleaseOnly)
+                {
+                    // Abort the drag in Windows since it triggered the UI overlay
+                    SendMouseButton(Win32Interop.MouseEventFlags.LeftUp);
+                }
+            }
+        }
+    }
+
+    private async void SendGetClosest()
+    {
+        if (websocket != null && websocket.State == WebSocketState.Open)
+        {
+            await websocket.SendText("{\"type\":\"getClosest\"}");
+            Debug.Log("[VirtualPointerDriver] Requested closest elements after 2s drag");
+        }
     }
 
     private static void SendMouseButton(Win32Interop.MouseEventFlags flags)
@@ -126,73 +253,6 @@ public class VirtualPointerDriver : MonoBehaviour
 
         Win32Interop.SendInput((uint)inputs.Length, inputs, System.Runtime.InteropServices.Marshal.SizeOf(typeof(Win32Interop.INPUT)));
 #endif
-    }
-
-    private void EnsureCursorAttached()
-    {
-        if (attachedDocument != null && attachedDocument.rootVisualElement != null && cursorRoot?.parent == attachedDocument.rootVisualElement)
-            return;
-
-        attachedDocument = null;
-        cursorRoot = null;
-
-        UIDocument[] documents = FindObjectsByType<UIDocument>(FindObjectsSortMode.None);
-        foreach (UIDocument document in documents)
-        {
-            if (document == null || document.rootVisualElement == null)
-                continue;
-
-            attachedDocument = document;
-            cursorRoot = CreateCursorElement();
-            attachedDocument.rootVisualElement.Add(cursorRoot);
-            break;
-        }
-    }
-
-    private VisualElement CreateCursorElement()
-    {
-        var outer = new VisualElement
-        {
-            pickingMode = PickingMode.Ignore
-        };
-
-        outer.style.position = Position.Absolute;
-        outer.style.width = cursorSize;
-        outer.style.height = cursorSize;
-        outer.style.borderTopLeftRadius = cursorSize;
-        outer.style.borderTopRightRadius = cursorSize;
-        outer.style.borderBottomLeftRadius = cursorSize;
-        outer.style.borderBottomRightRadius = cursorSize;
-        outer.style.borderTopWidth = 2f;
-        outer.style.borderRightWidth = 2f;
-        outer.style.borderBottomWidth = 2f;
-        outer.style.borderLeftWidth = 2f;
-        outer.style.borderTopColor = cursorRingColor;
-        outer.style.borderRightColor = cursorRingColor;
-        outer.style.borderBottomColor = cursorRingColor;
-        outer.style.borderLeftColor = cursorRingColor;
-        outer.style.backgroundColor = cursorFillColor;
-        outer.style.display = DisplayStyle.None;
-
-        float dotSize = Mathf.Max(6f, cursorSize * 0.22f);
-        var dot = new VisualElement
-        {
-            pickingMode = PickingMode.Ignore
-        };
-
-        dot.style.position = Position.Absolute;
-        dot.style.width = dotSize;
-        dot.style.height = dotSize;
-        dot.style.left = (cursorSize - dotSize) * 0.5f;
-        dot.style.top = (cursorSize - dotSize) * 0.5f;
-        dot.style.borderTopLeftRadius = dotSize;
-        dot.style.borderTopRightRadius = dotSize;
-        dot.style.borderBottomLeftRadius = dotSize;
-        dot.style.borderBottomRightRadius = dotSize;
-        dot.style.backgroundColor = cursorDotColor;
-
-        outer.Add(dot);
-        return outer;
     }
 
     private Vector2 ConvertScreenToOverlayPosition(Vector2 rawScreenPosition)
@@ -218,17 +278,8 @@ public class VirtualPointerDriver : MonoBehaviour
         }
 #endif
 
-        if (attachedDocument?.rootVisualElement != null)
-        {
-            float panelWidth = attachedDocument.rootVisualElement.resolvedStyle.width;
-            float panelHeight = attachedDocument.rootVisualElement.resolvedStyle.height;
-
-            if (panelWidth > 0f)
-                x = Mathf.Clamp(x, 0f, panelWidth);
-
-            if (panelHeight > 0f)
-                y = Mathf.Clamp(y, 0f, panelHeight);
-        }
+        x = Mathf.Clamp(x, 0f, Screen.width);
+        y = Mathf.Clamp(y, 0f, Screen.height);
 
         return new Vector2(x, y);
     }
