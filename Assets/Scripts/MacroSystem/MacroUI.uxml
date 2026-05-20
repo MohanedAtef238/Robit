@@ -1,27 +1,36 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <Style src="MacroUI.uss" />
-    <ui:VisualElement name="macro-container" class="macro-container">
-
-        <!-- Group name label that fades in/out on page change -->
-        <ui:Label name="group-name-label" class="group-name-label" text="" />
+    
+    <!-- Central Hub, anchored at 50% 50% -->
+    <ui:VisualElement name="macro-container" class="macro-container macro-state--hidden">
+        
+        <ui:Label name="group-name-label" class="group-name-label label-state--hidden" text="" />
 
         <ui:VisualElement name="button-grid" class="button-grid">
-            <!-- 3 reusable macro button slots — controller swaps icons/bindings per group -->
-            <MacroButton name="BtnSlot0" class="macro-button">
+            
+            <ui:Button name="BtnWheelPrev" class="macro-button slot-prev macro-state--hidden">
+                <ui:VisualElement class="btn-icon icon-cycle-left" />
+            </ui:Button>
+            
+            <MacroButton name="BtnSlot0" class="macro-button slot-0 macro-state--hidden">
                 <ui:VisualElement name="BtnSlot0Icon" class="btn-icon" />
+                <ui:Label name="Tooltip0" class="button-tooltip label-state--hidden" text="Action" />
             </MacroButton>
-            <MacroButton name="BtnSlot1" class="macro-button">
+            
+            <MacroButton name="BtnSlot1" class="macro-button slot-1 macro-state--hidden">
                 <ui:VisualElement name="BtnSlot1Icon" class="btn-icon" />
+                <ui:Label name="Tooltip1" class="button-tooltip label-state--hidden" text="Action" />
             </MacroButton>
-            <MacroButton name="BtnSlot2" class="macro-button">
+            
+            <MacroButton name="BtnSlot2" class="macro-button slot-2 macro-state--hidden">
                 <ui:VisualElement name="BtnSlot2Icon" class="btn-icon" />
+                <ui:Label name="Tooltip2" class="button-tooltip label-state--hidden" text="Action" />
             </MacroButton>
-            <ui:Button name="BtnWheelPrev" class="wheel-arrow arrow-left">
-                <ui:VisualElement class="arrow-icon" />
+            
+            <ui:Button name="BtnWheelNext" class="macro-button slot-next macro-state--hidden">
+                <ui:VisualElement class="btn-icon icon-cycle-right" />
             </ui:Button>
-            <ui:Button name="BtnWheelNext" class="wheel-arrow arrow-right">
-                <ui:VisualElement class="arrow-icon" />
-            </ui:Button>
+            
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
