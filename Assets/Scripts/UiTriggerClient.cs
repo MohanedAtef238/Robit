@@ -34,6 +34,7 @@ public class UiTriggerClient : MonoBehaviour
 
     [Header("Selection Overlay")]
     [SerializeField] private int maxVisibleOptions = 6;
+    [SerializeField] private float emgHoldThresholdSeconds = 2f;
 
     private WebSocket websocket;
     private UIDocument uiDocument;
@@ -48,6 +49,9 @@ public class UiTriggerClient : MonoBehaviour
     private bool wasHPressed;
     private readonly bool[] wasDigitPressed = new bool[6];
     private bool wasEscapePressed;
+    private bool wasEmgPressed;
+    private float emgPressedAt;
+    private bool emgHoldTriggered;
 
     [DllImport("user32.dll")]
     private static extern short GetAsyncKeyState(int vKey);
@@ -142,6 +146,8 @@ public class UiTriggerClient : MonoBehaviour
         if (!uiBound)
             return;
 
+        UpdateEmgHold();
+
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
         bool isHPressed = (GetAsyncKeyState(0x48) & 0x8000) != 0;
         if (isHPressed && !wasHPressed)
@@ -173,6 +179,28 @@ public class UiTriggerClient : MonoBehaviour
             if (Keyboard.current.escapeKey.wasPressedThisFrame) HideSelectionOverlay();
         }
 #endif
+    }
+
+    private void UpdateEmgHold()
+    {
+        bool isEmgPressed = VirtualInputState.Instance.IsEmgActive;
+        if (isEmgPressed && !wasEmgPressed)
+        {
+            emgPressedAt = Time.unscaledTime;
+            emgHoldTriggered = false;
+        }
+        else if (!isEmgPressed && wasEmgPressed)
+        {
+            emgHoldTriggered = false;
+        }
+
+        if (isEmgPressed && !emgHoldTriggered && Time.unscaledTime - emgPressedAt >= emgHoldThresholdSeconds)
+        {
+            SendGetClosest();
+            emgHoldTriggered = true;
+        }
+
+        wasEmgPressed = isEmgPressed;
     }
 
     private void HandleWebSocketMessage(byte[] bytes)

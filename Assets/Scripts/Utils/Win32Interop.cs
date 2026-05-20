@@ -235,6 +235,9 @@ public static class Win32Interop
     public static extern bool GetCursorPos(out POINT lpPoint);
 
     [DllImport("user32.dll")]
+    public static extern bool SetCursorPos(int X, int Y);
+
+    [DllImport("user32.dll")]
     public static extern bool ScreenToClient(IntPtr hWnd, ref POINT lpPoint);
 
     [DllImport("user32.dll")]
