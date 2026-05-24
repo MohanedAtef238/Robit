@@ -3,6 +3,11 @@ using UnityEngine.UIElements;
 [UxmlElement]
 public partial class MacroButton : Button
 {
+    // Explicit factory fallback for when Unity's source generator fails to run 
+    // (often happens after script compilation errors in other files)
+    public new class UxmlFactory : UxmlFactory<MacroButton, UxmlTraits> { }
+    public new class UxmlTraits : Button.UxmlTraits { }
+
     public IMacroAction Action { get; private set; }
     public IInputProvider InputProvider { get; private set; }
 

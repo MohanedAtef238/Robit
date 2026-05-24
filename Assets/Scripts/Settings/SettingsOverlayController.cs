@@ -128,6 +128,7 @@ public class SettingsOverlayController : MonoBehaviour
 
         // Restore window transparency/state before quitting
         WindowManager.MakeOpaque();
+        GlobalCursorManager.Instance?.RestoreSystemCursors();
 
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;

@@ -18,3 +18,9 @@
     opacity: 1;
     scale: 1 1;
 }
+
+/* Helper to instantly snap elements without transitions */
+.no-transition {
+    transition-duration: 0s, 0s;
+    transition-delay: 0s, 0s;
+}

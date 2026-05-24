@@ -49,7 +49,13 @@ public class MacroButtonController : MonoBehaviour
             int captured = i;
             slotButtons[i]?.RegisterCallback<PointerEnterEvent>(_ => ShowTooltip(captured, true));
             slotButtons[i]?.RegisterCallback<PointerLeaveEvent>(_ => ShowTooltip(captured, false));
+
+            // Firefly cursor: open on hover, closed on leave
+            GlobalCursorManager.AttachTo(slotButtons[i]);
         }
+
+        if (prevBtn != null) GlobalCursorManager.AttachTo(prevBtn);
+        if (nextBtn != null) GlobalCursorManager.AttachTo(nextBtn);
 
         viewModel = new MacroViewModel();
         viewModel.OnMenuToggled += OnMenuToggled;

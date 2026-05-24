@@ -247,6 +247,33 @@ public static class Win32Interop
     public static extern bool GetClientRect(IntPtr hWnd, out RECT lpRect);
 
     // ═══════════════════════════════════════════════════════════════════════════
+    // Global System Cursor Management
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    public static extern IntPtr LoadCursorFromFile(string lpFileName);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool SetSystemCursor(IntPtr hcur, uint id);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool SystemParametersInfo(uint uiAction, uint uiParam, IntPtr pvParam, uint fWinIni);
+
+    public const uint OCR_NORMAL = 32512;
+    public const uint OCR_HAND = 32649;
+    public const uint OCR_IBEAM = 32513;
+    public const uint OCR_WAIT = 32514;
+    public const uint OCR_NO = 32648;
+    public const uint OCR_APPSTARTING = 32650;
+    public const uint OCR_SIZEALL = 32646;
+    public const uint OCR_SIZEWE = 32644;
+    public const uint OCR_SIZENS = 32645;
+    public const uint OCR_SIZENWSE = 32642;
+    public const uint OCR_SIZENESW = 32643;
+    public const uint OCR_HELP = 32651;
+    public const uint SPI_SETCURSORS = 0x0057;
+
+    // ═══════════════════════════════════════════════════════════════════════════
     // SendInput — mouse & keyboard injection
     // ═══════════════════════════════════════════════════════════════════════════
 

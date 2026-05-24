@@ -15,9 +15,7 @@ public class Transparency : MonoBehaviour
 
     // Debug fields — used by the editor OnGUI overlay
     private bool isClickThrough = true;
-    #if !UNITY_EDITOR
     private bool isTransparencyEnabled = true;
-    #endif
     #if UNITY_EDITOR
     private string debugHitInfo = "none";
     private Vector2 debugCursorPos;
@@ -62,14 +60,19 @@ public class Transparency : MonoBehaviour
     {
         Application.runInBackground = true;
 
-        #if !UNITY_EDITOR
-        hWnd = WindowManager.GetWindowHandle();
         mainCamera = Camera.main;
         if (mainCamera == null) mainCamera = FindFirstObjectByType<Camera>();
 
+        #if !UNITY_EDITOR
+        hWnd = WindowManager.GetWindowHandle();
+        #endif
+
         if (startInTransparentMode)
         {
+            #if !UNITY_EDITOR
             WindowManager.MakeTransparent(); 
+            #endif
+            
             if (mainCamera != null)
             {
                 mainCamera.clearFlags = CameraClearFlags.SolidColor;
@@ -82,7 +85,6 @@ public class Transparency : MonoBehaviour
         }
         
         RobitLogger.Log($"[Transparency] Initialized. Mode: {(startInTransparentMode ? "Transparent" : "Opaque")}");
-        #endif
     }
 
     public void SwitchToHomeMode()
@@ -92,7 +94,10 @@ public class Transparency : MonoBehaviour
 
     private IEnumerator ForceOpaqueRoutine()
     {
+        #if !UNITY_EDITOR
         WindowManager.MakeOpaque();
+        #endif
+        
         if (mainCamera != null)
         {
             mainCamera.clearFlags = CameraClearFlags.SolidColor;
@@ -112,15 +117,17 @@ public class Transparency : MonoBehaviour
         yield return new WaitForEndOfFrame();
         yield return new WaitForEndOfFrame(); 
 
+        #if !UNITY_EDITOR
         WindowManager.MakeOpaque();
+        #endif
+        
         this.enabled = false;
     }
     
     public void DisableTransparency()
     {
-        #if !UNITY_EDITOR
         isTransparencyEnabled = false;
-        #endif
+        
         SetClickThrough(false);
         if (mainCamera != null)
         {
@@ -148,13 +155,10 @@ public class Transparency : MonoBehaviour
         SetClickThrough(true);
     }
 
-
     
     public void EnableTransparency()
     {
-        #if !UNITY_EDITOR
         isTransparencyEnabled = true;
-        #endif
         this.enabled = true;
         
         if (mainCamera != null)

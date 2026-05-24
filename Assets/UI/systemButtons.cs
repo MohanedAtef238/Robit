@@ -47,6 +47,8 @@ public class SystemButtonsController : MonoBehaviour
     private void OnExitClicked()
     {
         Debug.Log("Exiting Mock OS...");
+        
+        GlobalCursorManager.Instance?.RestoreSystemCursors();
 
         // This works in a standalone build
         Application.Quit();

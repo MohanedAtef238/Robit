@@ -3,7 +3,7 @@ using UnityEngine.UIElements;
 using UnityEngine.EventSystems;
 
 [RequireComponent(typeof(BoxCollider))]
-public class RobitInteraction : MonoBehaviour, IPointerClickHandler
+public class RobitInteraction : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
     [SerializeField] private MacroButtonController macroController;
     [SerializeField] private HomePageController homePageController;
@@ -73,6 +73,16 @@ public class RobitInteraction : MonoBehaviour, IPointerClickHandler
         {
             macroController.HideWithShrink();
         }
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        GlobalCursorManager.Instance?.SetHoverCursor();
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        GlobalCursorManager.Instance?.SetDefaultCursor();
     }
 }
 
