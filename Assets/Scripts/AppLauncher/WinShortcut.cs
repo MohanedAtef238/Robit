@@ -15,14 +15,7 @@ namespace LnkParser
         {
             using (var istream = File.OpenRead(path))
             {
-                try
-                {
-                    this.Parse(istream);
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception("Failed to parse this file as a Windows shortcut", ex);
-                }
+                this.Parse(istream);
             }
         }
 
@@ -30,13 +23,23 @@ namespace LnkParser
         // Provided for unit testing — allows MemoryStream fixtures without disk access.
         public WinShortcut(Stream stream)
         {
+            this.Parse(stream);
+        }
+
+        public static bool TryParse(Stream stream, out string targetPath, out string workingDirectory)
+        {
+            targetPath = null;
+            workingDirectory = null;
             try
             {
-                this.Parse(stream);
+                var shortcut = new WinShortcut(stream);
+                targetPath = shortcut.TargetPath;
+                workingDirectory = shortcut.WorkingDirectory;
+                return !string.IsNullOrEmpty(targetPath);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                throw new Exception("Failed to parse this file as a Windows shortcut", ex);
+                return false;
             }
         }
 

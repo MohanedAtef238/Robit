@@ -104,7 +104,11 @@ public class GazeFollowerRunner : MonoBehaviour
             yield break;
         }
 
-        bool hasSavedCalibration = QuerySavedCalibrationStatus(workingDirectory, pythonExe, scriptPath, out bool statusKnown);
+        var task = QuerySavedCalibrationStatusAsync(workingDirectory, pythonExe, scriptPath);
+        while (!task.IsCompleted)
+            yield return null;
+
+        var (hasSavedCalibration, statusKnown) = task.Result;
         yield return StartCoroutine(ShowCalibrationChoicePrompt(hasSavedCalibration, statusKnown));
         startupFlowRunning = false;
     }
@@ -168,7 +172,7 @@ public class GazeFollowerRunner : MonoBehaviour
         string scriptPathConfig = relativeScriptPath;
         LoadEnvOverrides(ref workingDirectoryConfig, ref pythonPathConfig, ref scriptPathConfig);
 
-        if (!TryResolvePath(workingDirectoryConfig, expectFile: false, out workingDirectory, out string workingDetails))
+        if (!RunnerPathResolver.TryResolvePath(workingDirectoryConfig, expectFile: false, out workingDirectory, out string workingDetails))
         {
             RobitLogger.LogWarning("[GazeFollowerRunner] Working directory could not be resolved (gaze tracking unavailable).\n" + workingDetails);
             pythonExe = null;
@@ -176,14 +180,14 @@ public class GazeFollowerRunner : MonoBehaviour
             return false;
         }
 
-        if (!TryResolvePath(pythonPathConfig, expectFile: true, out pythonExe, out string pythonDetails))
+        if (!RunnerPathResolver.TryResolvePath(pythonPathConfig, expectFile: true, out pythonExe, out string pythonDetails))
         {
             RobitLogger.LogWarning("[GazeFollowerRunner] Python executable could not be resolved (gaze tracking unavailable).\n" + pythonDetails);
             scriptPath = null;
             return false;
         }
 
-        if (!TryResolvePath(scriptPathConfig, expectFile: true, out scriptPath, out string scriptDetails))
+        if (!RunnerPathResolver.TryResolvePath(scriptPathConfig, expectFile: true, out scriptPath, out string scriptDetails))
         {
             RobitLogger.LogWarning("[GazeFollowerRunner] Gaze bridge script could not be resolved (gaze tracking unavailable).\n" + scriptDetails);
             return false;
@@ -192,51 +196,55 @@ public class GazeFollowerRunner : MonoBehaviour
         return true;
     }
 
-    private bool QuerySavedCalibrationStatus(string workingDirectory, string pythonExe, string scriptPath, out bool statusKnown)
+    private System.Threading.Tasks.Task<(bool hasSaved, bool statusKnown)> QuerySavedCalibrationStatusAsync(string workingDirectory, string pythonExe, string scriptPath)
     {
-        statusKnown = false;
-
-        try
+        return System.Threading.Tasks.Task.Run(() =>
         {
-            var startInfo = new ProcessStartInfo
+            bool hasSaved = false;
+            bool statusKnown = false;
+            try
             {
-                FileName = pythonExe,
-                Arguments = $"\"{scriptPath}\" --status-only",
-                WorkingDirectory = workingDirectory,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true,
-            };
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = pythonExe,
+                    Arguments = $"\"{scriptPath}\" --status-only",
+                    WorkingDirectory = workingDirectory,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true,
+                };
 
-            using Process process = Process.Start(startInfo);
-            if (process == null)
-                return false;
+                using Process process = Process.Start(startInfo);
+                if (process == null)
+                    return (false, false);
 
-            string stdout = process.StandardOutput.ReadToEnd();
-            string stderr = process.StandardError.ReadToEnd();
-            process.WaitForExit(15000);
+                string stdout = process.StandardOutput.ReadToEnd();
+                string stderr = process.StandardError.ReadToEnd();
+                process.WaitForExit(15000);
 
-            if (!string.IsNullOrWhiteSpace(stderr))
-                RobitLogger.LogWarning("[GazeFollowerRunner] Calibration status probe stderr:\n" + stderr.Trim());
+                if (!string.IsNullOrWhiteSpace(stderr))
+                    RobitLogger.LogWarning("[GazeFollowerRunner] Calibration status probe stderr:\n" + stderr.Trim());
 
-            foreach (string rawLine in stdout.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
-            {
-                string line = rawLine.Trim();
-                if (!line.StartsWith("HAS_SAVED_CALIBRATION:", StringComparison.OrdinalIgnoreCase))
-                    continue;
+                foreach (string rawLine in stdout.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    string line = rawLine.Trim();
+                    if (!line.StartsWith("HAS_SAVED_CALIBRATION:", StringComparison.OrdinalIgnoreCase))
+                        continue;
 
-                string payload = line.Substring("HAS_SAVED_CALIBRATION:".Length).Trim();
-                statusKnown = true;
-                return payload == "1" || payload.Equals("true", StringComparison.OrdinalIgnoreCase);
+                    string payload = line.Substring("HAS_SAVED_CALIBRATION:".Length).Trim();
+                    statusKnown = true;
+                    hasSaved = payload == "1" || payload.Equals("true", StringComparison.OrdinalIgnoreCase);
+                    break;
+                }
             }
-        }
-        catch (Exception ex)
-        {
-            RobitLogger.LogWarning($"[GazeFollowerRunner] Failed to query calibration status: {ex.Message}");
-        }
+            catch (Exception ex)
+            {
+                RobitLogger.LogWarning($"[GazeFollowerRunner] Failed to query calibration status: {ex.Message}");
+            }
 
-        return false;
+            return (hasSaved, statusKnown);
+        });
     }
 
     private IEnumerator ShowCalibrationChoicePrompt(bool hasSavedCalibration, bool statusKnown)
@@ -470,14 +478,14 @@ public class GazeFollowerRunner : MonoBehaviour
         if (!loadOverridesFromEnvFile)
             return;
 
-        if (!TryResolveEnvFilePath(envFileName, out string envPath, out string details))
+        if (!RunnerPathResolver.TryResolveEnvFilePath(envFileName, out string envPath, out string details))
         {
             if (logResolvedPaths)
                 RobitLogger.Log("[GazeFollowerRunner] Env file not found. Using inspector values.\n" + details);
             return;
         }
 
-        Dictionary<string, string> values = ParseEnvFile(envPath);
+        Dictionary<string, string> values = RunnerPathResolver.ParseEnvFile(envPath);
         if (values.TryGetValue("GAZE_WORKING_DIR", out string wd) && !string.IsNullOrWhiteSpace(wd))
             workingDirectoryConfig = wd.Trim();
 
@@ -490,137 +498,4 @@ public class GazeFollowerRunner : MonoBehaviour
         RobitLogger.Log($"[GazeFollowerRunner] Loaded env overrides from: {envPath}");
     }
 
-    private static Dictionary<string, string> ParseEnvFile(string envPath)
-    {
-        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        string[] lines = File.ReadAllLines(envPath);
-        foreach (string raw in lines)
-        {
-            if (string.IsNullOrWhiteSpace(raw))
-                continue;
-
-            string line = raw.Trim();
-            if (line.StartsWith("#"))
-                continue;
-
-            int split = line.IndexOf('=');
-            if (split <= 0)
-                continue;
-
-            string key = line.Substring(0, split).Trim();
-            string value = line.Substring(split + 1).Trim();
-
-            if (value.Length >= 2)
-            {
-                bool dq = value.StartsWith("\"") && value.EndsWith("\"");
-                bool sq = value.StartsWith("'") && value.EndsWith("'");
-                if (dq || sq)
-                    value = value.Substring(1, value.Length - 2);
-            }
-
-            if (!string.IsNullOrEmpty(key))
-                result[key] = value;
-        }
-        return result;
-    }
-
-    private static bool TryResolveEnvFilePath(string configuredEnvFileName, out string envPath, out string details)
-    {
-        envPath = null;
-        string foundPath = null;
-        var attempts = new List<string>();
-
-        string fileName = string.IsNullOrWhiteSpace(configuredEnvFileName) ? "gaze.env" : configuredEnvFileName.Trim().Trim('"');
-
-        void TryPath(string candidate)
-        {
-            string fullPath;
-            try
-            {
-                fullPath = Path.GetFullPath(candidate);
-            }
-            catch
-            {
-                return;
-            }
-
-            if (attempts.Contains(fullPath))
-                return;
-
-            attempts.Add(fullPath);
-            if (foundPath == null && File.Exists(fullPath))
-                foundPath = fullPath;
-        }
-
-        string dataPath = Application.dataPath;
-        string buildRoot = Directory.GetParent(dataPath)?.FullName ?? dataPath;
-        string executableRoot = AppDomain.CurrentDomain.BaseDirectory;
-        string projectRoot = Directory.GetParent(dataPath)?.FullName ?? dataPath;
-
-        TryPath(Path.Combine(buildRoot, fileName));
-        TryPath(Path.Combine(executableRoot, fileName));
-        TryPath(Path.Combine(projectRoot, fileName));
-
-        details = $"[EnvResolver] Configured='{fileName}'\n[EnvResolver] Attempts:\n - {string.Join("\n - ", attempts)}";
-        envPath = foundPath;
-        return foundPath != null;
-    }
-
-    private static bool TryResolvePath(string configuredPath, bool expectFile, out string resolvedPath, out string details)
-    {
-        resolvedPath = null;
-        string foundPath = null;
-        if (string.IsNullOrWhiteSpace(configuredPath))
-        {
-            details = "[PathResolver] Configured path is empty.";
-            return false;
-        }
-
-        string normalized = configuredPath.Trim().Trim('"');
-        var attempts = new List<string>();
-
-        bool Exists(string path) => expectFile ? File.Exists(path) : Directory.Exists(path);
-
-        void TryCandidate(string candidate)
-        {
-            string fullPath;
-            try
-            {
-                fullPath = Path.GetFullPath(candidate);
-            }
-            catch
-            {
-                return;
-            }
-
-            if (attempts.Contains(fullPath))
-                return;
-
-            attempts.Add(fullPath);
-            if (foundPath == null && Exists(fullPath))
-                foundPath = fullPath;
-        }
-
-        if (Path.IsPathRooted(normalized))
-            TryCandidate(normalized);
-        else
-        {
-            string dataPath = Application.dataPath;
-            string projectRoot = Directory.GetParent(dataPath)?.FullName ?? dataPath;
-            string buildRoot = Directory.GetParent(dataPath)?.FullName ?? dataPath;
-            string executableRoot = AppDomain.CurrentDomain.BaseDirectory;
-            string streamingAssetsPath = Application.streamingAssetsPath;
-
-            TryCandidate(Path.Combine(streamingAssetsPath, normalized));
-            TryCandidate(Path.Combine(projectRoot, normalized));
-            TryCandidate(Path.Combine(buildRoot, normalized));
-            TryCandidate(Path.Combine(executableRoot, normalized));
-            TryCandidate(Path.Combine(buildRoot, "..", normalized));
-        }
-
-        details = $"[PathResolver] Configured='{configuredPath}', Type={(expectFile ? "File" : "Directory")}\n" +
-                  $"[PathResolver] Attempts:\n - {string.Join("\n - ", attempts)}";
-        resolvedPath = foundPath;
-        return foundPath != null;
-    }
 }

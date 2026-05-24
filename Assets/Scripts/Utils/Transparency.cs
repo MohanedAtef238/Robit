@@ -15,7 +15,9 @@ public class Transparency : MonoBehaviour
 
     // Debug fields — used by the editor OnGUI overlay
     private bool isClickThrough = true;
+#pragma warning disable 0414
     private bool isTransparencyEnabled = true;
+#pragma warning restore 0414
     #if UNITY_EDITOR
     private string debugHitInfo = "none";
     private Vector2 debugCursorPos;

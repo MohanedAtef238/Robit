@@ -52,28 +52,20 @@ public static class Win32BrightnessInterop
     private static bool TryGetPhysicalMonitor(out PHYSICAL_MONITOR monitor)
     {
         monitor = default;
-        try
-        {
-            // Get the Unity window's primary monitor handle
-            IntPtr hwnd = Win32Interop.GetActiveWindow();
-            IntPtr hMonitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY);
-            if (hMonitor == IntPtr.Zero) return false;
+        // Get the Unity window's primary monitor handle
+        IntPtr hwnd = Win32Interop.GetActiveWindow();
+        IntPtr hMonitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY);
+        if (hMonitor == IntPtr.Zero) return false;
 
-            if (!GetNumberOfPhysicalMonitorsFromHMONITOR(hMonitor, out uint count) || count == 0)
-                return false;
-
-            var monitors = new PHYSICAL_MONITOR[count];
-            if (!GetPhysicalMonitorsFromHMONITOR(hMonitor, count, monitors))
-                return false;
-
-            monitor = monitors[0];
-            return true;
-        }
-        catch (Exception e)
-        {
-            RobitLogger.LogWarning($"[Win32BrightnessInterop] TryGetPhysicalMonitor failed: {e.Message}");
+        if (!GetNumberOfPhysicalMonitorsFromHMONITOR(hMonitor, out uint count) || count == 0)
             return false;
-        }
+
+        var monitors = new PHYSICAL_MONITOR[count];
+        if (!GetPhysicalMonitorsFromHMONITOR(hMonitor, count, monitors))
+            return false;
+
+        monitor = monitors[0];
+        return true;
     }
 
     private static void ReleaseMonitor(ref PHYSICAL_MONITOR monitor)
@@ -83,7 +75,7 @@ public static class Win32BrightnessInterop
             var arr = new[] { monitor };
             DestroyPhysicalMonitors(1, arr);
         }
-        catch { /* best effort */ }
+        catch (Exception) { /* best effort */ }
     }
 
     // ── Public API ──────────────────────────────────────────────────────────

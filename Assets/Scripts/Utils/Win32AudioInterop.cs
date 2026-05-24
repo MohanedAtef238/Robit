@@ -115,22 +115,31 @@ public static class Win32AudioInterop
     {
         lock (_comLock)
         {
-            try
+            for (int attempt = 0; attempt < 2; attempt++)
             {
-                var vol = GetOrAcquireEndpointVolume();
-                int hr = vol.GetMasterVolumeLevelScalar(out float level);
-                if (hr == AUDCLNT_E_DEVICE_INVALIDATED)
+                try
                 {
+                    var vol = GetOrAcquireEndpointVolume();
+                    int hr = vol.GetMasterVolumeLevelScalar(out float level);
+                    if (hr != AUDCLNT_E_DEVICE_INVALIDATED)
+                        return level;
+
                     HandleStaleDeviceUnderLock();
-                    return GetVolume(); // Retry once with fresh acquisition
                 }
-                return level;
+                catch (COMException e)
+                {
+                    RobitLogger.LogWarning($"[Win32AudioInterop] GetVolume COM error: {e.Message}");
+                    HandleStaleDeviceUnderLock();
+                }
+                catch (Exception e)
+                {
+                    RobitLogger.LogWarning($"[Win32AudioInterop] GetVolume failed: {e.Message}");
+                    return 0.5f;
+                }
             }
-            catch (Exception e)
-            {
-                RobitLogger.LogWarning($"[Win32AudioInterop] GetVolume failed: {e.Message}");
-                return 0.5f;
-            }
+
+            RobitLogger.LogWarning("[Win32AudioInterop] GetVolume: device still invalid after retry.");
+            return 0.5f;
         }
     }
 
@@ -139,21 +148,30 @@ public static class Win32AudioInterop
     {
         lock (_comLock)
         {
-            try
+            for (int attempt = 0; attempt < 2; attempt++)
             {
-                var vol = GetOrAcquireEndpointVolume();
-                var guid = Guid.Empty;
-                int hr = vol.SetMasterVolumeLevelScalar(Mathf.Clamp01(volume), ref guid);
-                if (hr == AUDCLNT_E_DEVICE_INVALIDATED)
+                try
                 {
+                    var vol = GetOrAcquireEndpointVolume();
+                    var guid = Guid.Empty;
+                    int hr = vol.SetMasterVolumeLevelScalar(Mathf.Clamp01(volume), ref guid);
+                    if (hr != AUDCLNT_E_DEVICE_INVALIDATED)
+                        return;
+
                     HandleStaleDeviceUnderLock();
-                    SetVolume(volume);
+                }
+                catch (COMException e)
+                {
+                    RobitLogger.LogWarning($"[Win32AudioInterop] SetVolume COM error: {e.Message}");
+                    HandleStaleDeviceUnderLock();
+                }
+                catch (Exception e)
+                {
+                    RobitLogger.LogWarning($"[Win32AudioInterop] SetVolume failed: {e.Message}");
+                    return;
                 }
             }
-            catch (Exception e)
-            {
-                RobitLogger.LogWarning($"[Win32AudioInterop] SetVolume failed: {e.Message}");
-            }
+            RobitLogger.LogWarning("[Win32AudioInterop] SetVolume: device still invalid after retry.");
         }
     }
 
@@ -162,22 +180,31 @@ public static class Win32AudioInterop
     {
         lock (_comLock)
         {
-            try
+            for (int attempt = 0; attempt < 2; attempt++)
             {
-                var vol = GetOrAcquireEndpointVolume();
-                int hr = vol.GetMute(out bool mute);
-                if (hr == AUDCLNT_E_DEVICE_INVALIDATED)
+                try
                 {
+                    var vol = GetOrAcquireEndpointVolume();
+                    int hr = vol.GetMute(out bool mute);
+                    if (hr != AUDCLNT_E_DEVICE_INVALIDATED)
+                        return mute;
+
                     HandleStaleDeviceUnderLock();
-                    return GetMute();
                 }
-                return mute;
+                catch (COMException e)
+                {
+                    RobitLogger.LogWarning($"[Win32AudioInterop] GetMute COM error: {e.Message}");
+                    HandleStaleDeviceUnderLock();
+                }
+                catch (Exception e)
+                {
+                    RobitLogger.LogWarning($"[Win32AudioInterop] GetMute failed: {e.Message}");
+                    return false;
+                }
             }
-            catch (Exception e)
-            {
-                RobitLogger.LogWarning($"[Win32AudioInterop] GetMute failed: {e.Message}");
-                return false;
-            }
+
+            RobitLogger.LogWarning("[Win32AudioInterop] GetMute: device still invalid after retry.");
+            return false;
         }
     }
 
@@ -186,21 +213,30 @@ public static class Win32AudioInterop
     {
         lock (_comLock)
         {
-            try
+            for (int attempt = 0; attempt < 2; attempt++)
             {
-                var vol = GetOrAcquireEndpointVolume();
-                var guid = Guid.Empty;
-                int hr = vol.SetMute(mute, ref guid);
-                if (hr == AUDCLNT_E_DEVICE_INVALIDATED)
+                try
                 {
+                    var vol = GetOrAcquireEndpointVolume();
+                    var guid = Guid.Empty;
+                    int hr = vol.SetMute(mute, ref guid);
+                    if (hr != AUDCLNT_E_DEVICE_INVALIDATED)
+                        return;
+
                     HandleStaleDeviceUnderLock();
-                    SetMute(mute);
+                }
+                catch (COMException e)
+                {
+                    RobitLogger.LogWarning($"[Win32AudioInterop] SetMute COM error: {e.Message}");
+                    HandleStaleDeviceUnderLock();
+                }
+                catch (Exception e)
+                {
+                    RobitLogger.LogWarning($"[Win32AudioInterop] SetMute failed: {e.Message}");
+                    return;
                 }
             }
-            catch (Exception e)
-            {
-                RobitLogger.LogWarning($"[Win32AudioInterop] SetMute failed: {e.Message}");
-            }
+            RobitLogger.LogWarning("[Win32AudioInterop] SetMute: device still invalid after retry.");
         }
     }
 }

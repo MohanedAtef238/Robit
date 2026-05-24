@@ -83,7 +83,7 @@ public static class IconExtractor
                         if (icoData != null) icoList.Add(icoData);
                     }
                 }
-                catch { /* ignore invalid resource */ }
+                catch (Exception) { /* ignore invalid resource */ }
 
                 return true; // continue enumerating
             };
@@ -200,21 +200,19 @@ public static class IconExtractor
         return data;
     }
 
-    static T ByteArrayToStructure<T>(byte[] bytes, ref int offset)
+    static T ByteArrayToStructure<T>(byte[] bytes, ref int offset) where T : struct
     {
-        int size = Marshal.SizeOf(typeof(T));
-        IntPtr ptr = Marshal.AllocHGlobal(size);
+        int size = Marshal.SizeOf<T>();
+        var handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
         try
         {
-            Marshal.Copy(bytes, offset, ptr, size);
-            T obj = (T)Marshal.PtrToStructure(ptr, typeof(T));
+            T obj = Marshal.PtrToStructure<T>(handle.AddrOfPinnedObject() + offset);
             offset += size;
             return obj;
         }
         finally
         {
-            // Always release, even if Marshal.Copy throws (e.g. offset out of bounds)
-            Marshal.FreeHGlobal(ptr);
+            handle.Free();
         }
     }
 }

@@ -22,7 +22,9 @@ public class VirtualPointerDriver : MonoBehaviour
     [Tooltip("Minimum time in seconds the EMG must be active to count as a click (prevents noise)")]
     [SerializeField] private float minClickHoldTime = 0.05f;
     [Tooltip("Maximum time to be considered a 'click'. Longer stays become a 'drag'.")]
+#pragma warning disable 0414
     [SerializeField] private float maxClickDuration = 0.5f;
+#pragma warning restore 0414
 
     [Header("World Cursor Tracking")]
     [SerializeField] private GameObject cursorInstance;

@@ -71,14 +71,8 @@ public class DesktopParser : MonoBehaviour
                 string targetPath = null;
                 string workingDirectory = null;
 
-                try
-                {
-                    byte[] shortcutData = _fileSystem.ReadAllBytes(file);
-                    var shortcut = new WinShortcut(new MemoryStream(shortcutData));
-                    targetPath = shortcut.TargetPath;
-                    workingDirectory = shortcut.WorkingDirectory;
-                }
-                catch
+                byte[] shortcutData = _fileSystem.ReadAllBytes(file);
+                if (!WinShortcut.TryParse(new MemoryStream(shortcutData), out targetPath, out workingDirectory))
                 {
                     // WinShortcut can't parse ItemIDList-based shortcuts (modern installers,
                     // GPU-Z, Unity Hub, etc.). Fall back to the Windows Shell IShellLink COM API
@@ -133,10 +127,7 @@ private Texture2D ExtractHighQualityIcon(string filePath)
         }
         else
         {
-            if (Application.isPlaying)
-                UnityEngine.Object.Destroy(tex);
-            else
-                UnityEngine.Object.DestroyImmediate(tex);
+            UnityEngine.Object.Destroy(tex);
 
             RobitLogger.LogWarning($"[DesktopParser] Failed to load cached PNG, falling back to extraction");
         }
