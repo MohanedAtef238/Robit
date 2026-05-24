@@ -190,10 +190,9 @@ public class MacroButtonController : MonoBehaviour
             }
         }
 
-        MacroActionType[] actions = { group.action0, group.action1, group.action2 };
         for (int s = 0; s < SlotsPerPage; s++)
         {
-            if (actions[s] == MacroActionType.None) continue;
+            if (GetGroupAction(group, s) == MacroActionType.None) continue;
             ShowSlot(slotButtons[s], s + 1);
         }
 
@@ -237,10 +236,10 @@ public class MacroButtonController : MonoBehaviour
         if (show && viewModel != null && viewModel.IsOpen)
         {
             var group = viewModel.GetCurrentGroup();
-            MacroActionType[] actions = { group.action0, group.action1, group.action2 };
-            if (actions[index] == MacroActionType.None) return;
-            
-            tip.text = MacroActionFactory.Create(actions[index]).DisplayName;
+            MacroActionType action = GetGroupAction(group, index);
+            if (action == MacroActionType.None) return;
+
+            tip.text = MacroActionFactory.Create(action).DisplayName;
             SetClass(tip, "label-state--hidden", false);
             SetClass(tip, "label-state--visible", true);
         }
@@ -272,7 +271,6 @@ public class MacroButtonController : MonoBehaviour
 
     private void BindGroup(MacroGroup group)
     {
-        MacroActionType[] actions = { group.action0, group.action1, group.action2 };
         for (int i = 0; i < SlotsPerPage; i++)
         {
             var btn = slotButtons[i];
@@ -284,12 +282,14 @@ public class MacroButtonController : MonoBehaviour
                 _slotIconRefreshCbs[i] = null;
             }
             btn.Unbind();
-            if (actions[i] == MacroActionType.None) continue;
 
-            btn.Bind(MacroActionFactory.Create(actions[i]), inputProvider);
-            SetButtonIcon(btn, actions[i]);
+            MacroActionType action = GetGroupAction(group, i);
+            if (action == MacroActionType.None) continue;
 
-            if (actions[i] == MacroActionType.MuteToggle)
+            btn.Bind(MacroActionFactory.Create(action), inputProvider);
+            SetButtonIcon(btn, action);
+
+            if (action == MacroActionType.MuteToggle)
             {
                 var capturedBtn = btn;
                 int capturedSlot = i;
@@ -299,6 +299,15 @@ public class MacroButtonController : MonoBehaviour
             }
         }
     }
+
+    /// Returns the action assigned to the given slot index (0–2) without allocating a temporary array.
+    private static MacroActionType GetGroupAction(MacroGroup group, int slot) => slot switch
+    {
+        0 => group.action0,
+        1 => group.action1,
+        2 => group.action2,
+        _ => MacroActionType.None,
+    };
 
     private static readonly Dictionary<MacroActionType, string> actionIconMap = new Dictionary<MacroActionType, string>
     {

@@ -74,7 +74,6 @@ public class AppLauncherUIToolkit : MonoBehaviour
     private bool BindUIElements()
     {
         uiDocument = GetComponent<UIDocument>();
-        pagination = new PaginationLogic(ItemsPerPage);
 
         if (uiDocument == null || uiDocument.rootVisualElement == null)
         {
@@ -103,7 +102,7 @@ public class AppLauncherUIToolkit : MonoBehaviour
         backBtn = rootParams.Q<Button>("back-btn");
         if (backBtn != null)
             backBtn.RegisterCallback<PointerDownEvent>(OnBackClicked, TrickleDown.TrickleDown);
-            
+
         pageIndicator.style.display = DisplayStyle.None;
         pagination = new PaginationLogic(ItemsPerPage);
         return true;
@@ -284,6 +283,13 @@ public class AppLauncherUIToolkit : MonoBehaviour
     private List<VisualElement> CreatePageElements(int pageIndex)
     {
         List<VisualElement> pageCards = new List<VisualElement>();
+
+        if (desktopCardTemplate == null)
+        {
+            RobitLogger.LogError("[AppLauncherUIToolkit] Desktop Card Template is not assigned.");
+            return pageCards;
+        }
+
         var range = pagination.GetPageRange(allShortcuts.Count, pageIndex);
         int startIndex = range.start;
         int endIndex = range.end;
@@ -291,12 +297,6 @@ public class AppLauncherUIToolkit : MonoBehaviour
         for (int i = startIndex; i < endIndex; i++)
         {
             ShortcutInfo shortcut = allShortcuts[i];
-
-            if (desktopCardTemplate == null)
-            {
-                RobitLogger.LogError("[AppLauncherUIToolkit] Desktop Card Template is not assigned.");
-                break;
-            }
 
             TemplateContainer cardInstance = desktopCardTemplate.Instantiate();
             cardInstance.style.flexShrink = 0;
@@ -336,11 +336,6 @@ public class AppLauncherUIToolkit : MonoBehaviour
         pageIndicator.text = $"{pagination.CurrentPage + 1} / {pageCount}";
         navLeft.SetEnabled(!isTransitioning && pagination.CurrentPage > 0);
         navRight.SetEnabled(!isTransitioning && pagination.CurrentPage < pageCount - 1);
-    }
-
-    private int GetPageCount()
-    {
-        return pagination.GetPageCount(allShortcuts.Count);
     }
 
     void OnAppCardClick(string path, string workingDirectory)

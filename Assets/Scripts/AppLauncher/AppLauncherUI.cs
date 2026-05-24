@@ -100,8 +100,6 @@ public class AppLauncherUI : MonoBehaviour
             {
                 iconImage.texture = shortcut.Icon;
                 iconImage.SetNativeSize();
-                iconImage.enabled = false;
-                iconImage.enabled = true;
             }
 
             // Add a listener to the button to launch the app
