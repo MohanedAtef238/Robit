@@ -18,7 +18,7 @@ public class ProfileData {
 }
 
 public static class ProfileManager {
-    public const int MaxProfiles = 4;
+    public const int MaxProfiles = 3;
     private static string FilePath => Path.Combine(Application.persistentDataPath, "profiles.json");
     
     public static ProfileData LoadProfiles() {
@@ -32,9 +32,34 @@ public static class ProfileManager {
         File.WriteAllText(FilePath, json);
     }
     
-    public static UserProfile CreateProfile(string name) {
-        string[] placeholders = { "placeholder1", "placeholder2", "placeholder3" };
-        string randomPfp = placeholders[UnityEngine.Random.Range(0, placeholders.Length)];
+    public static UserProfile CreateProfile(string name, List<UserProfile> existingProfiles = null) {
+        Sprite[] sprites = Resources.LoadAll<Sprite>("ProfilePictures");
+        string randomPfp = "";
+        
+        if (sprites != null && sprites.Length > 0) {
+            HashSet<string> usedPfps = new HashSet<string>();
+            if (existingProfiles != null) {
+                foreach (var p in existingProfiles) {
+                    if (!string.IsNullOrEmpty(p.pfpPath)) {
+                        usedPfps.Add(p.pfpPath);
+                    }
+                }
+            }
+            
+            List<Sprite> availableSprites = new List<Sprite>();
+            foreach (var s in sprites) {
+                if (!usedPfps.Contains(s.name)) {
+                    availableSprites.Add(s);
+                }
+            }
+            
+            // Fallback to all if somehow we run out
+            if (availableSprites.Count == 0) {
+                availableSprites.AddRange(sprites);
+            }
+            
+            randomPfp = availableSprites[UnityEngine.Random.Range(0, availableSprites.Count)].name;
+        }
         
         return new UserProfile {
             id = Guid.NewGuid().ToString(),

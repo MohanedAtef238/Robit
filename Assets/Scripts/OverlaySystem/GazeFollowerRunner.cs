@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 
 [DefaultExecutionOrder(-900)]
@@ -22,6 +23,8 @@ public class GazeFollowerRunner : MonoBehaviour
     }
 
     public static GazeFollowerRunner Instance { get; private set; }
+
+    private const string CalibrationSceneName = "GazeCalibrationScene";
 
     [Header("Multimodal Setup")]
     [SerializeField] private string relativeExePath = @"Multimodal_UDP/unity_gaze_bridge.exe";
@@ -37,6 +40,7 @@ public class GazeFollowerRunner : MonoBehaviour
 
     private VisualElement startupPromptRoot;
     private bool startupFlowRunning;
+    private string activeProfileId;
 
     private ConcurrentQueue<Vector2> gazePacketQueue = new ConcurrentQueue<Vector2>();
 
@@ -117,6 +121,9 @@ public class GazeFollowerRunner : MonoBehaviour
         if (startupFlowRunning)
             yield break;
 
+        if (gazeProcess != null && !gazeProcess.HasExited)
+            yield break;
+
         startupFlowRunning = true;
 
         if (!promptForCalibrationChoice)
@@ -134,11 +141,20 @@ public class GazeFollowerRunner : MonoBehaviour
             yield break;
         }
 
-        var task = QuerySavedCalibrationStatusAsync(exePath);
+        var task = QuerySavedCalibrationStatusAsync(exePath, activeProfileId);
         while (!task.IsCompleted)
             yield return null;
 
         var (hasSavedCalibration, statusKnown) = task.Result;
+
+        if (!hasSavedCalibration)
+        {
+            RobitLogger.Log("[GazeFollowerRunner] No saved calibration found. Loading calibration scene.");
+            SceneManager.LoadScene(CalibrationSceneName);
+            // startupFlowRunning intentionally stays true; cleared by NotifyCalibrationComplete()
+            yield break;
+        }
+
         yield return StartCoroutine(ShowCalibrationChoicePrompt(hasSavedCalibration, statusKnown));
         startupFlowRunning = false;
     }
@@ -171,6 +187,10 @@ public class GazeFollowerRunner : MonoBehaviour
             if (simulateGazeWithArrowKeys)
             {
                 baseArgs += " --keyboard";
+            }
+            if (!string.IsNullOrEmpty(activeProfileId))
+            {
+                baseArgs += $" --profile-id \"{activeProfileId}\"";
             }
 
             var startInfo = new ProcessStartInfo
@@ -249,7 +269,7 @@ public class GazeFollowerRunner : MonoBehaviour
         }
     }
 
-    private Task<(bool hasSaved, bool statusKnown)> QuerySavedCalibrationStatusAsync(string exePath)
+    private Task<(bool hasSaved, bool statusKnown)> QuerySavedCalibrationStatusAsync(string exePath, string profileId)
     {
         return Task.Run(() =>
         {
@@ -257,10 +277,16 @@ public class GazeFollowerRunner : MonoBehaviour
             bool statusKnown = false;
             try
             {
+                string args = "--status-only";
+                if (!string.IsNullOrEmpty(profileId))
+                {
+                    args += $" --profile-id \"{profileId}\"";
+                }
+
                 var startInfo = new ProcessStartInfo
                 {
                     FileName = exePath,
-                    Arguments = "--status-only",
+                    Arguments = args,
                     WorkingDirectory = Path.GetDirectoryName(exePath),
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
@@ -325,118 +351,74 @@ public class GazeFollowerRunner : MonoBehaviour
         {
             RobitLogger.LogWarning("[GazeFollowerRunner] No UIDocument was available for the calibration prompt. Falling back to automatic start.");
             StartGazeFollower(hasSavedCalibration ? GazeLaunchMode.UseSaved : GazeLaunchMode.Calibrate);
+            if (hasSavedCalibration) SceneManager.LoadScene("OverlayScene");
             yield break;
         }
 
         bool selectionMade = false;
-        startupPromptRoot = BuildPromptVisualTree(hasSavedCalibration, statusKnown, mode =>
+
+#if UNITY_EDITOR
+        var visualTree = UnityEditor.AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/GazeCalibrationPrompt.uxml");
+#else
+        var visualTree = Resources.Load<VisualTreeAsset>("GazeCalibrationPrompt");
+#endif
+
+        if (visualTree == null)
         {
-            selectionMade = true;
-            RemoveStartupPrompt();
-            StartGazeFollower(mode);
-        });
+            RobitLogger.LogError("[GazeFollowerRunner] Could not load GazeCalibrationPrompt.uxml. Falling back to automatic start.");
+            StartGazeFollower(hasSavedCalibration ? GazeLaunchMode.UseSaved : GazeLaunchMode.Calibrate);
+            if (hasSavedCalibration) SceneManager.LoadScene("OverlayScene");
+            yield break;
+        }
+
+        startupPromptRoot = visualTree.Instantiate();
+        var subtitle = startupPromptRoot.Q<Label>("subtitle");
+        var calibrateBtn = startupPromptRoot.Q<Button>("calibrate-btn");
+        var useSavedBtn = startupPromptRoot.Q<Button>("use-saved-btn");
+
+        if (subtitle != null)
+        {
+            subtitle.text = statusKnown
+                ? (hasSavedCalibration
+                    ? "A saved gaze calibration was found for this profile. Choose whether to reuse it or calibrate again."
+                    : "No saved gaze calibration was found for this profile. Run calibration now to set up tracking.")
+                : "Calibration status could not be checked automatically. You can still calibrate now or try the saved calibration path.";
+        }
+
+        if (useSavedBtn != null)
+        {
+            useSavedBtn.SetEnabled(hasSavedCalibration);
+            if (!hasSavedCalibration)
+            {
+                useSavedBtn.text = "No Saved Calibration Found";
+                useSavedBtn.style.backgroundColor = new Color(0.27f, 0.30f, 0.36f, 1f);
+            }
+            else
+            {
+                useSavedBtn.clicked += () => 
+                {
+                    selectionMade = true;
+                    RemoveStartupPrompt();
+                    StartGazeFollower(GazeLaunchMode.UseSaved);
+                    SceneManager.LoadScene("OverlayScene");
+                };
+            }
+        }
+
+        if (calibrateBtn != null)
+        {
+            calibrateBtn.clicked += () => 
+            {
+                selectionMade = true;
+                RemoveStartupPrompt();
+                SceneManager.LoadScene(CalibrationSceneName);
+            };
+        }
 
         targetDocument.rootVisualElement.Add(startupPromptRoot);
 
         while (!selectionMade)
             yield return null;
-    }
-
-    private VisualElement BuildPromptVisualTree(bool hasSavedCalibration, bool statusKnown, Action<GazeLaunchMode> onSelected)
-    {
-        var overlay = new VisualElement
-        {
-            pickingMode = PickingMode.Position
-        };
-        overlay.style.position = Position.Absolute;
-        overlay.style.left = 0;
-        overlay.style.top = 0;
-        overlay.style.right = 0;
-        overlay.style.bottom = 0;
-        overlay.style.justifyContent = Justify.Center;
-        overlay.style.alignItems = Align.Center;
-        overlay.style.backgroundColor = new Color(0.03f, 0.05f, 0.09f, 0.72f);
-        overlay.style.paddingLeft = 24;
-        overlay.style.paddingRight = 24;
-        overlay.style.paddingTop = 24;
-        overlay.style.paddingBottom = 24;
-
-        var card = new VisualElement();
-        card.style.width = 520;
-        card.style.maxWidth = new Length(92, LengthUnit.Percent);
-        card.style.paddingLeft = 28;
-        card.style.paddingRight = 28;
-        card.style.paddingTop = 24;
-        card.style.paddingBottom = 24;
-        card.style.backgroundColor = new Color(0.09f, 0.12f, 0.18f, 0.98f);
-        card.style.borderTopLeftRadius = 18;
-        card.style.borderTopRightRadius = 18;
-        card.style.borderBottomLeftRadius = 18;
-        card.style.borderBottomRightRadius = 18;
-        card.style.borderLeftWidth = 1;
-        card.style.borderRightWidth = 1;
-        card.style.borderTopWidth = 1;
-        card.style.borderBottomWidth = 1;
-        card.style.borderLeftColor = new Color(0.28f, 0.40f, 0.52f, 1f);
-        card.style.borderRightColor = new Color(0.28f, 0.40f, 0.52f, 1f);
-        card.style.borderTopColor = new Color(0.28f, 0.40f, 0.52f, 1f);
-        card.style.borderBottomColor = new Color(0.28f, 0.40f, 0.52f, 1f);
-
-        var title = new Label("Eye Tracking Setup");
-        title.style.fontSize = 24;
-        title.style.unityFontStyleAndWeight = FontStyle.Bold;
-        title.style.color = new Color(0.96f, 0.98f, 1f, 1f);
-        title.style.marginBottom = 8;
-
-        string subtitleText = statusKnown
-            ? (hasSavedCalibration
-                ? "A saved gaze calibration was found. Choose whether to reuse it or calibrate again."
-                : "No saved gaze calibration was found. Run calibration now to set up tracking.")
-            : "Calibration status could not be checked automatically. You can still calibrate now or try the saved calibration path.";
-
-        var subtitle = new Label(subtitleText);
-        subtitle.style.whiteSpace = WhiteSpace.Normal;
-        subtitle.style.fontSize = 14;
-        subtitle.style.color = new Color(0.81f, 0.87f, 0.93f, 1f);
-        subtitle.style.marginBottom = 16;
-
-        Button calibrateButton = CreatePromptButton("Calibrate Again", new Color(0.18f, 0.74f, 0.56f, 1f));
-        calibrateButton.clicked += () => onSelected?.Invoke(GazeLaunchMode.Calibrate);
-
-        Button useSavedButton = CreatePromptButton(
-            hasSavedCalibration ? "Use Saved Calibration" : "No Saved Calibration Found",
-            hasSavedCalibration ? new Color(0.19f, 0.50f, 0.86f, 1f) : new Color(0.27f, 0.30f, 0.36f, 1f));
-        useSavedButton.SetEnabled(hasSavedCalibration);
-        if (hasSavedCalibration)
-            useSavedButton.clicked += () => onSelected?.Invoke(GazeLaunchMode.UseSaved);
-
-        var footer = new Label("This follows the same saved-calibration logic used in game_test.py.");
-        footer.style.marginTop = 14;
-        footer.style.fontSize = 12;
-        footer.style.color = new Color(0.62f, 0.70f, 0.78f, 1f);
-
-        card.Add(title);
-        card.Add(subtitle);
-        card.Add(calibrateButton);
-        card.Add(useSavedButton);
-        card.Add(footer);
-        overlay.Add(card);
-        return overlay;
-    }
-
-    private static Button CreatePromptButton(string text, Color backgroundColor)
-    {
-        var button = new Button { text = text };
-        button.style.height = 44;
-        button.style.marginTop = 8;
-        button.style.borderTopLeftRadius = 12;
-        button.style.borderTopRightRadius = 12;
-        button.style.borderBottomLeftRadius = 12;
-        button.style.borderBottomRightRadius = 12;
-        button.style.backgroundColor = backgroundColor;
-        button.style.color = Color.white;
-        button.style.unityFontStyleAndWeight = FontStyle.Bold;
-        return button;
     }
 
     private void RemoveStartupPrompt()
@@ -511,5 +493,224 @@ public class GazeFollowerRunner : MonoBehaviour
         gazeProcess.Exited -= OnProcessExited;
         gazeProcess.Dispose();
         gazeProcess = null;
+    }
+
+    /// <summary>
+    /// Called by GazeCalibrationController when Unity-driven calibration completes.
+    /// Clears the startup flow lock and starts the gaze bridge in use-saved mode.
+    /// </summary>
+    public void NotifyCalibrationComplete()
+    {
+        startupFlowRunning = false;
+        StartGazeFollower(GazeLaunchMode.UseSaved);
+    }
+
+    /// <summary>
+    /// Called by GazeCalibrationController.Start() when the calibration scene is ready.
+    /// Launches the camera-check preview panel before starting the actual calibration.
+    /// This is invoked regardless of HOW the calibration scene was reached
+    /// (first-time, "Calibrate Again", etc.).
+    /// </summary>
+    public void OnCalibrationSceneReady(GazeCalibrationController controller)
+    {
+        StartCoroutine(RunCameraCheckInCalibrationScene(controller));
+    }
+
+    /// <summary>
+    /// Overlays a camera-check panel on the calibration scene's UIDocument.
+    /// Streams JPEG frames from the Python bridge (camera-check mode) into a
+    /// Texture2D rendered in the panel. Once the user confirms the camera is
+    /// working, the panel is removed and StartCalibration() is called on the
+    /// controller.
+    /// </summary>
+    private IEnumerator RunCameraCheckInCalibrationScene(GazeCalibrationController controller)
+    {
+        string exePath = GetResolvedExePath();
+
+        var calibDoc = controller.GetComponent<UIDocument>();
+        if (calibDoc == null || calibDoc.rootVisualElement == null || !File.Exists(exePath))
+        {
+            RobitLogger.LogWarning("[GazeFollowerRunner] Camera check skipped — UIDocument or exe missing.");
+            controller.StartCalibration(activeProfileId);
+            yield break;
+        }
+
+        // Load CameraCheckPanel UXML
+#if UNITY_EDITOR
+        var visualTree = UnityEditor.AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/CameraCheckPanel.uxml");
+#else
+        var visualTree = Resources.Load<VisualTreeAsset>("CameraCheckPanel");
+#endif
+        if (visualTree == null)
+        {
+            RobitLogger.LogWarning("[GazeFollowerRunner] CameraCheckPanel.uxml not found. Skipping camera check.");
+            controller.StartCalibration(activeProfileId);
+            yield break;
+        }
+
+        VisualElement cameraPanel = visualTree.Instantiate();
+        cameraPanel.style.position = Position.Absolute;
+        cameraPanel.style.left = 0;
+        cameraPanel.style.top = 0;
+        cameraPanel.style.right = 0;
+        cameraPanel.style.bottom = 0;
+        calibDoc.rootVisualElement.Add(cameraPanel);
+
+        var previewElement = cameraPanel.Q<VisualElement>("camera-preview");
+        var statusLabel    = cameraPanel.Q<Label>("camera-status");
+        var errorLabel     = cameraPanel.Q<Label>("camera-error");
+        var retryBtn       = cameraPanel.Q<Button>("camera-retry-btn");
+        var continueBtn    = cameraPanel.Q<Button>("camera-continue-btn");
+
+        // Texture updated every frame from incoming JPEG bytes
+        Texture2D previewTexture = new Texture2D(2, 2, TextureFormat.RGB24, false);
+
+        bool selectionMade = false;
+        bool cameraOk      = false;
+
+        // Mutable camera-check process state (replaced on Retry)
+        UdpClient                  camUdp     = null;
+        Process                    camProcess = null;
+        CancellationTokenSource    camCts     = null;
+        ConcurrentQueue<byte[]>    camQueue   = new ConcurrentQueue<byte[]>();
+
+        void LaunchCameraCheckProcess()
+        {
+            // Tear down any previous instance
+            try { camCts?.Cancel(); } catch { }
+            try { if (camProcess != null && !camProcess.HasExited) camProcess.Kill(); } catch { }
+            camProcess?.Dispose();
+            camUdp?.Close();
+            camUdp?.Dispose();
+
+            // Drain stale packets
+            while (camQueue.TryDequeue(out _)) { }
+
+            camUdp = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
+            int camPort = ((IPEndPoint)camUdp.Client.LocalEndPoint).Port;
+            camCts = new CancellationTokenSource();
+
+            var psi = new ProcessStartInfo
+            {
+                FileName               = exePath,
+                Arguments              = $"--mode camera-check --port {camPort}",
+                WorkingDirectory       = Path.GetDirectoryName(exePath),
+                UseShellExecute        = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError  = true,
+                CreateNoWindow         = true,
+            };
+            camProcess = Process.Start(psi);
+
+            cameraOk = false;
+            if (statusLabel  != null) statusLabel.text                    = "Starting camera\u2026";
+            if (continueBtn  != null) continueBtn.SetEnabled(false);
+            if (retryBtn     != null) retryBtn.style.display               = DisplayStyle.None;
+            if (errorLabel   != null) errorLabel.style.display             = DisplayStyle.None;
+            if (previewElement != null)
+                previewElement.style.backgroundImage = StyleKeyword.None;
+
+            // Background UDP receive loop
+            var capturedUdp = camUdp;
+            var capturedCts = camCts;
+            _ = Task.Run(async () =>
+            {
+                while (!capturedCts.IsCancellationRequested)
+                {
+                    try
+                    {
+                        var res = await capturedUdp.ReceiveAsync();
+                        camQueue.Enqueue(res.Buffer);
+                    }
+                    catch { break; }
+                }
+            }, capturedCts.Token);
+        }
+
+        // Wire up buttons before first launch
+        if (retryBtn != null)
+            retryBtn.clicked += LaunchCameraCheckProcess;
+
+        if (continueBtn != null)
+            continueBtn.clicked += () => selectionMade = true;
+
+        // Set initial UI state
+        if (continueBtn != null) continueBtn.SetEnabled(false);
+        if (retryBtn    != null) retryBtn.style.display    = DisplayStyle.None;
+        if (errorLabel  != null) errorLabel.style.display  = DisplayStyle.None;
+
+        LaunchCameraCheckProcess();
+
+        // ── Main coroutine loop ───────────────────────────────────────────────
+        while (!selectionMade)
+        {
+            while (camQueue.TryDequeue(out byte[] packet))
+            {
+                // JPEG always starts with 0xFF 0xD8; text messages start with 'C' (CAM_)
+                if (packet.Length >= 2 && packet[0] == 0xFF && packet[1] == 0xD8)
+                {
+                    // Live JPEG frame — only render after camera confirmed OK
+                    if (cameraOk && previewElement != null)
+                    {
+                        previewTexture.LoadImage(packet);
+                        previewTexture.Apply();
+                        previewElement.style.backgroundImage =
+                            new StyleBackground(Background.FromTexture2D(previewTexture));
+                    }
+                }
+                else
+                {
+                    string text = Encoding.UTF8.GetString(packet).Trim();
+
+                    if (text == "CAM_OK")
+                    {
+                        cameraOk = true;
+                        if (statusLabel  != null) statusLabel.text            = "Camera ready \u2713";
+                        if (continueBtn  != null) continueBtn.SetEnabled(true);
+                        if (retryBtn     != null) retryBtn.style.display      = DisplayStyle.None;
+                        if (errorLabel   != null) errorLabel.style.display    = DisplayStyle.None;
+                    }
+                    else if (text.StartsWith("CAM_ERROR:", StringComparison.Ordinal))
+                    {
+                        string reason = text.Substring("CAM_ERROR:".Length);
+                        cameraOk = false;
+                        if (statusLabel  != null) statusLabel.text            = "Camera not detected.";
+                        if (errorLabel   != null)
+                        {
+                            errorLabel.text                  = reason;
+                            errorLabel.style.display         = DisplayStyle.Flex;
+                        }
+                        if (retryBtn     != null) retryBtn.style.display      = DisplayStyle.Flex;
+                        if (continueBtn  != null) continueBtn.SetEnabled(false);
+                    }
+                }
+            }
+
+            yield return null;
+        }
+
+        // ── User clicked Continue — clean up camera-check resources ───────────
+        try { camCts?.Cancel(); } catch { }
+        camCts?.Dispose();
+        camUdp?.Close();
+        camUdp?.Dispose();
+        try { if (camProcess != null && !camProcess.HasExited) camProcess.Kill(); } catch { }
+        camProcess?.Dispose();
+
+        cameraPanel.RemoveFromHierarchy();
+        UnityEngine.Object.Destroy(previewTexture);
+
+        // Hand off to calibration
+        controller.StartCalibration(activeProfileId);
+    }
+
+    /// <summary>
+    /// Re-triggers the startup flow (queries calibration status and begins gaze tracking).
+    /// Safe to call after returning from the calibration scene.
+    /// </summary>
+    public void TriggerStartupFlow(string profileId)
+    {
+        activeProfileId = profileId;
+        StartCoroutine(BeginStartupFlow());
     }
 }

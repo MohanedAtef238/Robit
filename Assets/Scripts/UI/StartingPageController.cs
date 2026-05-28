@@ -30,6 +30,7 @@ public class StartingPageController : MonoBehaviour
     public float animDuration = 1.4f;         // how long the float-up takes
 
     private ProfileData _data;
+    private GameObject loadingOverlay;
 
     // ── Lifecycle ───────────────────────────────────────────────────────────
 
@@ -38,6 +39,54 @@ public class StartingPageController : MonoBehaviour
         namePromptPanel.SetActive(false);
         btnCreate.onClick.AddListener(OnCreateConfirmed);
         btnCancel.onClick.AddListener(HidePrompt);
+
+        if (welcomeText != null)
+        {
+            welcomeText.text = "Robit";
+        }
+
+        // Dynamically create the loading overlay using the Loading15 prefab
+        GameObject prefab = Resources.Load<GameObject>("Loading15");
+        if (prefab != null)
+        {
+            Canvas canvas = Object.FindFirstObjectByType<Canvas>();
+            if (canvas != null)
+            {
+                loadingOverlay = new GameObject("LoadingOverlay");
+                loadingOverlay.transform.SetParent(canvas.transform, false);
+                RectTransform rtRoot = loadingOverlay.AddComponent<RectTransform>();
+                rtRoot.anchorMin = Vector2.zero;
+                rtRoot.anchorMax = Vector2.one;
+                rtRoot.offsetMin = Vector2.zero;
+                rtRoot.offsetMax = Vector2.zero;
+
+                // Dark Background
+                GameObject bg = new GameObject("Background");
+                bg.transform.SetParent(loadingOverlay.transform, false);
+                RectTransform rtBg = bg.AddComponent<RectTransform>();
+                rtBg.anchorMin = Vector2.zero;
+                rtBg.anchorMax = Vector2.one;
+                rtBg.offsetMin = Vector2.zero;
+                rtBg.offsetMax = Vector2.zero;
+                Image bgImage = bg.AddComponent<Image>();
+                bgImage.color = new Color(0.04f, 0.05f, 0.08f, 1f); // Dark background
+
+                // Spinner
+                GameObject spinner = Instantiate(prefab, loadingOverlay.transform);
+                RectTransform rtSpinner = spinner.GetComponent<RectTransform>();
+                if (rtSpinner != null)
+                {
+                    rtSpinner.anchoredPosition = Vector2.zero;
+                    rtSpinner.localScale = Vector3.one * 1.5f; // scale it slightly for better visibility
+                }
+                
+                loadingOverlay.SetActive(false);
+            }
+        }
+        else
+        {
+            UnityEngine.Debug.LogWarning("Loading15 prefab not found in Resources folder.");
+        }
 
         _data = ProfileManager.LoadProfiles();
 
@@ -130,7 +179,31 @@ public class StartingPageController : MonoBehaviour
     {
         PlayerPrefs.SetString("ActiveProfileID", profileId);
         PlayerPrefs.Save();
-        SceneManager.LoadScene(1);   // Main overlay scene
+
+        // Provide immediate visual feedback that a profile was selected
+        if (loadingOverlay != null)
+        {
+            loadingOverlay.SetActive(true);
+        }
+        else if (welcomeText != null)
+        {
+            welcomeText.text = "Loading...";
+        }
+
+        if (profilesContainer != null)
+        {
+            profilesContainer.gameObject.SetActive(false);
+        }
+
+        var runner = FindFirstObjectByType<GazeFollowerRunner>();
+        if (runner != null)
+        {
+            runner.TriggerStartupFlow(profileId);
+        }
+        else
+        {
+            SceneManager.LoadScene("OverlayScene");
+        }
     }
 
     // ── Name prompt ──────────────────────────────────────────────────────────
@@ -152,7 +225,7 @@ public class StartingPageController : MonoBehaviour
         string trimmed = nameInput.text.Trim();
         if (string.IsNullOrEmpty(trimmed)) trimmed = "Profile " + (_data.profiles.Count + 1);
 
-        _data.profiles.Add(ProfileManager.CreateProfile(trimmed));
+        _data.profiles.Add(ProfileManager.CreateProfile(trimmed, _data.profiles));
         ProfileManager.SaveProfiles(_data);
 
         HidePrompt();

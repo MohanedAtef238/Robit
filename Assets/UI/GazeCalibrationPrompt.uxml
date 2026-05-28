@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<engine:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:engine="UnityEngine.UIElements"
+    xmlns:editor="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd">
+
+    <engine:VisualElement name="overlay" picking-mode="Position" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; justify-content: center; align-items: center; background-color: rgba(8, 13, 23, 0.72); padding-left: 24px; padding-right: 24px; padding-top: 24px; padding-bottom: 24px;">
+        <engine:VisualElement name="card" style="width: 520px; max-width: 92%; padding-left: 28px; padding-right: 28px; padding-top: 24px; padding-bottom: 24px; background-color: rgba(23, 31, 46, 0.98); border-top-left-radius: 18px; border-top-right-radius: 18px; border-bottom-left-radius: 18px; border-bottom-right-radius: 18px; border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; border-left-color: rgb(71, 102, 133); border-right-color: rgb(71, 102, 133); border-top-color: rgb(71, 102, 133); border-bottom-color: rgb(71, 102, 133);">
+            <engine:Label text="Eye Tracking Setup" name="title" style="font-size: 24px; -unity-font-style: bold; color: rgb(245, 250, 255); margin-bottom: 8px;" />
+            <engine:Label text="A saved gaze calibration was found for this profile. Choose whether to reuse it or calibrate again." name="subtitle" style="white-space: normal; font-size: 14px; color: rgb(207, 222, 237); margin-bottom: 16px;" />
+            <engine:Button text="Calibrate Again" name="calibrate-btn" style="height: 44px; margin-top: 8px; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; background-color: rgb(46, 189, 143); color: rgb(255, 255, 255); -unity-font-style: bold; border-width: 0;" />
+            <engine:Button text="Use Saved Calibration" name="use-saved-btn" style="height: 44px; margin-top: 8px; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; background-color: rgb(48, 128, 219); color: rgb(255, 255, 255); -unity-font-style: bold; border-width: 0;" />
+            <engine:Label text="Calibration is saved separately for each profile." name="footer" style="margin-top: 14px; font-size: 12px; color: rgb(158, 179, 199);" />
+        </engine:VisualElement>
+    </engine:VisualElement>
+</engine:UXML>

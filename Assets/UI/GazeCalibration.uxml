@@ -1,0 +1,23 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <ui:VisualElement name="calibration-root" class="calibration-root">
+
+        <!-- Status text at the top -->
+        <ui:VisualElement name="status-area" class="status-area">
+            <ui:Label name="point-label"  class="point-label"  text="" />
+            <ui:Label name="status-label" class="status-label" text="Initializing…" />
+        </ui:VisualElement>
+
+        <!-- The gaze dot (positioned absolutely in C#) -->
+        <ui:VisualElement name="calibration-dot" class="calibration-dot">
+            <ui:VisualElement name="progress-track" class="progress-track">
+                <ui:VisualElement name="progress-fill" class="progress-fill" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Full-screen overlay shown while SVR model is being fit -->
+        <ui:VisualElement name="fitting-overlay" class="fitting-overlay">
+            <ui:Label name="fitting-label" class="fitting-label" text="Fitting gaze model…" />
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>

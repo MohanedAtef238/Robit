@@ -1,0 +1,109 @@
+/* ─── Root ──────────────────────────────────────────────────────────────── */
+.calibration-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(10, 13, 20, 255);
+    overflow: hidden;
+}
+
+/* ─── Status area (top-centre) ──────────────────────────────────────────── */
+.status-area {
+    position: absolute;
+    left: 0;
+    top: 32px;
+    right: 0;
+    align-items: center;
+}
+
+.point-label {
+    color: rgba(160, 180, 210, 200);
+    font-size: 15px;
+    -unity-font-style: bold;
+    margin-bottom: 6px;
+}
+
+.status-label {
+    color: rgba(210, 220, 235, 220);
+    font-size: 18px;
+    -unity-text-align: upper-center;
+    white-space: normal;
+}
+
+/* ─── Calibration dot ───────────────────────────────────────────────────── */
+.calibration-dot {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    /* C# sets left/top as percentages; margins shift origin to dot center */
+    margin-left: -15px;
+    margin-top: -15px;
+    border-top-left-radius: 50%;
+    border-top-right-radius: 50%;
+    border-bottom-left-radius: 50%;
+    border-bottom-right-radius: 50%;
+    background-color: rgba(235, 240, 255, 230);
+    /* Smooth movement transition */
+    transition-property: left, top, background-color, opacity;
+    transition-duration: 0.12s, 0.12s, 0.2s, 0.15s;
+    transition-timing-function: ease-out, ease-out, ease, ease;
+}
+
+/* Collecting state — blue tint while frames are being captured */
+.calibration-dot.dot-collecting {
+    background-color: rgba(80, 160, 255, 230);
+}
+
+/* Done state — green tint to confirm point accepted */
+.calibration-dot.dot-done {
+    background-color: rgba(80, 220, 120, 230);
+}
+
+/* ─── Progress bar (sits below dot, auto-centered via negative margin) ─── */
+.progress-track {
+    position: absolute;
+    bottom: -14px;
+    left: 50%;
+    width: 60px;
+    height: 4px;
+    margin-left: -30px;
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
+    border-bottom-left-radius: 2px;
+    border-bottom-right-radius: 2px;
+    background-color: rgba(255, 255, 255, 30);
+    overflow: hidden;
+}
+
+.progress-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0%;
+    background-color: rgba(80, 160, 255, 200);
+    transition-property: width;
+    transition-duration: 0.08s;
+    transition-timing-function: ease-out;
+}
+
+/* ─── Fitting overlay ────────────────────────────────────────────────────── */
+.fitting-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(10, 13, 20, 200);
+    align-items: center;
+    justify-content: center;
+}
+
+.fitting-label {
+    color: rgba(210, 220, 235, 230);
+    font-size: 22px;
+    -unity-font-style: bold;
+    -unity-text-align: upper-center;
+}

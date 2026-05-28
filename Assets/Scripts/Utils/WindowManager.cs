@@ -169,6 +169,26 @@ public static class WindowManager
         #endif
     }
 
+    /// <summary>
+    /// Resizes the window to cover the full monitor, keeping it topmost.
+    /// Call from GazeCalibrationScene so calibration dots appear at physical screen positions.
+    /// OverlayManager.Start() will call SetOverlaySize() when returning to OverlayScene.
+    /// </summary>
+    public static void MakeFullscreen()
+    {
+        #if !UNITY_EDITOR
+        IntPtr hWnd = GetWindowHandle();
+        if (hWnd == IntPtr.Zero) return;
+
+        int screenWidth = Screen.currentResolution.width;
+        int screenHeight = Screen.currentResolution.height;
+
+        Win32Interop.SetWindowPos(hWnd, Win32Interop.HWND_TOPMOST, 0, 0, screenWidth, screenHeight, Win32Interop.SWP_SHOWWINDOW);
+
+        RobitLogger.Log($"[WindowManager] Window set to fullscreen: {screenWidth}x{screenHeight}");
+        #endif
+    }
+
     // Toggles WS_EX_TRANSPARENT while keeping WS_EX_LAYERED
     public static void SetClickThrough(bool enabled)
     {
