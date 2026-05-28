@@ -22,7 +22,7 @@ public class UiAutomationRunner : MonoBehaviour
 
     private Process automationProcess;
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Bootstrap()
     {
         if (FindFirstObjectByType<UiAutomationRunner>() != null)

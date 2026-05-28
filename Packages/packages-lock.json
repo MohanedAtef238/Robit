@@ -1,5 +1,14 @@
 {
   "dependencies": {
+    "com.coffee.ui-effect": {
+      "version": "https://github.com/mob-sakai/UIEffect.git?path=Packages/src",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.ugui": "1.0.0"
+      },
+      "hash": "70937d2ce39b61c29c4feb4d13642c65bb553d6c"
+    },
     "com.coplaydev.unity-mcp": {
       "version": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#beta",
       "depth": 0,
@@ -8,7 +17,7 @@
         "com.unity.nuget.newtonsoft-json": "3.0.2",
         "com.unity.test-framework": "1.1.31"
       },
-      "hash": "bbc49922d84f71a9459d1341b58315863edceda3"
+      "hash": "7abd6e3edd3d8142ab5bc1fa7227dea563a8751c"
     },
     "com.endel.nativewebsocket": {
       "version": "https://github.com/endel/NativeWebSocket.git#upm-2",
@@ -22,6 +31,15 @@
       "depth": 0,
       "source": "embedded",
       "dependencies": {}
+    },
+    "com.qiaozhilei.easy-text-effects": {
+      "version": "https://github.com/LeiQiaoZhi/Easy-Text-Effect.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.ugui": "1.0.0"
+      },
+      "hash": "102249bba7e95ec4f3c3cfbaf4f0afd9b1b4ccce"
     },
     "com.unity.2d.sprite": {
       "version": "1.0.0",

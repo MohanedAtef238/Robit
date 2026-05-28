@@ -96,7 +96,8 @@ public class HomePageController : MonoBehaviour
         SetContainerIgnore(root, "Sound");
         SetContainerIgnore(root, "signal");
         SetContainerIgnore(root, "brightness");
-        SetContainerIgnore(root, "clockWidget");
+        SetContainerIgnore(root, "clock-tab");
+        SetContainerIgnore(root, "clock-panel");
         SetContainerIgnore(root, "settingsView");
 
         // Restore interactivity on all buttons/sliders inside settingsView

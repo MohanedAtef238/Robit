@@ -43,7 +43,7 @@ public class VirtualPointerDriver : MonoBehaviour
     private float emgStartTime;
     private Camera mainCamera;
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Bootstrap()
     {
         if (FindFirstObjectByType<VirtualPointerDriver>() != null)

@@ -1,8 +1,13 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -18,21 +23,22 @@ public class GazeFollowerRunner : MonoBehaviour
 
     public static GazeFollowerRunner Instance { get; private set; }
 
-    [Header("Python Setup")]
-    [SerializeField] private string relativeWorkingDirectory = @"D:/Projects/GazeFollower";
-    [SerializeField] private string relativePythonPath = @"D:/Projects/GazeFollower/.venv/Scripts/python.exe";
-    [SerializeField] private string relativeScriptPath = "InputBridge/unity_gaze_bridge.py";
+    [Header("Multimodal Setup")]
+    [SerializeField] private string relativeExePath = @"Multimodal_UDP/unity_gaze_bridge.exe";
     [SerializeField] private bool autoStartOnAwake = true;
     [SerializeField] private bool promptForCalibrationChoice = true;
-
-    [Header("Runtime Env Overrides")]
-    [SerializeField] private bool loadOverridesFromEnvFile = true;
-    [SerializeField] private string envFileName = "gaze.env";
-    [SerializeField] private bool logResolvedPaths = true;
+    
+    [Header("Debug")]
+    [SerializeField] private bool simulateGazeWithArrowKeys = true;
 
     private Process gazeProcess;
+    private UdpClient udpClient;
+    private CancellationTokenSource udpCancellation;
+
     private VisualElement startupPromptRoot;
     private bool startupFlowRunning;
+
+    private ConcurrentQueue<Vector2> gazePacketQueue = new ConcurrentQueue<Vector2>();
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Bootstrap()
@@ -55,8 +61,23 @@ public class GazeFollowerRunner : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        if (autoStartOnAwake)
-            StartCoroutine(BeginStartupFlow());
+        // if (autoStartOnAwake)
+        //     StartCoroutine(BeginStartupFlow());
+    }
+
+    private void Update()
+    {
+        // Drain all packets, keep only the latest gaze position to minimize latency
+        Vector2? latestGaze = null;
+        while (gazePacketQueue.TryDequeue(out Vector2 gazePos))
+        {
+            latestGaze = gazePos;
+        }
+
+        if (latestGaze.HasValue)
+        {
+            VirtualInputState.Instance.SetGazePosition(latestGaze.Value);
+        }
     }
 
     public void StartGazeFollower()
@@ -66,6 +87,8 @@ public class GazeFollowerRunner : MonoBehaviour
 
     public void StopGazeFollower()
     {
+        CleanupUdp();
+
         if (gazeProcess == null)
             return;
 
@@ -84,6 +107,11 @@ public class GazeFollowerRunner : MonoBehaviour
         }
     }
 
+    private string GetResolvedExePath()
+    {
+        return Path.Combine(Application.streamingAssetsPath, relativeExePath).Replace("/", "\\");
+    }
+
     private IEnumerator BeginStartupFlow()
     {
         if (startupFlowRunning)
@@ -98,13 +126,15 @@ public class GazeFollowerRunner : MonoBehaviour
             yield break;
         }
 
-        if (!TryResolveLaunchConfiguration(out string workingDirectory, out string pythonExe, out string scriptPath))
+        string exePath = GetResolvedExePath();
+        if (!File.Exists(exePath))
         {
+            RobitLogger.LogWarning($"[GazeFollowerRunner] Executable not found at {exePath}. Did you run PyInstaller?");
             startupFlowRunning = false;
             yield break;
         }
 
-        var task = QuerySavedCalibrationStatusAsync(workingDirectory, pythonExe, scriptPath);
+        var task = QuerySavedCalibrationStatusAsync(exePath);
         while (!task.IsCompleted)
             yield return null;
 
@@ -122,83 +152,106 @@ public class GazeFollowerRunner : MonoBehaviour
             return;
         }
 
-        if (!TryResolveLaunchConfiguration(out string workingDirectory, out string pythonExe, out string scriptPath))
+        string exePath = GetResolvedExePath();
+        if (!File.Exists(exePath))
+        {
+            RobitLogger.LogWarning($"[GazeFollowerRunner] Executable not found at {exePath}.");
             return;
-
-        if (logResolvedPaths)
-        {
-            RobitLogger.Log("[GazeFollowerRunner] Using paths:\n" +
-                            $" - WorkingDir: {workingDirectory}\n" +
-                            $" - PythonExe : {pythonExe}\n" +
-                            $" - Script    : {scriptPath}");
         }
-
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = pythonExe,
-            Arguments = $"\"{scriptPath}\" --mode {ToModeArgument(launchMode)}",
-            WorkingDirectory = workingDirectory,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true,
-        };
-
-        gazeProcess = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
-        gazeProcess.OutputDataReceived += OnOutputDataReceived;
-        gazeProcess.ErrorDataReceived += OnErrorDataReceived;
-        gazeProcess.Exited += OnProcessExited;
 
         try
         {
-            gazeProcess.Start();
-            gazeProcess.BeginOutputReadLine();
-            gazeProcess.BeginErrorReadLine();
-            RobitLogger.Log("[GazeFollowerRunner] Started gaze bridge.");
+            udpClient = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
+            int assignedPort = ((IPEndPoint)udpClient.Client.LocalEndPoint).Port;
+
+            udpCancellation = new CancellationTokenSource();
+            _ = Task.Run(() => ReceiveUdpLoop(udpCancellation.Token), udpCancellation.Token);
+
+            string baseArgs = $"--port {assignedPort} --mode {ToModeArgument(launchMode)}";
+            if (simulateGazeWithArrowKeys)
+            {
+                baseArgs += " --keyboard";
+            }
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = exePath,
+                Arguments = baseArgs,
+                WorkingDirectory = Path.GetDirectoryName(exePath),
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true,
+            };
+
+            gazeProcess = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
+            gazeProcess.OutputDataReceived += OnOutputDataReceived;
+            gazeProcess.ErrorDataReceived += OnErrorDataReceived;
+            gazeProcess.Exited += OnProcessExited;
+
+            // gazeProcess.Start();
+            // gazeProcess.BeginOutputReadLine();
+            // gazeProcess.BeginErrorReadLine();
+            RobitLogger.Log($"[GazeFollowerRunner] Started gaze bridge executable on dynamic port {assignedPort}.");
         }
         catch (Exception ex)
         {
             RobitLogger.LogError($"[GazeFollowerRunner] Failed to start gaze process: {ex.Message}");
+            CleanupUdp();
         }
 #else
         RobitLogger.LogWarning("[GazeFollowerRunner] This runner currently supports Windows builds only.");
 #endif
     }
 
-    private bool TryResolveLaunchConfiguration(out string workingDirectory, out string pythonExe, out string scriptPath)
+    private async Task ReceiveUdpLoop(CancellationToken token)
     {
-        string workingDirectoryConfig = relativeWorkingDirectory;
-        string pythonPathConfig = relativePythonPath;
-        string scriptPathConfig = relativeScriptPath;
-        LoadEnvOverrides(ref workingDirectoryConfig, ref pythonPathConfig, ref scriptPathConfig);
-
-        if (!RunnerPathResolver.TryResolvePath(workingDirectoryConfig, expectFile: false, out workingDirectory, out string workingDetails))
+        while (!token.IsCancellationRequested)
         {
-            RobitLogger.LogWarning("[GazeFollowerRunner] Working directory could not be resolved (gaze tracking unavailable).\n" + workingDetails);
-            pythonExe = null;
-            scriptPath = null;
-            return false;
-        }
+            try
+            {
+                UdpReceiveResult result = await udpClient.ReceiveAsync();
+                string payload = Encoding.UTF8.GetString(result.Buffer).Trim();
 
-        if (!RunnerPathResolver.TryResolvePath(pythonPathConfig, expectFile: true, out pythonExe, out string pythonDetails))
-        {
-            RobitLogger.LogWarning("[GazeFollowerRunner] Python executable could not be resolved (gaze tracking unavailable).\n" + pythonDetails);
-            scriptPath = null;
-            return false;
+                string[] parts = payload.Split(',');
+                if (parts.Length == 2 &&
+                    float.TryParse(parts[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float x) &&
+                    float.TryParse(parts[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float y))
+                {
+                    gazePacketQueue.Enqueue(new Vector2(x, y));
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                break; // Expected when UdpClient is closed
+            }
+            catch (Exception ex)
+            {
+                RobitLogger.LogWarning($"[GazeFollowerRunner] UDP Receive Error: {ex.Message}");
+            }
         }
-
-        if (!RunnerPathResolver.TryResolvePath(scriptPathConfig, expectFile: true, out scriptPath, out string scriptDetails))
-        {
-            RobitLogger.LogWarning("[GazeFollowerRunner] Gaze bridge script could not be resolved (gaze tracking unavailable).\n" + scriptDetails);
-            return false;
-        }
-
-        return true;
     }
 
-    private System.Threading.Tasks.Task<(bool hasSaved, bool statusKnown)> QuerySavedCalibrationStatusAsync(string workingDirectory, string pythonExe, string scriptPath)
+    private void CleanupUdp()
     {
-        return System.Threading.Tasks.Task.Run(() =>
+        if (udpCancellation != null)
+        {
+            udpCancellation.Cancel();
+            udpCancellation.Dispose();
+            udpCancellation = null;
+        }
+
+        if (udpClient != null)
+        {
+            udpClient.Close();
+            udpClient.Dispose();
+            udpClient = null;
+        }
+    }
+
+    private Task<(bool hasSaved, bool statusKnown)> QuerySavedCalibrationStatusAsync(string exePath)
+    {
+        return Task.Run(() =>
         {
             bool hasSaved = false;
             bool statusKnown = false;
@@ -206,9 +259,9 @@ public class GazeFollowerRunner : MonoBehaviour
             {
                 var startInfo = new ProcessStartInfo
                 {
-                    FileName = pythonExe,
-                    Arguments = $"\"{scriptPath}\" --status-only",
-                    WorkingDirectory = workingDirectory,
+                    FileName = exePath,
+                    Arguments = "--status-only",
+                    WorkingDirectory = Path.GetDirectoryName(exePath),
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -432,19 +485,6 @@ public class GazeFollowerRunner : MonoBehaviour
             return;
         }
 
-        if (line.StartsWith("GAZE:", StringComparison.OrdinalIgnoreCase))
-        {
-            string payload = line.Substring(5).Trim();
-            string[] parts = payload.Split(',');
-            if (parts.Length == 2 &&
-                float.TryParse(parts[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float x) &&
-                float.TryParse(parts[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float y))
-            {
-                VirtualInputState.Instance.SetGazePosition(new Vector2(x, y));
-                return;
-            }
-        }
-
         RobitLogger.Log($"[GazeFollowerRunner][PY] {line}");
     }
 
@@ -472,30 +512,4 @@ public class GazeFollowerRunner : MonoBehaviour
         gazeProcess.Dispose();
         gazeProcess = null;
     }
-
-    private void LoadEnvOverrides(ref string workingDirectoryConfig, ref string pythonPathConfig, ref string scriptPathConfig)
-    {
-        if (!loadOverridesFromEnvFile)
-            return;
-
-        if (!RunnerPathResolver.TryResolveEnvFilePath(envFileName, out string envPath, out string details))
-        {
-            if (logResolvedPaths)
-                RobitLogger.Log("[GazeFollowerRunner] Env file not found. Using inspector values.\n" + details);
-            return;
-        }
-
-        Dictionary<string, string> values = RunnerPathResolver.ParseEnvFile(envPath);
-        if (values.TryGetValue("GAZE_WORKING_DIR", out string wd) && !string.IsNullOrWhiteSpace(wd))
-            workingDirectoryConfig = wd.Trim();
-
-        if (values.TryGetValue("GAZE_PYTHON_PATH", out string py) && !string.IsNullOrWhiteSpace(py))
-            pythonPathConfig = py.Trim();
-
-        if (values.TryGetValue("GAZE_SCRIPT_PATH", out string script) && !string.IsNullOrWhiteSpace(script))
-            scriptPathConfig = script.Trim();
-
-        RobitLogger.Log($"[GazeFollowerRunner] Loaded env overrides from: {envPath}");
-    }
-
 }

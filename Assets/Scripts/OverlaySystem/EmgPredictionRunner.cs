@@ -1,7 +1,13 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -10,25 +16,23 @@ public class EmgPredictionRunner : MonoBehaviour
 {
     public static EmgPredictionRunner Instance { get; private set; }
 
-    [Header("Python Setup")]
-    [SerializeField] private string relativeWorkingDirectory = @"D:/Projects/emg-work";
-    [SerializeField] private string relativePythonPath = @"D:/Projects/emg-work/.venv/Scripts/python.exe";
-    [SerializeField] private string relativeScriptPath = "InputBridge/unity_emg_bridge.py";
+    [Header("Multimodal Setup")]
+    [SerializeField] private string relativeExePath = @"Multimodal_UDP/unity_emg_bridge.exe";
     [SerializeField] private bool autoStartOnAwake = true;
 
     [Header("Debug")]
     [SerializeField] private bool simulateEmgWithSpaceKey = true;
 
-    [Header("Runtime Env Overrides")]
-    [SerializeField] private bool loadOverridesFromEnvFile = true;
-    [SerializeField] private string envFileName = "emg.env";
-    [SerializeField] private bool logResolvedPaths = true;
-
     private Process emgProcess;
+    private UdpClient udpClient;
+    private CancellationTokenSource udpCancellation;
+    
     private bool pythonEmgActive;
     private bool simulatedEmgActive;
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private ConcurrentQueue<bool> emgPacketQueue = new ConcurrentQueue<bool>();
+
+    // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Bootstrap()
     {
         if (FindFirstObjectByType<EmgPredictionRunner>() != null)
@@ -49,12 +53,19 @@ public class EmgPredictionRunner : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        if (autoStartOnAwake)
-            StartEmgPrediction();
+        // if (autoStartOnAwake)
+        //     StartEmgPrediction();
     }
 
     private void Update()
     {
+        // Process UDP packets
+        while (emgPacketQueue.TryDequeue(out bool pythonState))
+        {
+            pythonEmgActive = pythonState;
+            ApplyEffectiveEmgState();
+        }
+
         if (!simulateEmgWithSpaceKey || Keyboard.current == null)
             return;
 
@@ -75,63 +86,54 @@ public class EmgPredictionRunner : MonoBehaviour
             return;
         }
 
-        string workingDirectoryConfig = relativeWorkingDirectory;
-        string pythonPathConfig = relativePythonPath;
-        string scriptPathConfig = relativeScriptPath;
-        LoadEnvOverrides(ref workingDirectoryConfig, ref pythonPathConfig, ref scriptPathConfig);
-
-        if (!RunnerPathResolver.TryResolvePath(workingDirectoryConfig, expectFile: false, out string workingDirectory, out string workingDetails))
-        {
-            RobitLogger.LogWarning("[EmgPredictionRunner] Working directory could not be resolved (EMG unavailable).\n" + workingDetails);
-            return;
-        }
-
-        if (!RunnerPathResolver.TryResolvePath(pythonPathConfig, expectFile: true, out string pythonExe, out string pythonDetails))
-        {
-            RobitLogger.LogWarning("[EmgPredictionRunner] Python executable could not be resolved (EMG unavailable).\n" + pythonDetails);
-            return;
-        }
-
-        if (!RunnerPathResolver.TryResolvePath(scriptPathConfig, expectFile: true, out string scriptPath, out string scriptDetails))
-        {
-            RobitLogger.LogWarning("[EmgPredictionRunner] EMG bridge script could not be resolved.\n" + scriptDetails);
-            return;
-        }
-
-        if (logResolvedPaths)
-        {
-            RobitLogger.Log("[EmgPredictionRunner] Using paths:\n" +
-                            $" - WorkingDir: {workingDirectory}\n" +
-                            $" - PythonExe : {pythonExe}\n" +
-                            $" - Script    : {scriptPath}");
-        }
-
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = pythonExe,
-            Arguments = $"\"{scriptPath}\"",
-            WorkingDirectory = workingDirectory,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true,
-        };
-
-        emgProcess = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
-        emgProcess.OutputDataReceived += OnOutputDataReceived;
-        emgProcess.ErrorDataReceived += OnErrorDataReceived;
-        emgProcess.Exited += OnProcessExited;
-
+        // Setup UDP Socket
         try
         {
-            emgProcess.Start();
-            emgProcess.BeginOutputReadLine();
-            emgProcess.BeginErrorReadLine();
-            RobitLogger.Log("[EmgPredictionRunner] Started EMG bridge.");
+            udpClient = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
+            int assignedPort = ((IPEndPoint)udpClient.Client.LocalEndPoint).Port;
+            
+            udpCancellation = new CancellationTokenSource();
+            _ = Task.Run(() => ReceiveUdpLoop(udpCancellation.Token), udpCancellation.Token);
+
+            string exePath = Path.Combine(Application.streamingAssetsPath, relativeExePath).Replace("/", "\\");
+
+            if (!File.Exists(exePath))
+            {
+                RobitLogger.LogWarning($"[EmgPredictionRunner] Executable not found at {exePath}. Did you run PyInstaller?");
+                return;
+            }
+
+            string baseArgs = $"--port {assignedPort}";
+            if (simulateEmgWithSpaceKey)
+            {
+                baseArgs += " --keyboard";
+            }
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = exePath,
+                Arguments = baseArgs,
+                WorkingDirectory = Path.GetDirectoryName(exePath),
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = false, // Must be false so msvcrt can hook console keyboard
+            };
+
+            emgProcess = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
+            emgProcess.OutputDataReceived += OnOutputDataReceived;
+            emgProcess.ErrorDataReceived += OnErrorDataReceived;
+            emgProcess.Exited += OnProcessExited;
+
+            // emgProcess.Start();
+            // emgProcess.BeginOutputReadLine();
+            // emgProcess.BeginErrorReadLine();
+            RobitLogger.Log($"[EmgPredictionRunner] Started EMG bridge executable on dynamic port {assignedPort}.");
         }
         catch (Exception ex)
         {
             RobitLogger.LogError($"[EmgPredictionRunner] Failed to start EMG bridge: {ex.Message}");
+            CleanupUdp();
         }
 #else
         RobitLogger.LogWarning("[EmgPredictionRunner] This runner currently supports Windows builds only.");
@@ -140,6 +142,8 @@ public class EmgPredictionRunner : MonoBehaviour
 
     public void StopEmgPrediction()
     {
+        CleanupUdp();
+
         if (emgProcess == null)
             return;
 
@@ -155,6 +159,52 @@ public class EmgPredictionRunner : MonoBehaviour
         finally
         {
             CleanupProcessHandlers();
+        }
+    }
+
+    private async Task ReceiveUdpLoop(CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            try
+            {
+                UdpReceiveResult result = await udpClient.ReceiveAsync();
+                string payload = Encoding.UTF8.GetString(result.Buffer).Trim();
+
+                if (payload == "1" || payload.Equals("true", StringComparison.OrdinalIgnoreCase))
+                {
+                    emgPacketQueue.Enqueue(true);
+                }
+                else if (payload == "0" || payload.Equals("false", StringComparison.OrdinalIgnoreCase))
+                {
+                    emgPacketQueue.Enqueue(false);
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                break; // Expected when UdpClient is closed
+            }
+            catch (Exception ex)
+            {
+                RobitLogger.LogWarning($"[EmgPredictionRunner] UDP Receive Error: {ex.Message}");
+            }
+        }
+    }
+
+    private void CleanupUdp()
+    {
+        if (udpCancellation != null)
+        {
+            udpCancellation.Cancel();
+            udpCancellation.Dispose();
+            udpCancellation = null;
+        }
+
+        if (udpClient != null)
+        {
+            udpClient.Close();
+            udpClient.Dispose();
+            udpClient = null;
         }
     }
 
@@ -176,16 +226,7 @@ public class EmgPredictionRunner : MonoBehaviour
         if (string.IsNullOrWhiteSpace(e.Data))
             return;
 
-        string line = e.Data.Trim();
-        if (line.StartsWith("EMG:", StringComparison.OrdinalIgnoreCase))
-        {
-            string payload = line.Substring(4).Trim();
-            pythonEmgActive = payload == "1" || payload.Equals("true", StringComparison.OrdinalIgnoreCase);
-            ApplyEffectiveEmgState();
-            return;
-        }
-
-        RobitLogger.Log($"[EmgPredictionRunner][PY] {line}");
+        RobitLogger.Log($"[EmgPredictionRunner][PY] {e.Data}");
     }
 
     private void OnErrorDataReceived(object sender, DataReceivedEventArgs e)
@@ -198,8 +239,7 @@ public class EmgPredictionRunner : MonoBehaviour
 
     private void OnProcessExited(object sender, EventArgs e)
     {
-        pythonEmgActive = false;
-        ApplyEffectiveEmgState();
+        emgPacketQueue.Enqueue(false); // Reset on exit
         RobitLogger.Log("[EmgPredictionRunner] EMG process exited.");
     }
 
@@ -220,30 +260,4 @@ public class EmgPredictionRunner : MonoBehaviour
         emgProcess.Dispose();
         emgProcess = null;
     }
-
-    private void LoadEnvOverrides(ref string workingDirectoryConfig, ref string pythonPathConfig, ref string scriptPathConfig)
-    {
-        if (!loadOverridesFromEnvFile)
-            return;
-
-        if (!RunnerPathResolver.TryResolveEnvFilePath(envFileName, out string envPath, out string details))
-        {
-            if (logResolvedPaths)
-                RobitLogger.Log("[EmgPredictionRunner] Env file not found. Using inspector values.\n" + details);
-            return;
-        }
-
-        Dictionary<string, string> values = RunnerPathResolver.ParseEnvFile(envPath);
-        if (values.TryGetValue("EMG_WORKING_DIR", out string wd) && !string.IsNullOrWhiteSpace(wd))
-            workingDirectoryConfig = wd.Trim();
-
-        if (values.TryGetValue("EMG_PYTHON_PATH", out string py) && !string.IsNullOrWhiteSpace(py))
-            pythonPathConfig = py.Trim();
-
-        if (values.TryGetValue("EMG_SCRIPT_PATH", out string script) && !string.IsNullOrWhiteSpace(script))
-            scriptPathConfig = script.Trim();
-
-        RobitLogger.Log($"[EmgPredictionRunner] Loaded env overrides from: {envPath}");
-    }
-
 }

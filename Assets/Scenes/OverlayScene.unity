@@ -2068,6 +2068,70 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1441460880}
   m_Mesh: {fileID: -2477511411847689622, guid: 45de48f8e68813b44a5fb510892c8810, type: 3}
+--- !u!1 &1454036236
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1454036239}
+  - component: {fileID: 1454036238}
+  - component: {fileID: 1454036237}
+  m_Layer: 0
+  m_Name: Multimodal_input_manager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1454036237
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1454036236}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 036630b74d7ac8749bb8684faed4f5cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Robit::GazeFollowerRunner
+  relativeExePath: Multimodal_UDP/unity_gaze_bridge.exe
+  autoStartOnAwake: 1
+  promptForCalibrationChoice: 0
+  simulateGazeWithArrowKeys: 1
+--- !u!114 &1454036238
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1454036236}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e18c84023b60274996f0e4026fb5c96, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Robit::EmgPredictionRunner
+  relativeExePath: Multimodal_UDP/unity_emg_bridge.exe
+  autoStartOnAwake: 1
+  simulateEmgWithSpaceKey: 1
+--- !u!4 &1454036239
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1454036236}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.28095, y: -0.19214, z: 1.07761}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1467389657
 GameObject:
   m_ObjectHideFlags: 0
@@ -4642,3 +4706,4 @@ SceneRoots:
   - {fileID: 1921078589}
   - {fileID: 91883970}
   - {fileID: 33811928}
+  - {fileID: 1454036239}

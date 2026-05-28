@@ -9,7 +9,8 @@
         "Unity.UI",
         "Unity.VisualScripting.Core",
         "Unity.VectorGraphics",
-        "colyseus.nativewebsocket"
+        "colyseus.nativewebsocket",
+        "Coffee.UIEffect"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
