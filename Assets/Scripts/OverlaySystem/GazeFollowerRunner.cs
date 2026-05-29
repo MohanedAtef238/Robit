@@ -358,7 +358,7 @@ public class GazeFollowerRunner : MonoBehaviour
         bool selectionMade = false;
 
 #if UNITY_EDITOR
-        var visualTree = UnityEditor.AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/GazeCalibrationPrompt.uxml");
+        var visualTree = UnityEditor.AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/Resources/GazeCalibrationPrompt.uxml");
 #else
         var visualTree = Resources.Load<VisualTreeAsset>("GazeCalibrationPrompt");
 #endif
@@ -537,7 +537,7 @@ public class GazeFollowerRunner : MonoBehaviour
 
         // Load CameraCheckPanel UXML
 #if UNITY_EDITOR
-        var visualTree = UnityEditor.AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/CameraCheckPanel.uxml");
+        var visualTree = UnityEditor.AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/Resources/CameraCheckPanel.uxml");
 #else
         var visualTree = Resources.Load<VisualTreeAsset>("CameraCheckPanel");
 #endif

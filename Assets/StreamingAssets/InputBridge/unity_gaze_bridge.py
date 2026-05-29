@@ -1,9 +1,11 @@
 import argparse
 import ctypes
 import os
+import socket
 import sys
 import time
 
+import cv2
 import pygame
 from pygame.locals import KEYDOWN, K_ESCAPE
 
@@ -29,6 +31,48 @@ def create_gaze_follower():
     return GazeFollower(camera=WebCamCamera(webcam_id=0), config=build_config())
 
 
+def camera_check(port: int) -> None:
+    """
+    Opens the default webcam and communicates the result to Unity via UDP.
+
+    Sends ``CAM_OK`` on success, then streams JPEG frames until the process is
+    killed.  Sends ``CAM_ERROR:<reason>`` and exits immediately on failure.
+    """
+    UDP_DEST = ("127.0.0.1", port)
+    JPEG_QUALITY = 60          # ~20-40 KB per frame at 640x480 — safe under 65 507-byte UDP limit
+    FRAME_INTERVAL = 1.0 / 20  # 20 fps is plenty for a preview thumbnail
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)  # CAP_DSHOW avoids long open delays on Windows
+        if not cap.isOpened():
+            sock.sendto(b"CAM_ERROR:Could not open webcam (device 0 not found or in use)", UDP_DEST)
+            return
+
+        sock.sendto(b"CAM_OK", UDP_DEST)
+
+        try:
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    time.sleep(0.05)  # camera warming up
+                    continue
+
+                ok, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, JPEG_QUALITY])
+                if not ok:
+                    continue
+
+                data = buf.tobytes()
+                if len(data) <= 65000:  # skip oversized frames rather than truncating
+                    sock.sendto(data, UDP_DEST)
+
+                time.sleep(FRAME_INTERVAL)
+        finally:
+            cap.release()
+    finally:
+        sock.close()
+
+
 def probe_saved_calibration():
     gaze_follower = None
     try:
@@ -49,9 +93,14 @@ def should_calibrate(mode, has_saved_calibration):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", choices=["auto", "calibrate", "use-saved"], default="auto")
+    parser.add_argument("--mode", choices=["auto", "calibrate", "use-saved", "camera-check"], default="auto")
+    parser.add_argument("--port", type=int, default=0)
     parser.add_argument("--status-only", action="store_true")
     args = parser.parse_args()
+
+    if args.mode == "camera-check":
+        camera_check(args.port)
+        return
 
     sys.path.insert(0, os.getcwd())
 

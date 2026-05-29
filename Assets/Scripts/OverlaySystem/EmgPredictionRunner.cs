@@ -18,7 +18,10 @@ public class EmgPredictionRunner : MonoBehaviour
 
     [Header("Multimodal Setup")]
     [SerializeField] private string relativeExePath = @"Multimodal_UDP/unity_emg_bridge.exe";
+    [SerializeField] private string comPort = "COM4";
     [SerializeField] private bool autoStartOnAwake = true;
+
+    public string CurrentSensorStatus { get; private set; } = "UNKNOWN";
 
     [Header("Debug")]
     [SerializeField] private bool simulateEmgWithSpaceKey = true;
@@ -103,11 +106,7 @@ public class EmgPredictionRunner : MonoBehaviour
                 return;
             }
 
-            string baseArgs = $"--port {assignedPort}";
-            if (simulateEmgWithSpaceKey)
-            {
-                baseArgs += " --keyboard";
-            }
+            string baseArgs = $"--port {assignedPort} --com-port {comPort}";
 
             var startInfo = new ProcessStartInfo
             {
@@ -117,7 +116,7 @@ public class EmgPredictionRunner : MonoBehaviour
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
-                CreateNoWindow = false, // Must be false so msvcrt can hook console keyboard
+                CreateNoWindow = true,
             };
 
             emgProcess = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
@@ -171,7 +170,20 @@ public class EmgPredictionRunner : MonoBehaviour
                 UdpReceiveResult result = await udpClient.ReceiveAsync();
                 string payload = Encoding.UTF8.GetString(result.Buffer).Trim();
 
-                if (payload == "1" || payload.Equals("true", StringComparison.OrdinalIgnoreCase))
+                if (payload.StartsWith("EMG_STATUS:", StringComparison.OrdinalIgnoreCase))
+                {
+                    string status = payload.Substring("EMG_STATUS:".Length).Trim();
+                    CurrentSensorStatus = status;
+                    if (status.StartsWith("ERROR", StringComparison.OrdinalIgnoreCase))
+                    {
+                        RobitLogger.LogError($"[EmgPredictionRunner] Sensor Connection Failed: {status}");
+                    }
+                    else if (status.StartsWith("OK", StringComparison.OrdinalIgnoreCase))
+                    {
+                        RobitLogger.Log("[EmgPredictionRunner] Sensor Connection Successful (EMG_OK).");
+                    }
+                }
+                else if (payload == "1" || payload.Equals("true", StringComparison.OrdinalIgnoreCase))
                 {
                     emgPacketQueue.Enqueue(true);
                 }
