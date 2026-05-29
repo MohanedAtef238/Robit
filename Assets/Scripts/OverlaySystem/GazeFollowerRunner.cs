@@ -35,6 +35,8 @@ public class GazeFollowerRunner : MonoBehaviour
     [SerializeField] private bool simulateGazeWithArrowKeys = true;
 
     private Process gazeProcess;
+    private Process cameraCheckProcess;
+    private Process statusProbeProcess;
     private UdpClient udpClient;
     private CancellationTokenSource udpCancellation;
 
@@ -93,22 +95,23 @@ public class GazeFollowerRunner : MonoBehaviour
     {
         CleanupUdp();
 
-        if (gazeProcess == null)
-            return;
+        void TryKill(Process p)
+        {
+            try
+            {
+                if (p != null && !p.HasExited) p.Kill();
+            }
+            catch (Exception ex)
+            {
+                RobitLogger.LogWarning($"[GazeFollowerRunner] Failed to stop process: {ex.Message}");
+            }
+        }
 
-        try
-        {
-            if (!gazeProcess.HasExited)
-                gazeProcess.Kill();
-        }
-        catch (Exception ex)
-        {
-            RobitLogger.LogWarning($"[GazeFollowerRunner] Failed to stop gaze process: {ex.Message}");
-        }
-        finally
-        {
-            CleanupProcessHandlers();
-        }
+        TryKill(gazeProcess);
+        TryKill(cameraCheckProcess);
+        TryKill(statusProbeProcess);
+
+        CleanupProcessHandlers();
     }
 
     private string GetResolvedExePath()
@@ -294,13 +297,13 @@ public class GazeFollowerRunner : MonoBehaviour
                     CreateNoWindow = true,
                 };
 
-                using Process process = Process.Start(startInfo);
-                if (process == null)
+                statusProbeProcess = Process.Start(startInfo);
+                if (statusProbeProcess == null)
                     return (false, false);
 
-                string stdout = process.StandardOutput.ReadToEnd();
-                string stderr = process.StandardError.ReadToEnd();
-                process.WaitForExit(15000);
+                string stdout = statusProbeProcess.StandardOutput.ReadToEnd();
+                string stderr = statusProbeProcess.StandardError.ReadToEnd();
+                statusProbeProcess.WaitForExit(15000);
 
                 if (!string.IsNullOrWhiteSpace(stderr))
                     RobitLogger.LogWarning("[GazeFollowerRunner] Calibration status probe stderr:\n" + stderr.Trim());
@@ -570,7 +573,6 @@ public class GazeFollowerRunner : MonoBehaviour
 
         // Mutable camera-check process state (replaced on Retry)
         UdpClient                  camUdp     = null;
-        Process                    camProcess = null;
         CancellationTokenSource    camCts     = null;
         ConcurrentQueue<byte[]>    camQueue   = new ConcurrentQueue<byte[]>();
 
@@ -578,8 +580,8 @@ public class GazeFollowerRunner : MonoBehaviour
         {
             // Tear down any previous instance
             try { camCts?.Cancel(); } catch { }
-            try { if (camProcess != null && !camProcess.HasExited) camProcess.Kill(); } catch { }
-            camProcess?.Dispose();
+            try { if (cameraCheckProcess != null && !cameraCheckProcess.HasExited) cameraCheckProcess.Kill(); } catch { }
+            cameraCheckProcess?.Dispose();
             camUdp?.Close();
             camUdp?.Dispose();
 
@@ -627,7 +629,7 @@ public class GazeFollowerRunner : MonoBehaviour
 
             try 
             {
-                camProcess = Process.Start(psi);
+                cameraCheckProcess = Process.Start(psi);
             }
             catch (System.ComponentModel.Win32Exception ex)
             {
@@ -737,8 +739,8 @@ public class GazeFollowerRunner : MonoBehaviour
         camCts?.Dispose();
         camUdp?.Close();
         camUdp?.Dispose();
-        try { if (camProcess != null && !camProcess.HasExited) camProcess.Kill(); } catch { }
-        camProcess?.Dispose();
+        try { if (cameraCheckProcess != null && !cameraCheckProcess.HasExited) cameraCheckProcess.Kill(); } catch { }
+        cameraCheckProcess?.Dispose();
 
         cameraPanel.RemoveFromHierarchy();
         UnityEngine.Object.Destroy(previewTexture);

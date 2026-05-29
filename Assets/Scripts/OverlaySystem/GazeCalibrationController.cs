@@ -69,7 +69,7 @@ public class GazeCalibrationController : MonoBehaviour
         if (sceneCamera != null)
         {
             sceneCamera.clearFlags = CameraClearFlags.SolidColor;
-            sceneCamera.backgroundColor = new Color(0.04f, 0.05f, 0.08f, 1f);
+            sceneCamera.backgroundColor = new Color(0.85f, 0.94f, 0.86f, 1f);
         }
 
 #if !UNITY_EDITOR

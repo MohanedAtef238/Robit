@@ -5,7 +5,7 @@
     top: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(10, 13, 20, 255);
+    background-color: rgb(215, 240, 220);
     overflow: hidden;
 }
 
@@ -19,15 +19,16 @@
 }
 
 .point-label {
-    color: rgba(160, 180, 210, 200);
-    font-size: 15px;
+    color: rgba(0, 0, 0, 220);
+    font-size: 18px;
     -unity-font-style: bold;
     margin-bottom: 6px;
 }
 
 .status-label {
-    color: rgba(210, 220, 235, 220);
-    font-size: 18px;
+    color: rgba(0, 0, 0, 240);
+    font-size: 22px;
+    -unity-font-style: bold;
     -unity-text-align: upper-center;
     white-space: normal;
 }
@@ -44,7 +45,7 @@
     border-top-right-radius: 50%;
     border-bottom-left-radius: 50%;
     border-bottom-right-radius: 50%;
-    background-color: rgba(235, 240, 255, 230);
+    background-color: rgb(255, 60, 60);
     /* Smooth movement transition */
     transition-property: left, top, background-color, opacity;
     transition-duration: 0.12s, 0.12s, 0.2s, 0.15s;
@@ -53,12 +54,12 @@
 
 /* Collecting state — blue tint while frames are being captured */
 .calibration-dot.dot-collecting {
-    background-color: rgba(80, 160, 255, 230);
+    background-color: rgb(0, 100, 255);
 }
 
 /* Done state — green tint to confirm point accepted */
 .calibration-dot.dot-done {
-    background-color: rgba(80, 220, 120, 230);
+    background-color: rgb(0, 200, 80);
 }
 
 /* ─── Progress bar (sits below dot, auto-centered via negative margin) ─── */
@@ -73,7 +74,7 @@
     border-top-right-radius: 2px;
     border-bottom-left-radius: 2px;
     border-bottom-right-radius: 2px;
-    background-color: rgba(255, 255, 255, 30);
+    background-color: rgba(0, 0, 0, 40);
     overflow: hidden;
 }
 
@@ -83,7 +84,7 @@
     top: 0;
     bottom: 0;
     width: 0%;
-    background-color: rgba(80, 160, 255, 200);
+    background-color: rgb(40, 120, 255);
     transition-property: width;
     transition-duration: 0.08s;
     transition-timing-function: ease-out;
@@ -96,13 +97,13 @@
     top: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(10, 13, 20, 200);
+    background-color: rgba(215, 240, 220, 230);
     align-items: center;
     justify-content: center;
 }
 
 .fitting-label {
-    color: rgba(210, 220, 235, 230);
+    color: rgba(0, 0, 0, 240);
     font-size: 22px;
     -unity-font-style: bold;
     -unity-text-align: upper-center;
