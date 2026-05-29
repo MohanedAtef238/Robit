@@ -528,9 +528,9 @@ public class GazeFollowerRunner : MonoBehaviour
         string exePath = GetResolvedExePath();
 
         var calibDoc = controller.GetComponent<UIDocument>();
-        if (calibDoc == null || calibDoc.rootVisualElement == null || !File.Exists(exePath))
+        if (calibDoc == null || calibDoc.rootVisualElement == null)
         {
-            RobitLogger.LogWarning("[GazeFollowerRunner] Camera check skipped — UIDocument or exe missing.");
+            RobitLogger.LogWarning("[GazeFollowerRunner] Camera check skipped — UIDocument missing.");
             controller.StartCalibration(activeProfileId);
             yield break;
         }
@@ -586,6 +586,30 @@ public class GazeFollowerRunner : MonoBehaviour
             // Drain stale packets
             while (camQueue.TryDequeue(out _)) { }
 
+            cameraOk = false;
+            if (statusLabel  != null) statusLabel.text                    = "Starting camera\u2026";
+            if (continueBtn  != null) 
+            {
+                continueBtn.SetEnabled(false);
+                continueBtn.style.opacity = 0.5f;
+            }
+            if (retryBtn     != null) retryBtn.style.display               = DisplayStyle.None;
+            if (errorLabel   != null) errorLabel.style.display             = DisplayStyle.None;
+            if (previewElement != null)
+                previewElement.style.backgroundImage = StyleKeyword.None;
+
+            if (!File.Exists(exePath))
+            {
+                if (statusLabel != null) statusLabel.text = "Executable Missing";
+                if (errorLabel != null)
+                {
+                    errorLabel.text = $"Bridge not found at:\n{exePath}";
+                    errorLabel.style.display = DisplayStyle.Flex;
+                }
+                if (retryBtn != null) retryBtn.style.display = DisplayStyle.Flex;
+                return;
+            }
+
             camUdp = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
             int camPort = ((IPEndPoint)camUdp.Client.LocalEndPoint).Port;
             camCts = new CancellationTokenSource();
@@ -600,19 +624,22 @@ public class GazeFollowerRunner : MonoBehaviour
                 RedirectStandardError  = true,
                 CreateNoWindow         = true,
             };
-            camProcess = Process.Start(psi);
 
-            cameraOk = false;
-            if (statusLabel  != null) statusLabel.text                    = "Starting camera\u2026";
-            if (continueBtn  != null) 
+            try 
             {
-                continueBtn.SetEnabled(false);
-                continueBtn.style.opacity = 0.5f;
+                camProcess = Process.Start(psi);
             }
-            if (retryBtn     != null) retryBtn.style.display               = DisplayStyle.None;
-            if (errorLabel   != null) errorLabel.style.display             = DisplayStyle.None;
-            if (previewElement != null)
-                previewElement.style.backgroundImage = StyleKeyword.None;
+            catch (System.ComponentModel.Win32Exception ex)
+            {
+                if (statusLabel != null) statusLabel.text = "Launch Failed";
+                if (errorLabel != null)
+                {
+                    errorLabel.text = $"Failed to start bridge:\n{ex.Message}";
+                    errorLabel.style.display = DisplayStyle.Flex;
+                }
+                if (retryBtn != null) retryBtn.style.display = DisplayStyle.Flex;
+                return;
+            }
 
             // Background UDP receive loop
             var capturedUdp = camUdp;
