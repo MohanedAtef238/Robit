@@ -15,6 +15,7 @@ using Coffee.UIEffects;
 public class ProfileCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
     [Header("References")]
+    public Transform contentContainer;
     public Image profileImage;
     public TextMeshProUGUI nameText;
     public TextMeshProUGUI statusText;
@@ -25,6 +26,7 @@ public class ProfileCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     private Action _onClick;
     private Vector3 _baseScale;
+    private Vector3 _contentBaseScale;
     private UIEffect _uiEffect;
     private UIEffectTweener _tweener;
     private Coroutine _scaleCoroutine;
@@ -32,6 +34,8 @@ public class ProfileCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     void Awake()
     {
         _baseScale = transform.localScale;
+        if (contentContainer != null) _contentBaseScale = contentContainer.localScale;
+        
         _uiEffect = GetComponentInChildren<UIEffect>();
         _tweener = GetComponentInChildren<UIEffectTweener>();
 
@@ -66,7 +70,9 @@ public class ProfileCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     public void OnPointerEnter(PointerEventData _)
     {
         if (_scaleCoroutine != null) StopCoroutine(_scaleCoroutine);
-        _scaleCoroutine = StartCoroutine(ScaleTo(_baseScale * hoverScale));
+        
+        Vector3 target = contentContainer != null ? _contentBaseScale * hoverScale : _baseScale * hoverScale;
+        _scaleCoroutine = StartCoroutine(ScaleTo(target));
         
         if (_uiEffect != null) _uiEffect.edgeShinyAutoPlaySpeed = 2f;
         if (_tweener != null) _tweener.PlayForward(true);
@@ -75,7 +81,10 @@ public class ProfileCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     public void OnPointerExit(PointerEventData _)
     {
         if (_scaleCoroutine != null) StopCoroutine(_scaleCoroutine);
-        _scaleCoroutine = StartCoroutine(ScaleTo(_baseScale));
+        
+        Vector3 target = contentContainer != null ? _contentBaseScale : _baseScale;
+        _scaleCoroutine = StartCoroutine(ScaleTo(target));
+        
         if (_uiEffect != null) 
         {
             _uiEffect.edgeShinyAutoPlaySpeed = 0f;
@@ -89,12 +98,13 @@ public class ProfileCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     private IEnumerator ScaleTo(Vector3 target)
     {
-        while (Vector3.Distance(transform.localScale, target) > 0.001f)
+        Transform targetTransform = contentContainer != null ? contentContainer : transform;
+        while (Vector3.Distance(targetTransform.localScale, target) > 0.001f)
         {
-            transform.localScale = Vector3.Lerp(transform.localScale, target, Time.deltaTime * hoverSpeed);
+            targetTransform.localScale = Vector3.Lerp(targetTransform.localScale, target, Time.deltaTime * hoverSpeed);
             yield return null;
         }
-        transform.localScale = target;
+        targetTransform.localScale = target;
     }
 
     public void AnimatePopIn(float delay)

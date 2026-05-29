@@ -604,7 +604,11 @@ public class GazeFollowerRunner : MonoBehaviour
 
             cameraOk = false;
             if (statusLabel  != null) statusLabel.text                    = "Starting camera\u2026";
-            if (continueBtn  != null) continueBtn.SetEnabled(false);
+            if (continueBtn  != null) 
+            {
+                continueBtn.SetEnabled(false);
+                continueBtn.style.opacity = 0.5f;
+            }
             if (retryBtn     != null) retryBtn.style.display               = DisplayStyle.None;
             if (errorLabel   != null) errorLabel.style.display             = DisplayStyle.None;
             if (previewElement != null)
@@ -635,7 +639,11 @@ public class GazeFollowerRunner : MonoBehaviour
             continueBtn.clicked += () => selectionMade = true;
 
         // Set initial UI state
-        if (continueBtn != null) continueBtn.SetEnabled(false);
+        if (continueBtn != null) 
+        {
+            continueBtn.SetEnabled(false);
+            continueBtn.style.opacity = 0.5f;
+        }
         if (retryBtn    != null) retryBtn.style.display    = DisplayStyle.None;
         if (errorLabel  != null) errorLabel.style.display  = DisplayStyle.None;
 
@@ -666,7 +674,11 @@ public class GazeFollowerRunner : MonoBehaviour
                     {
                         cameraOk = true;
                         if (statusLabel  != null) statusLabel.text            = "Camera ready \u2713";
-                        if (continueBtn  != null) continueBtn.SetEnabled(true);
+                        if (continueBtn  != null) 
+                        {
+                            continueBtn.SetEnabled(true);
+                            continueBtn.style.opacity = 1f;
+                        }
                         if (retryBtn     != null) retryBtn.style.display      = DisplayStyle.None;
                         if (errorLabel   != null) errorLabel.style.display    = DisplayStyle.None;
                     }
@@ -681,7 +693,11 @@ public class GazeFollowerRunner : MonoBehaviour
                             errorLabel.style.display         = DisplayStyle.Flex;
                         }
                         if (retryBtn     != null) retryBtn.style.display      = DisplayStyle.Flex;
-                        if (continueBtn  != null) continueBtn.SetEnabled(false);
+                        if (continueBtn  != null) 
+                        {
+                            continueBtn.SetEnabled(false);
+                            continueBtn.style.opacity = 0.5f;
+                        }
                     }
                 }
             }
