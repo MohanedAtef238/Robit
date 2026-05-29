@@ -1,20 +1,29 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <!--
+        CRITICAL: Style tag must be here so USS is bundled in builds.
+        Dot visual properties are also set inline in C# as a safety net.
+        calibration-root has zero padding/margin — percentage coords are clean.
+    -->
+    <Style src="project://database/Assets/UI/GazeCalibration.uss" />
+
     <ui:VisualElement name="calibration-root" class="calibration-root">
 
-        <!-- Status text at the top -->
-        <ui:VisualElement name="status-area" class="status-area">
-            <ui:Label name="point-label"  class="point-label"  text="" />
-            <ui:Label name="status-label" class="status-label" text="Initializing…" />
-        </ui:VisualElement>
-
-        <!-- The gaze dot (positioned absolutely in C#) -->
+        <!-- Live gaze dot — C# sets left/top as absolute px from Screen.width/height -->
         <ui:VisualElement name="calibration-dot" class="calibration-dot">
             <ui:VisualElement name="progress-track" class="progress-track">
                 <ui:VisualElement name="progress-fill" class="progress-fill" />
             </ui:VisualElement>
         </ui:VisualElement>
 
-        <!-- Full-screen overlay shown while SVR model is being fit -->
+        <!-- Centred prompt card — floats above the dot layer -->
+        <ui:VisualElement name="prompt-panel" class="prompt-panel">
+            <ui:VisualElement name="prompt-card" class="prompt-card">
+                <ui:Label name="point-label"  class="point-label"  text="" />
+                <ui:Label name="status-label" class="status-label" text="Initializing…" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Full-screen overlay shown while SVR model is being fitted -->
         <ui:VisualElement name="fitting-overlay" class="fitting-overlay">
             <ui:Label name="fitting-label" class="fitting-label" text="Fitting gaze model…" />
         </ui:VisualElement>

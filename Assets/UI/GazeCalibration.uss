@@ -1,80 +1,168 @@
 /* ─── Root ──────────────────────────────────────────────────────────────── */
+/*  CRITICAL: zero padding/margin so that left/top percentages map 1:1      */
+/*  to the logical panel rectangle with no artificial offset.               */
 .calibration-root {
     position: absolute;
     left: 0;
     top: 0;
     right: 0;
     bottom: 0;
+    padding: 0;
+    margin: 0;
     background-color: rgb(215, 240, 220);
     overflow: hidden;
 }
 
-/* ─── Status area (top-centre) ──────────────────────────────────────────── */
-.status-area {
+/* ─── Prompt panel (centred card) ───────────────────────────────────────── */
+.prompt-panel {
     position: absolute;
     left: 0;
-    top: 32px;
     right: 0;
+    top: 0;
+    bottom: 0;
     align-items: center;
+    justify-content: center;
+    /* pointer-events: none so the dot behind it is still the focus */
+}
+
+.prompt-card {
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 200);
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-left-color: rgba(80, 160, 100, 200);
+    border-right-color: rgba(80, 160, 100, 200);
+    border-top-color: rgba(80, 160, 100, 200);
+    border-bottom-color: rgba(80, 160, 100, 200);
+    padding-left: 40px;
+    padding-right: 40px;
+    padding-top: 28px;
+    padding-bottom: 28px;
+    min-width: 360px;
 }
 
 .point-label {
-    color: rgba(0, 0, 0, 220);
-    font-size: 18px;
+    color: rgba(0, 100, 40, 240);
+    font-size: 16px;
     -unity-font-style: bold;
-    margin-bottom: 6px;
+    -unity-text-align: upper-center;
+    margin-bottom: 8px;
 }
 
 .status-label {
-    color: rgba(0, 0, 0, 240);
-    font-size: 22px;
+    color: rgba(0, 0, 0, 230);
+    font-size: 24px;
     -unity-font-style: bold;
     -unity-text-align: upper-center;
     white-space: normal;
 }
 
 /* ─── Calibration dot ───────────────────────────────────────────────────── */
+/*                                                                           */
+/*  SIZE: 45 × 45 px                                                        */
+/*  The C# controller sets `dot.style.left` and `dot.style.top` to         */
+/*  Length.Percent(x * 100) and Length.Percent(y * 100).                   */
+/*                                                                           */
+/*  Those percentages are relative to the PARENT container width/height.   */
+/*  The parent is .calibration-root which is zero-padding 100% × 100%.    */
+/*                                                                           */
+/*  The negative margins shift the origin from the dot's top-left corner   */
+/*  to its exact visual center:                                             */
+/*    margin-left: -(45/2) = -22.5 px                                      */
+/*    margin-top:  -(45/2) = -22.5 px                                      */
+/*                                                                           */
 .calibration-dot {
     position: absolute;
-    width: 30px;
-    height: 30px;
-    /* C# sets left/top as percentages; margins shift origin to dot center */
-    margin-left: -15px;
-    margin-top: -15px;
+    width: 45px;
+    height: 45px;
+    margin-left: -22px;
+    margin-top: -22px;
     border-top-left-radius: 50%;
     border-top-right-radius: 50%;
     border-bottom-left-radius: 50%;
     border-bottom-right-radius: 50%;
-    background-color: rgb(255, 60, 60);
-    /* Smooth movement transition */
+    background-color: rgb(220, 30, 30);
+    /* White ring for maximum contrast on any background */
+    border-left-width: 3px;
+    border-right-width: 3px;
+    border-top-width: 3px;
+    border-bottom-width: 3px;
+    border-left-color: rgb(255, 255, 255);
+    border-right-color: rgb(255, 255, 255);
+    border-top-color: rgb(255, 255, 255);
+    border-bottom-color: rgb(255, 255, 255);
     transition-property: left, top, background-color, opacity;
-    transition-duration: 0.12s, 0.12s, 0.2s, 0.15s;
+    transition-duration: 0.1s, 0.1s, 0.2s, 0.15s;
     transition-timing-function: ease-out, ease-out, ease, ease;
 }
 
-/* Collecting state — blue tint while frames are being captured */
+/* Collecting state: blue while frames being captured */
 .calibration-dot.dot-collecting {
-    background-color: rgb(0, 100, 255);
+    background-color: rgb(30, 100, 255);
 }
 
-/* Done state — green tint to confirm point accepted */
+/* Done state: green confirmation flash */
 .calibration-dot.dot-done {
-    background-color: rgb(0, 200, 80);
+    background-color: rgb(0, 190, 70);
 }
 
-/* ─── Progress bar (sits below dot, auto-centered via negative margin) ─── */
+/* ─── Debug grid dot (static, no animation) ────────────────────────────── */
+/*  Spawned by C# debug overlay — identical size/centering as live dot     */
+.debug-dot {
+    position: absolute;
+    width: 45px;
+    height: 45px;
+    margin-left: -22px;
+    margin-top: -22px;
+    border-top-left-radius: 50%;
+    border-top-right-radius: 50%;
+    border-bottom-left-radius: 50%;
+    border-bottom-right-radius: 50%;
+    background-color: rgb(255, 50, 50);
+    border-left-width: 3px;
+    border-right-width: 3px;
+    border-top-width: 3px;
+    border-bottom-width: 3px;
+    border-left-color: rgb(255, 255, 255);
+    border-right-color: rgb(255, 255, 255);
+    border-top-color: rgb(255, 255, 255);
+    border-bottom-color: rgb(255, 255, 255);
+    opacity: 0.85;
+}
+
+/* Index label inside each debug dot */
+.debug-dot-label {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    -unity-text-align: middle-center;
+    color: rgb(255, 255, 255);
+    font-size: 12px;
+    -unity-font-style: bold;
+}
+
+/* ─── Progress bar (sits below the live dot, auto-centred) ──────────────── */
 .progress-track {
     position: absolute;
     bottom: -14px;
     left: 50%;
     width: 60px;
-    height: 4px;
+    height: 5px;
     margin-left: -30px;
-    border-top-left-radius: 2px;
-    border-top-right-radius: 2px;
-    border-bottom-left-radius: 2px;
-    border-bottom-right-radius: 2px;
-    background-color: rgba(0, 0, 0, 40);
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 3px;
+    background-color: rgba(0, 0, 0, 50);
     overflow: hidden;
 }
 
@@ -90,7 +178,7 @@
     transition-timing-function: ease-out;
 }
 
-/* ─── Fitting overlay ────────────────────────────────────────────────────── */
+/* ─── Fitting overlay (shown while SVR model trains) ────────────────────── */
 .fitting-overlay {
     position: absolute;
     left: 0;

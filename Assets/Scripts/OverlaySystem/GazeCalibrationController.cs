@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -10,17 +11,67 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 
 /// <summary>
-/// Manages the GazeCalibrationScene: launches the Python bridge in unity-calibrate mode,
-/// receives CALI_* UDP messages, drives the calibration dot UI, and returns to the overlay
-/// scene once the SVR model is saved.
+/// Manages the GazeCalibrationScene:
+///   - Launches the Python bridge in unity-calibrate mode
+///   - Receives CALI_* UDP messages and drives the calibration dot UI
+///   - Returns to the overlay scene once the SVR model is saved
+///
+/// DOT POSITIONING
+///   Python sends normalised [0..1] coords relative to the physical screen.
+///   PanelSettings is ConstantPixelSize so logical px == screen px.
+///   We position dots at:  left = normX * Screen.width
+///                         top  = normY * Screen.height
+///   The dot has margin-left = margin-top = -(DOT_SIZE/2) so its visual
+///   CENTER sits exactly on that pixel — no offset whatsoever.
+///
+/// DOT APPEARANCE — SET 100% INLINE (no USS dependency)
+///   All visual properties of every dot (live or debug) are set directly
+///   in C# via dot.style.*  This ensures they render correctly even if
+///   the USS fails to load in a build or the PanelSettings has no stylesheet.
+///
+/// DEBUG GRID
+///   Press G to spawn all 13 numbered red dots simultaneously.
+///   Press G again to clear. What you see = what Python targets.
 /// </summary>
 [RequireComponent(typeof(UIDocument))]
 public class GazeCalibrationController : MonoBehaviour
 {
+    // ── Dot size (px) — single source of truth for both live and debug dots ──
+    private const float DOT_SIZE        = 45f;
+    private const float DOT_HALF        = DOT_SIZE / 2f;   // 22.5 px
+    private const float DOT_BORDER      = 3f;
+    private const float PROGRESS_H      = 6f;
+    private const float PROGRESS_W      = 70f;
+
+    private static readonly Color DOT_COLOR_IDLE       = new Color(0.88f, 0.12f, 0.12f);  // red
+    private static readonly Color DOT_COLOR_COLLECTING = new Color(0.12f, 0.42f, 1.00f);  // blue
+    private static readonly Color DOT_COLOR_DONE       = new Color(0.05f, 0.76f, 0.30f);  // green
+    private static readonly Color DOT_BORDER_COLOR     = Color.white;
+    private static readonly Color DEBUG_DOT_COLOR      = new Color(1.00f, 0.20f, 0.20f);
+
+    // ── Python-side calibration point list (must match unity_gaze_bridge.py) ─
+    private static readonly (float x, float y)[] CalibrationPoints =
+    {
+        (0.026f, 0.046f),  //  1  top-left
+        (0.500f, 0.046f),  //  5  top-center
+        (0.974f, 0.046f),  //  9  top-right
+        (0.263f, 0.273f),  // 12  inner top-left
+        (0.737f, 0.273f),  // 16  inner top-right
+        (0.026f, 0.500f),  // 19  mid-left
+        (0.974f, 0.500f),  // 27  mid-right
+        (0.263f, 0.726f),  // 30  inner bottom-left
+        (0.737f, 0.726f),  // 34  inner bottom-right
+        (0.026f, 0.954f),  // 37  bottom-left
+        (0.500f, 0.954f),  // 41  bottom-center
+        (0.974f, 0.954f),  // 45  bottom-right
+        (0.500f, 0.500f),  // 23  center
+    };
+
     [Tooltip("Scene to load after calibration finishes.")]
     [SerializeField] private string returnSceneName = "OverlayScene";
 
@@ -31,44 +82,46 @@ public class GazeCalibrationController : MonoBehaviour
     [SerializeField] private Camera sceneCamera;
 
     // ── UI references ────────────────────────────────────────────────────────
+    private VisualElement calibrationRoot;
     private VisualElement dot;
     private VisualElement progressFill;
-    private Label statusLabel;
-    private Label pointLabel;
+    private Label         statusLabel;
+    private Label         pointLabel;
     private VisualElement fittingOverlay;
 
-    // ── Dot animation ─────────────────────────────────────────────────────────
+    // ── Live dot animation state ───────────────────────────────────────────
     private float dotTargetX;
     private float dotTargetY;
     private float dotCurrentX;
     private float dotCurrentY;
-    private bool dotVisible;
-    private bool firstPointReceived;
+    private bool  dotVisible;
+    private bool  firstPointReceived;
 
-    // ── Singleton ─────────────────────────────────────────────────────────────
+    // ── Debug grid ────────────────────────────────────────────────────────
+    private bool debugGridVisible;
+    private readonly List<VisualElement> debugDots = new List<VisualElement>();
+
+    // ── Singleton ────────────────────────────────────────────────────────
     public static GazeCalibrationController Instance { get; private set; }
 
-    // ── Process / network ────────────────────────────────────────────────────
-    private Process calibrationProcess;
-    private UdpClient udpClient;
+    // ── Process / network ────────────────────────────────────────────────
+    private Process            calibrationProcess;
+    private UdpClient          udpClient;
     private CancellationTokenSource udpCancellation;
     private ConcurrentQueue<string> messageQueue = new ConcurrentQueue<string>();
 
-    // ── Per-profile calibration path ─────────────────────────────────────────
     private string calibrationProfileId;
 
-    // ──────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────
 
     private void Awake()
     {
         Instance = this;
 
-        if (sceneCamera == null)
-            sceneCamera = Camera.main;
-
+        if (sceneCamera == null) sceneCamera = Camera.main;
         if (sceneCamera != null)
         {
-            sceneCamera.clearFlags = CameraClearFlags.SolidColor;
+            sceneCamera.clearFlags     = CameraClearFlags.SolidColor;
             sceneCamera.backgroundColor = new Color(0.85f, 0.94f, 0.86f, 1f);
         }
 
@@ -81,29 +134,65 @@ public class GazeCalibrationController : MonoBehaviour
     private void Start()
     {
         var uiDoc = GetComponent<UIDocument>();
-        var root = uiDoc.rootVisualElement;
+        var root  = uiDoc.rootVisualElement;
 
-        dot          = root.Q<VisualElement>("calibration-dot");
-        progressFill = root.Q<VisualElement>("progress-fill");
-        statusLabel  = root.Q<Label>("status-label");
-        pointLabel   = root.Q<Label>("point-label");
-        fittingOverlay = root.Q<VisualElement>("fitting-overlay");
+        // ── Safety: ensure the stylesheet is always loaded ────────────────
+        // The UXML has a <Style> tag for builds; this catches any edge case
+        // where the USS still isn't applied (e.g. fresh PanelSettings asset).
+#if UNITY_EDITOR
+        var uss = UnityEditor.AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/UI/GazeCalibration.uss");
+        if (uss != null && !root.styleSheets.Contains(uss))
+            root.styleSheets.Add(uss);
+#endif
+
+        calibrationRoot = root.Q<VisualElement>("calibration-root");
+        dot             = root.Q<VisualElement>("calibration-dot");
+        progressFill    = root.Q<VisualElement>("progress-fill");
+        statusLabel     = root.Q<Label>("status-label");
+        pointLabel      = root.Q<Label>("point-label");
+        fittingOverlay  = root.Q<VisualElement>("fitting-overlay");
 
         if (fittingOverlay != null)
             fittingOverlay.style.display = DisplayStyle.None;
 
-        if (dot != null)
-            dot.style.opacity = 0;
+        // ── Apply inline styles to live dot (immune to CSS loading) ──────
+        ApplyDotInlineStyle(dot, DOT_COLOR_IDLE);
+        if (dot != null) dot.style.opacity = 0;
 
-        // Signal GazeFollowerRunner to run the camera check before calibration begins.
-        // The runner will call StartCalibration() once the user confirms the camera.
         GazeFollowerRunner.Instance?.OnCalibrationSceneReady(this);
     }
 
-    /// <summary>
-    /// Called by GazeFollowerRunner after the camera check panel is confirmed.
-    /// Stores the profile ID and launches the Python calibration bridge.
-    /// </summary>
+    // ── Coordinate helpers ────────────────────────────────────────────────
+    // ConstantPixelSize: logical px == screen px, so this is exact.
+    private static float NX(float n) => n * Screen.width;
+    private static float NY(float n) => n * Screen.height;
+
+    // ── Apply all dot visual properties inline (no USS class needed) ──────
+    private static void ApplyDotInlineStyle(VisualElement ve, Color bgColor)
+    {
+        if (ve == null) return;
+        ve.style.position          = Position.Absolute;
+        ve.style.width             = DOT_SIZE;
+        ve.style.height            = DOT_SIZE;
+        ve.style.marginLeft        = -DOT_HALF;
+        ve.style.marginTop         = -DOT_HALF;
+        ve.style.borderTopLeftRadius     = DOT_HALF;
+        ve.style.borderTopRightRadius    = DOT_HALF;
+        ve.style.borderBottomLeftRadius  = DOT_HALF;
+        ve.style.borderBottomRightRadius = DOT_HALF;
+        ve.style.backgroundColor   = bgColor;
+        ve.style.borderLeftColor   = DOT_BORDER_COLOR;
+        ve.style.borderRightColor  = DOT_BORDER_COLOR;
+        ve.style.borderTopColor    = DOT_BORDER_COLOR;
+        ve.style.borderBottomColor = DOT_BORDER_COLOR;
+        ve.style.borderLeftWidth   = DOT_BORDER;
+        ve.style.borderRightWidth  = DOT_BORDER;
+        ve.style.borderTopWidth    = DOT_BORDER;
+        ve.style.borderBottomWidth = DOT_BORDER;
+    }
+
+    // ── Start calibration (called by GazeFollowerRunner after camera check) ──
+
     public void StartCalibration(string profileId = null)
     {
         calibrationProfileId = profileId;
@@ -112,37 +201,38 @@ public class GazeCalibrationController : MonoBehaviour
 
     private void Update()
     {
-        // Lerp dot toward target position
+        // ── Lerp live dot to target position ────────────────────────────
         if (dotVisible && dot != null)
         {
             dotCurrentX = Mathf.Lerp(dotCurrentX, dotTargetX, Time.deltaTime * 8f);
             dotCurrentY = Mathf.Lerp(dotCurrentY, dotTargetY, Time.deltaTime * 8f);
-
-            dot.style.left = Length.Percent(dotCurrentX * 100f);
-            dot.style.top  = Length.Percent(dotCurrentY * 100f);
+            dot.style.left = NX(dotCurrentX);
+            dot.style.top  = NY(dotCurrentY);
         }
 
-        // Drain UDP messages on main thread
+        // ── Drain UDP messages (must happen on main thread) ───────────
         while (messageQueue.TryDequeue(out string msg))
             HandleMessage(msg);
+
+        // ── Debug grid toggle (G key) ─────────────────────────────────
+        if (Keyboard.current != null && Keyboard.current.gKey.wasPressedThisFrame)
+            ToggleDebugGrid();
     }
 
-    // ── Bridge launch ─────────────────────────────────────────────────────────
+    // ── Bridge launch ─────────────────────────────────────────────────────
 
     private IEnumerator LaunchBridge()
     {
         string exePath = Path.Combine(Application.streamingAssetsPath, relativeExePath)
                              .Replace("/", "\\");
-
         if (!File.Exists(exePath))
         {
-            SetStatus($"Bridge executable not found:\n{exePath}\n\nPlease run PyInstaller and copy the build to StreamingAssets.");
+            SetStatus($"Bridge executable not found:\n{exePath}");
             yield break;
         }
 
-        // Open a dynamic UDP port for receiving messages from Python
         udpClient = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
-        int assignedPort = ((IPEndPoint)udpClient.Client.LocalEndPoint).Port;
+        int port  = ((IPEndPoint)udpClient.Client.LocalEndPoint).Port;
 
         udpCancellation = new CancellationTokenSource();
         _ = Task.Run(() => ReceiveLoop(udpCancellation.Token));
@@ -150,8 +240,9 @@ public class GazeCalibrationController : MonoBehaviour
         var startInfo = new ProcessStartInfo
         {
             FileName         = exePath,
-            Arguments        = $"--port {assignedPort} --mode unity-calibrate"
-                               + (string.IsNullOrEmpty(calibrationProfileId) ? "" : $" --profile-id \"{calibrationProfileId}\""),
+            Arguments        = $"--port {port} --mode unity-calibrate"
+                               + (string.IsNullOrEmpty(calibrationProfileId) ? ""
+                                  : $" --profile-id \"{calibrationProfileId}\""),
             WorkingDirectory = Path.GetDirectoryName(exePath),
             UseShellExecute        = false,
             RedirectStandardOutput = true,
@@ -162,7 +253,6 @@ public class GazeCalibrationController : MonoBehaviour
         try
         {
             calibrationProcess = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
-
             calibrationProcess.OutputDataReceived += (_, e) =>
             {
                 if (!string.IsNullOrWhiteSpace(e.Data))
@@ -173,11 +263,9 @@ public class GazeCalibrationController : MonoBehaviour
                 if (!string.IsNullOrWhiteSpace(e.Data))
                     RobitLogger.LogWarning($"[GazeCalib][PY-ERR] {e.Data}");
             };
-
             calibrationProcess.Start();
             calibrationProcess.BeginOutputReadLine();
             calibrationProcess.BeginErrorReadLine();
-
             SetStatus("Initializing gaze model…\nThis may take a few seconds.");
         }
         catch (Exception ex)
@@ -186,7 +274,7 @@ public class GazeCalibrationController : MonoBehaviour
         }
     }
 
-    // ── UDP receive loop (background task) ───────────────────────────────────
+    // ── UDP receive loop (background thread) ────────────────────────────
 
     private async Task ReceiveLoop(CancellationToken token)
     {
@@ -195,24 +283,23 @@ public class GazeCalibrationController : MonoBehaviour
             try
             {
                 var result = await udpClient.ReceiveAsync();
-                string msg = Encoding.UTF8.GetString(result.Buffer).Trim();
-                messageQueue.Enqueue(msg);
+                messageQueue.Enqueue(Encoding.UTF8.GetString(result.Buffer).Trim());
             }
             catch (ObjectDisposedException) { break; }
             catch (Exception ex)
             {
-                RobitLogger.LogWarning($"[GazeCalibrationController] UDP receive error: {ex.Message}");
+                RobitLogger.LogWarning($"[GazeCalib] UDP error: {ex.Message}");
             }
         }
     }
 
-    // ── Message handling (main thread, called from Update) ───────────────────
+    // ── Message handling (main thread via Update) ───────────────────────
 
     private void HandleMessage(string msg)
     {
+        // ── CALI_SHOW_POINT {x},{y} {idx} {total} ─────────────────────
         if (msg.StartsWith("CALI_SHOW_POINT ", StringComparison.Ordinal))
         {
-            // Format: CALI_SHOW_POINT {x},{y} {pointIndex} {total}
             string payload = msg.Substring("CALI_SHOW_POINT ".Length);
             string[] parts = payload.Split(' ');
             if (parts.Length >= 3)
@@ -224,9 +311,13 @@ public class GazeCalibrationController : MonoBehaviour
                 {
                     if (!firstPointReceived)
                     {
-                        // Snap to first position instead of lerping from origin
                         dotCurrentX = x;
                         dotCurrentY = y;
+                        if (dot != null)
+                        {
+                            dot.style.left = NX(x);
+                            dot.style.top  = NY(y);
+                        }
                         firstPointReceived = true;
                     }
 
@@ -237,20 +328,21 @@ public class GazeCalibrationController : MonoBehaviour
                     if (dot != null)
                     {
                         dot.style.opacity = 1;
-                        dot.RemoveFromClassList("dot-collecting");
-                        dot.RemoveFromClassList("dot-done");
+                        ApplyDotInlineStyle(dot, DOT_COLOR_IDLE);
                     }
 
                     if (progressFill != null)
                         progressFill.style.width = Length.Percent(0);
                 }
 
-                if (pointLabel != null && parts.Length >= 3)
+                if (pointLabel != null)
                     pointLabel.text = $"Point  {parts[1]}  /  {parts[2]}";
 
-                SetStatus("Look at the dot");
+                SetStatus("Look at the dot and hold still");
             }
         }
+
+        // ── CALI_PROGRESS {0-100} ───────────────────────────────────────
         else if (msg.StartsWith("CALI_PROGRESS ", StringComparison.Ordinal))
         {
             if (int.TryParse(msg.Substring("CALI_PROGRESS ".Length).Trim(), out int pct))
@@ -259,50 +351,127 @@ public class GazeCalibrationController : MonoBehaviour
                     progressFill.style.width = Length.Percent(pct);
 
                 if (dot != null && pct > 0)
-                    dot.AddToClassList("dot-collecting");
+                    ApplyDotInlineStyle(dot, DOT_COLOR_COLLECTING);
+
+                SetStatus($"Collecting… {pct}%");
             }
         }
+
+        // ── CALI_POINT_DONE {idx} {total} ──────────────────────────────
         else if (msg.StartsWith("CALI_POINT_DONE", StringComparison.Ordinal))
         {
             if (dot != null)
-            {
-                dot.RemoveFromClassList("dot-collecting");
-                dot.AddToClassList("dot-done");
-            }
+                ApplyDotInlineStyle(dot, DOT_COLOR_DONE);
+
+            if (progressFill != null)
+                progressFill.style.width = Length.Percent(100);
+
+            // Parse current point index for feedback
+            string[] parts = msg.Split(' ');
+            string idx   = parts.Length > 1 ? parts[1] : "?";
+            string total = parts.Length > 2 ? parts[2] : "?";
+            SetStatus($"✓ Point {idx} of {total} done!");
+
+            if (pointLabel != null)
+                pointLabel.text = $"Point  {idx}  /  {total}  ✓";
         }
+
+        // ── CALI_MODEL_FITTING ─────────────────────────────────────────
         else if (msg == "CALI_MODEL_FITTING")
         {
+            if (dot != null) dot.style.opacity = 0;
             if (fittingOverlay != null)
                 fittingOverlay.style.display = DisplayStyle.Flex;
-
-            SetStatus("Fitting gaze model…");
+            SetStatus("Fitting gaze model… please wait");
         }
+
+        // ── CALI_MODEL_READY {mean_error} ──────────────────────────────
         else if (msg.StartsWith("CALI_MODEL_READY", StringComparison.Ordinal))
         {
-            string errorPart = msg.Substring("CALI_MODEL_READY".Length).Trim();
-            if (float.TryParse(errorPart, NumberStyles.Float, CultureInfo.InvariantCulture, out float err))
-                SetStatus($"Calibration complete!\nError: {err:F4}");
+            string errPart = msg.Substring("CALI_MODEL_READY".Length).Trim();
+            if (float.TryParse(errPart, NumberStyles.Float, CultureInfo.InvariantCulture, out float err))
+                SetStatus($"✓ Calibration complete!\nAvg error: {err:F4}");
             else
-                SetStatus("Calibration complete!");
+                SetStatus("✓ Calibration complete!");
 
-            StartCoroutine(FinishAndReturn(1.5f));
+            if (pointLabel != null)
+                pointLabel.text = "All points collected";
+
+            StartCoroutine(FinishAndReturn(2f));
         }
+
+        // ── CALI_MODEL_ERROR {reason} ──────────────────────────────────
         else if (msg.StartsWith("CALI_MODEL_ERROR", StringComparison.Ordinal))
         {
-            string errorMsg = msg.Substring("CALI_MODEL_ERROR".Length).Trim();
-
             if (fittingOverlay != null)
                 fittingOverlay.style.display = DisplayStyle.None;
-
-            SetStatus($"Calibration failed:\n{errorMsg}\n\nRestart the application to retry.");
+            SetStatus($"⚠ Calibration failed:\n{msg.Substring("CALI_MODEL_ERROR".Length).Trim()}\n\nRestart to retry.");
         }
+
+        // ── CALI_START {total} ─────────────────────────────────────────
         else if (msg.StartsWith("CALI_START", StringComparison.Ordinal))
         {
             SetStatus("Calibration starting…\nFocus on each dot as it appears.");
         }
     }
 
-    // ── Finish & return ───────────────────────────────────────────────────────
+    // ── Debug Grid ────────────────────────────────────────────────────────
+    // Spawns ALL 13 calibration points simultaneously as numbered red circles.
+    // Each dot uses IDENTICAL positioning and styling to the live calibration dot.
+    // What you see in the debug grid = exactly where Python will place each point.
+
+    private void ToggleDebugGrid()
+    {
+        if (debugGridVisible) ClearDebugGrid();
+        else                  ShowDebugGrid();
+        debugGridVisible = !debugGridVisible;
+    }
+
+    private void ShowDebugGrid()
+    {
+        if (calibrationRoot == null)
+        {
+            RobitLogger.LogWarning("[GazeCalibrationController] calibrationRoot is null.");
+            return;
+        }
+        ClearDebugGrid();
+
+        for (int i = 0; i < CalibrationPoints.Length; i++)
+        {
+            (float x, float y) = CalibrationPoints[i];
+
+            // Outer circle — SAME inline styling as live dot
+            var d = new VisualElement();
+            ApplyDotInlineStyle(d, DEBUG_DOT_COLOR);
+            d.style.left    = NX(x);
+            d.style.top     = NY(y);
+            d.style.opacity = 0.9f;
+
+            // White index number centered inside
+            var lbl = new Label((i + 1).ToString());
+            lbl.style.position        = Position.Absolute;
+            lbl.style.left            = 0; lbl.style.right = 0;
+            lbl.style.top             = 0; lbl.style.bottom = 0;
+            lbl.style.unityTextAlign  = TextAnchor.MiddleCenter;
+            lbl.style.color           = Color.white;
+            lbl.style.fontSize        = 13;
+            lbl.style.unityFontStyleAndWeight = FontStyle.Bold;
+            d.Add(lbl);
+
+            calibrationRoot.Add(d);
+            debugDots.Add(d);
+        }
+
+        RobitLogger.Log($"[GazeCalib] Debug grid: {CalibrationPoints.Length} dots shown. Press G to clear.");
+    }
+
+    private void ClearDebugGrid()
+    {
+        foreach (var d in debugDots) d.RemoveFromHierarchy();
+        debugDots.Clear();
+    }
+
+    // ── Finish ────────────────────────────────────────────────────────────
 
     private IEnumerator FinishAndReturn(float delay)
     {
@@ -312,39 +481,26 @@ public class GazeCalibrationController : MonoBehaviour
         SceneManager.LoadScene(returnSceneName);
     }
 
-    // ── Utilities ─────────────────────────────────────────────────────────────
-
     private void SetStatus(string text)
     {
-        if (statusLabel != null)
-            statusLabel.text = text;
+        if (statusLabel != null) statusLabel.text = text;
     }
 
     private void Cleanup()
     {
+        ClearDebugGrid();
         udpCancellation?.Cancel();
         udpCancellation?.Dispose();
         udpCancellation = null;
-
         udpClient?.Close();
         udpClient?.Dispose();
         udpClient = null;
-
-        try
-        {
-            if (calibrationProcess != null && !calibrationProcess.HasExited)
-                calibrationProcess.Kill();
-        }
-        catch { /* process already gone */ }
-
+        try { if (calibrationProcess != null && !calibrationProcess.HasExited) calibrationProcess.Kill(); }
+        catch { }
         calibrationProcess?.Dispose();
         calibrationProcess = null;
     }
 
-    private void OnDestroy()
-    {
-        if (Instance == this) Instance = null;
-        Cleanup();
-    }
+    private void OnDestroy()    { if (Instance == this) Instance = null; Cleanup(); }
     private void OnApplicationQuit() => Cleanup();
 }
