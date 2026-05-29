@@ -578,10 +578,22 @@ public class GazeFollowerRunner : MonoBehaviour
 
         void LaunchCameraCheckProcess()
         {
-            // Tear down any previous instance
+            // Tear down any previous instance — send graceful QUIT first so
+            // cap.release() runs in Python before we force-kill as fallback.
             try { camCts?.Cancel(); } catch { }
-            try { if (cameraCheckProcess != null && !cameraCheckProcess.HasExited) cameraCheckProcess.Kill(); } catch { }
+            if (cameraCheckProcess != null && !cameraCheckProcess.HasExited)
+            {
+                try
+                {
+                    cameraCheckProcess.StandardInput.WriteLine("QUIT");
+                    cameraCheckProcess.StandardInput.Flush();
+                    cameraCheckProcess.WaitForExit(800);   // up to 800 ms for clean exit
+                }
+                catch { }
+                try { if (!cameraCheckProcess.HasExited) cameraCheckProcess.Kill(); } catch { }
+            }
             cameraCheckProcess?.Dispose();
+            cameraCheckProcess = null;
             camUdp?.Close();
             camUdp?.Dispose();
 
@@ -624,6 +636,7 @@ public class GazeFollowerRunner : MonoBehaviour
                 UseShellExecute        = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError  = true,
+                RedirectStandardInput  = true,   // Required for graceful QUIT signal
                 CreateNoWindow         = true,
             };
 
@@ -734,16 +747,67 @@ public class GazeFollowerRunner : MonoBehaviour
             yield return null;
         }
 
-        // ── User clicked Continue — clean up camera-check resources ───────────
+        // ── User clicked Continue — graceful camera-check shutdown ──────────
+        //
+        // PROBLEM THIS SOLVES:
+        //   Process.Kill() on Windows sends TerminateProcess which bypasses all
+        //   Python finally/cleanup blocks.  cap.release() never runs, the webcam
+        //   driver stays locked, and the calibration process that opens the same
+        //   camera immediately after gets no frames (or fails to open entirely).
+        //
+        // SOLUTION:
+        //   1. Cancel the UDP receive loop first (no more packets needed).
+        //   2. Write "QUIT\n" to the process's stdin — the Python stdin-watcher
+        //      thread sets stop_event, the camera loop exits, cap.release() runs.
+        //   3. Wait up to 1.5 s for the process to exit cleanly.
+        //   4. If it hasn't exited, force-kill as a fallback.
+        //   5. Wait an additional 2 s for the DirectShow/MF driver to fully
+        //      release the camera handle at the OS level before starting
+        //      calibration.
+
+        // Step 1: stop receiving UDP packets
         try { camCts?.Cancel(); } catch { }
         camCts?.Dispose();
         camUdp?.Close();
         camUdp?.Dispose();
-        try { if (cameraCheckProcess != null && !cameraCheckProcess.HasExited) cameraCheckProcess.Kill(); } catch { }
+
+        // Step 2: send graceful QUIT via stdin
+        if (cameraCheckProcess != null && !cameraCheckProcess.HasExited)
+        {
+            try
+            {
+                cameraCheckProcess.StandardInput.WriteLine("QUIT");
+                cameraCheckProcess.StandardInput.Flush();
+            }
+            catch (Exception ex)
+            {
+                RobitLogger.LogWarning($"[GazeFollowerRunner] Could not write QUIT to camera-check stdin: {ex.Message}");
+            }
+        }
+
+        // Step 3+4: wait up to 1.5 s for clean exit, then force-kill
+        float waited = 0f;
+        while (waited < 1.5f && cameraCheckProcess != null && !cameraCheckProcess.HasExited)
+        {
+            yield return null;
+            waited += Time.unscaledDeltaTime;
+        }
+        if (cameraCheckProcess != null && !cameraCheckProcess.HasExited)
+        {
+            RobitLogger.LogWarning("[GazeFollowerRunner] Camera-check process did not exit cleanly — force killing.");
+            try { cameraCheckProcess.Kill(); } catch { }
+        }
         cameraCheckProcess?.Dispose();
+        cameraCheckProcess = null;
 
         cameraPanel.RemoveFromHierarchy();
         UnityEngine.Object.Destroy(previewTexture);
+
+        // Step 5: wait for the OS to release the camera driver handle.
+        // 2 seconds is conservative but reliable for DirectShow on Windows.
+        if (statusLabel != null) statusLabel.text = "Releasing camera…";
+        RobitLogger.Log("[GazeFollowerRunner] Waiting for camera to be released before starting calibration.");
+        yield return new WaitForSecondsRealtime(2.0f);
 
         // Hand off to calibration
         controller.StartCalibration(activeProfileId);
