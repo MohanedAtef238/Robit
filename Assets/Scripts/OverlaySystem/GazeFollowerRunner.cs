@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
+using UnityEngine.InputSystem;
 
 [DefaultExecutionOrder(-900)]
 public class GazeFollowerRunner : MonoBehaviour
@@ -79,15 +80,15 @@ public class GazeFollowerRunner : MonoBehaviour
             latestGaze = gazePos;
         }
 
-        if (simulateGazeWithArrowKeys && (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.DownArrow)))
+        if (simulateGazeWithArrowKeys && Keyboard.current != null && (Keyboard.current.leftArrowKey.isPressed || Keyboard.current.rightArrowKey.isPressed || Keyboard.current.upArrowKey.isPressed || Keyboard.current.downArrowKey.isPressed))
         {
             // Simulate gaze moving via arrow keys directly in Unity
             Vector2 currentGaze = VirtualInputState.Instance.GazePosition;
             float speed = 1000f * Time.deltaTime;
-            if (Input.GetKey(KeyCode.LeftArrow)) currentGaze.x -= speed;
-            if (Input.GetKey(KeyCode.RightArrow)) currentGaze.x += speed;
-            if (Input.GetKey(KeyCode.UpArrow)) currentGaze.y -= speed;
-            if (Input.GetKey(KeyCode.DownArrow)) currentGaze.y += speed;
+            if (Keyboard.current.leftArrowKey.isPressed) currentGaze.x -= speed;
+            if (Keyboard.current.rightArrowKey.isPressed) currentGaze.x += speed;
+            if (Keyboard.current.upArrowKey.isPressed) currentGaze.y -= speed;
+            if (Keyboard.current.downArrowKey.isPressed) currentGaze.y += speed;
             currentGaze.x = Mathf.Clamp(currentGaze.x, 0, Screen.width);
             currentGaze.y = Mathf.Clamp(currentGaze.y, 0, Screen.height);
             VirtualInputState.Instance.SetGazePosition(currentGaze);

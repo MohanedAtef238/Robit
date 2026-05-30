@@ -1,0 +1,88 @@
+.prompt-overlay {
+    position: absolute;
+    left: 0; right: 0; top: 0; bottom: 0;
+    background-color: rgba(26, 36, 28, 0.92);
+    align-items: center;
+    justify-content: center;
+}
+.prompt-panel {
+    background-color: rgb(244, 241, 234);
+    border-radius: 24px;
+    padding: 40px;
+    width: 450px;
+    border-width: 4px;
+    border-color: rgb(140, 159, 115);
+    align-items: stretch;
+}
+.prompt-title {
+    font-size: 26px;
+    color: rgb(59, 74, 52);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    margin-bottom: 28px;
+}
+
+/* The TextField container */
+.prompt-input {
+    margin-bottom: 28px;
+    height: 56px;
+}
+
+/* The actual input box inside the TextField */
+.prompt-input > .unity-text-field__input {
+    border-radius: 12px;
+    border-width: 2px;
+    border-color: rgb(211, 206, 188);
+    background-color: rgb(255, 255, 255);
+    padding-left: 14px;
+    font-size: 20px;
+    color: rgb(46, 56, 42);
+    height: 100%;
+    margin: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.prompt-input > .unity-text-field__input:focus {
+    border-color: rgb(106, 138, 75);
+    border-width: 3px;
+}
+
+.btn-container {
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.btn {
+    flex-grow: 1;
+    height: 52px;
+    border-radius: 16px;
+    font-size: 18px;
+    -unity-font-style: bold;
+    border-width: 0;
+    transition-duration: 0.1s;
+}
+.btn:hover {
+    scale: 1.03;
+}
+.btn:active {
+    scale: 0.97;
+}
+
+.btn-create {
+    background-color: rgb(106, 138, 75);
+    color: rgb(255, 255, 255);
+    margin-right: 10px;
+}
+.btn-create:hover {
+    background-color: rgb(126, 158, 95);
+}
+
+.btn-cancel {
+    background-color: rgb(211, 206, 188);
+    color: rgb(74, 70, 59);
+    margin-left: 10px;
+}
+.btn-cancel:hover {
+    background-color: rgb(221, 216, 198);
+}

@@ -2,7 +2,7 @@ using System.Collections;
 using System.Diagnostics;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
+using UnityEngine.UIElements;
 using TMPro;
 
 /// <summary>
@@ -22,8 +22,9 @@ public class StartingPageController : MonoBehaviour
     [Header("Name Prompt")]
     public GameObject namePromptPanel;
     public TMP_InputField nameInput;
-    public Button btnCreate;
-    public Button btnCancel;
+    public UnityEngine.UI.Button btnCreate;
+    public UnityEngine.UI.Button btnCancel;
+    public UnityEngine.UI.Image bgImageRef; // kept explicit to avoid future ambiguity
 
     [Header("Intro Animation")]
     public float introDelay = 0.3f;           // pause before animation starts
@@ -31,6 +32,10 @@ public class StartingPageController : MonoBehaviour
 
     private ProfileData _data;
     private GameObject loadingOverlay;
+
+    // UI Toolkit Prompt
+    private UIDocument _modernPromptDoc;
+    private TextField _modernNameInput;
 
     // ── Lifecycle ───────────────────────────────────────────────────────────
 
@@ -68,7 +73,7 @@ public class StartingPageController : MonoBehaviour
                 rtBg.anchorMax = Vector2.one;
                 rtBg.offsetMin = Vector2.zero;
                 rtBg.offsetMax = Vector2.zero;
-                Image bgImage = bg.AddComponent<Image>();
+                UnityEngine.UI.Image bgImage = bg.AddComponent<UnityEngine.UI.Image>();
                 bgImage.color = new Color(0.04f, 0.05f, 0.08f, 1f); // Dark background
 
                 // Spinner
@@ -208,21 +213,47 @@ public class StartingPageController : MonoBehaviour
 
     // ── Name prompt ──────────────────────────────────────────────────────────
 
+    private void SetupModernPromptIfMissing()
+    {
+        if (_modernPromptDoc == null)
+        {
+            _modernPromptDoc = gameObject.AddComponent<UIDocument>();
+            _modernPromptDoc.visualTreeAsset = Resources.Load<VisualTreeAsset>("ModernNamePrompt");
+            _modernPromptDoc.panelSettings   = Resources.Load<PanelSettings>("New Panel Settings");
+            _modernPromptDoc.sortingOrder = 100;
+            
+            var root = _modernPromptDoc.rootVisualElement;
+            root.style.display = DisplayStyle.None;
+            
+            _modernNameInput = root.Q<TextField>("input-name");
+            var btnCreate = root.Q<Button>("btn-create");
+            var btnCancel = root.Q<Button>("btn-cancel");
+            
+            if (btnCreate != null) btnCreate.clicked += OnCreateConfirmed;
+            if (btnCancel != null) btnCancel.clicked += HidePrompt;
+        }
+    }
+
     private void ShowPrompt()
     {
-        nameInput.text = string.Empty;
-        namePromptPanel.SetActive(true);
+        SetupModernPromptIfMissing();
+        if (_modernNameInput != null) _modernNameInput.value = string.Empty;
+        if (_modernPromptDoc != null) _modernPromptDoc.rootVisualElement.style.display = DisplayStyle.Flex;
+        
+        // Hide the old uGUI one just in case
+        if (namePromptPanel != null) namePromptPanel.SetActive(false);
         OpenOnScreenKeyboard();
     }
 
     private void HidePrompt()
     {
-        namePromptPanel.SetActive(false);
+        if (_modernPromptDoc != null) _modernPromptDoc.rootVisualElement.style.display = DisplayStyle.None;
+        if (namePromptPanel != null) namePromptPanel.SetActive(false);
     }
 
     private void OnCreateConfirmed()
     {
-        string trimmed = nameInput.text.Trim();
+        string trimmed = _modernNameInput != null ? _modernNameInput.value.Trim() : string.Empty;
         if (string.IsNullOrEmpty(trimmed)) trimmed = "Profile " + (_data.profiles.Count + 1);
 
         _data.profiles.Add(ProfileManager.CreateProfile(trimmed, _data.profiles));
