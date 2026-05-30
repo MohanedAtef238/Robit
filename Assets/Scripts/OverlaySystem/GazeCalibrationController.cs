@@ -397,6 +397,21 @@ public class GazeCalibrationController : MonoBehaviour
             if (pointLabel != null)
                 pointLabel.text = "All points collected";
 
+            // Mark the profile as calibrated in profiles.json now that the
+            // SVR model files have been confirmed saved on the Python side.
+            if (!string.IsNullOrEmpty(calibrationProfileId))
+            {
+                var data    = ProfileManager.LoadProfiles();
+                var profile = data.profiles.Find(p => p.id == calibrationProfileId);
+                if (profile != null)
+                {
+                    profile.isCalibrated        = true;
+                    profile.lastCalibrationDate = DateTime.Now.ToString("MMM d, yyyy h:mm tt");
+                    ProfileManager.SaveProfiles(data);
+                    RobitLogger.Log($"[GazeCalib] Profile '{profile.name}' marked as calibrated.");
+                }
+            }
+
             StartCoroutine(FinishAndReturn(2f));
         }
 

@@ -13,16 +13,27 @@
     overflow: hidden;
 }
 
-/* ─── Prompt panel (centred card) ───────────────────────────────────────── */
+/* ─── Prompt panel — centred horizontally in the dead zone between rows ────── */
+/*                                                                               */
+/*  Calibration dot Y layout (normalised):                                       */
+/*    Row 1 (top):        Y = 4.6%                                              */
+/*    Row 2 (inner-top):  Y = 27.3%   ← last row above the gap                 */
+/*    *** DEAD ZONE: 27.3% – 50% — no dots exist here ***                      */
+/*    Row 3 (mid/center): Y = 50%                                               */
+/*    Row 4 (inner-bot):  Y = 72.6%                                             */
+/*    Row 5 (bottom):     Y = 95.4%                                             */
+/*                                                                               */
+/*  top: 30% lands ~2.7 % below the inner-top row bottom edge on any screen:   */
+/*    1920×1080 → 324 px from top  (inner-top dot bottom ≈ 317 px) → +7 px     */
+/*    2560×1440 → 432 px from top  (inner-top dot bottom ≈ 416 px) → +16 px    */
+/*  It is also ~20 % above the center dot, so it never interferes with it.      */
 .prompt-panel {
     position: absolute;
     left: 0;
     right: 0;
-    top: 0;
-    bottom: 0;
+    top: 30%;
     align-items: center;
-    justify-content: center;
-    /* pointer-events: none so the dot behind it is still the focus */
+    justify-content: flex-start;
 }
 
 .prompt-card {

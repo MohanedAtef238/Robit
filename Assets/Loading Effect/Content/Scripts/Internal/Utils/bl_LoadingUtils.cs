@@ -1,11 +1,11 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public static class bl_LoadingUtils
 {
 
     public static bl_LoadingEffect GetLoading(int id)
     {
-        bl_LoadingEffect[] all = GameObject.FindObjectsOfType<bl_LoadingEffect>();
+        bl_LoadingEffect[] all = GameObject.FindObjectsByType<bl_LoadingEffect>(FindObjectsSortMode.None);
         foreach(bl_LoadingEffect l in all)
         {
             if(l.ID == id)

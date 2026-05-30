@@ -28,7 +28,6 @@ public class GazeFollowerRunner : MonoBehaviour
 
     [Header("Multimodal Setup")]
     [SerializeField] private string relativeExePath = @"Multimodal_UDP/unity_gaze_bridge.exe";
-    [SerializeField] private bool autoStartOnAwake = true;
     [SerializeField] private bool promptForCalibrationChoice = true;
     
     [Header("Debug")]
@@ -80,7 +79,20 @@ public class GazeFollowerRunner : MonoBehaviour
             latestGaze = gazePos;
         }
 
-        if (latestGaze.HasValue)
+        if (simulateGazeWithArrowKeys && (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.DownArrow)))
+        {
+            // Simulate gaze moving via arrow keys directly in Unity
+            Vector2 currentGaze = VirtualInputState.Instance.GazePosition;
+            float speed = 1000f * Time.deltaTime;
+            if (Input.GetKey(KeyCode.LeftArrow)) currentGaze.x -= speed;
+            if (Input.GetKey(KeyCode.RightArrow)) currentGaze.x += speed;
+            if (Input.GetKey(KeyCode.UpArrow)) currentGaze.y -= speed;
+            if (Input.GetKey(KeyCode.DownArrow)) currentGaze.y += speed;
+            currentGaze.x = Mathf.Clamp(currentGaze.x, 0, Screen.width);
+            currentGaze.y = Mathf.Clamp(currentGaze.y, 0, Screen.height);
+            VirtualInputState.Instance.SetGazePosition(currentGaze);
+        }
+        else if (latestGaze.HasValue)
         {
             VirtualInputState.Instance.SetGazePosition(latestGaze.Value);
         }
@@ -187,10 +199,6 @@ public class GazeFollowerRunner : MonoBehaviour
             _ = Task.Run(() => ReceiveUdpLoop(udpCancellation.Token), udpCancellation.Token);
 
             string baseArgs = $"--port {assignedPort} --mode {ToModeArgument(launchMode)}";
-            if (simulateGazeWithArrowKeys)
-            {
-                baseArgs += " --keyboard";
-            }
             if (!string.IsNullOrEmpty(activeProfileId))
             {
                 baseArgs += $" --profile-id \"{activeProfileId}\"";
@@ -212,9 +220,9 @@ public class GazeFollowerRunner : MonoBehaviour
             gazeProcess.ErrorDataReceived += OnErrorDataReceived;
             gazeProcess.Exited += OnProcessExited;
 
-            // gazeProcess.Start();
-            // gazeProcess.BeginOutputReadLine();
-            // gazeProcess.BeginErrorReadLine();
+            gazeProcess.Start();
+            gazeProcess.BeginOutputReadLine();
+            gazeProcess.BeginErrorReadLine();
             RobitLogger.Log($"[GazeFollowerRunner] Started gaze bridge executable on dynamic port {assignedPort}.");
         }
         catch (Exception ex)

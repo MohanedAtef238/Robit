@@ -19,7 +19,6 @@ public class EmgPredictionRunner : MonoBehaviour
     [Header("Multimodal Setup")]
     [SerializeField] private string relativeExePath = @"Multimodal_UDP/unity_emg_bridge.exe";
     [SerializeField] private string comPort = "COM4";
-    [SerializeField] private bool autoStartOnAwake = true;
 
     public string CurrentSensorStatus { get; private set; } = "UNKNOWN";
 
