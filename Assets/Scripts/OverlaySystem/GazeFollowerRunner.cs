@@ -14,8 +14,11 @@ using UnityEngine.UIElements;
 using UnityEngine.InputSystem;
 
 [DefaultExecutionOrder(-900)]
-public class GazeFollowerRunner : MonoBehaviour
+public class GazeFollowerRunner : BaseUdpProcessRunner<GazeFollowerRunner>
 {
+    // ── LogPrefix (required by BaseProcessRunner) ─────────────────────────────
+    protected override string LogPrefix => "[GazeFollowerRunner]";
+
     private enum GazeLaunchMode
     {
         Auto,
@@ -23,22 +26,18 @@ public class GazeFollowerRunner : MonoBehaviour
         UseSaved
     }
 
-    public static GazeFollowerRunner Instance { get; private set; }
-
     private const string CalibrationSceneName = "GazeCalibrationScene";
 
     [Header("Multimodal Setup")]
     [SerializeField] private string relativeExePath = @"Multimodal_UDP/unity_gaze_bridge.exe";
     [SerializeField] private bool promptForCalibrationChoice = true;
-    
+
     [Header("Debug")]
     [SerializeField] private bool simulateGazeWithArrowKeys = true;
 
     private Process gazeProcess;
     private Process cameraCheckProcess;
     private Process statusProbeProcess;
-    private UdpClient udpClient;
-    private CancellationTokenSource udpCancellation;
 
     private VisualElement startupPromptRoot;
     private bool startupFlowRunning;
@@ -56,19 +55,10 @@ public class GazeFollowerRunner : MonoBehaviour
         go.AddComponent<GazeFollowerRunner>();
     }
 
-    private void Awake()
+    // To trigger the startup flow, call TriggerStartupFlow(profileId) externally.
+    protected override void OnAfterAwake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
-        Instance = this;
-        DontDestroyOnLoad(gameObject);
-
-        // if (autoStartOnAwake)
-        //     StartCoroutine(BeginStartupFlow());
+        SharedCameraCapture.EnsureSpawned();
     }
 
     private void Update()
@@ -106,26 +96,22 @@ public class GazeFollowerRunner : MonoBehaviour
 
     public void StopGazeFollower()
     {
+        // UDP socket and cancellation token are managed by BaseUdpProcessRunner.
         CleanupUdp();
 
-        void TryKill(Process p)
-        {
-            try
-            {
-                if (p != null && !p.HasExited) p.Kill();
-            }
-            catch (Exception ex)
-            {
-                RobitLogger.LogWarning($"[GazeFollowerRunner] Failed to stop process: {ex.Message}");
-            }
-        }
+        // gazeProcess was started via StartManagedProcess() so needs full handler
+        // unhook + dispose via TerminateProcess.
+        TerminateProcess(ref gazeProcess);
 
-        TryKill(gazeProcess);
-        TryKill(cameraCheckProcess);
-        TryKill(statusProbeProcess);
-
-        CleanupProcessHandlers();
+        // cameraCheckProcess and statusProbeProcess were NOT started via
+        // StartManagedProcess() and have no base-class handlers hooked, so
+        // KillAndDispose (kill-only, no unhook) is the correct call.
+        KillAndDispose(ref cameraCheckProcess);
+        KillAndDispose(ref statusProbeProcess);
     }
+
+    /// <summary>Required by BaseProcessRunner — called on quit and destroy.</summary>
+    public override void StopRunner() => StopGazeFollower();
 
     private string GetResolvedExePath()
     {
@@ -141,6 +127,18 @@ public class GazeFollowerRunner : MonoBehaviour
             yield break;
 
         startupFlowRunning = true;
+
+        // Wait one frame so all Awake() calls across the scene have completed,
+        // then ensure Unity owns the webcam before any Python EXE is spawned.
+        yield return null;
+        // Camera capture is now completely self-managed via its own Singleton.
+
+        // Wait until SharedCameraCapture has written its first real frame into the MMF.
+        // Without this, Python opens the MMF, sees frameId == 0, and starts a 20-second
+        // frame-wait timeout even though the camera is still warming up.
+        yield return StartCoroutine(WaitForCameraReady());
+        if (!startupFlowRunning)   // WaitForCameraReady sets this false on timeout
+            yield break;
 
         if (!promptForCalibrationChoice)
         {
@@ -175,68 +173,87 @@ public class GazeFollowerRunner : MonoBehaviour
         startupFlowRunning = false;
     }
 
+    /// <summary>
+    /// Waits until SharedCameraCapture.IsReady is true (first webcam frame written to MMF),
+    /// up to a 15-second hard cap. Sets startupFlowRunning = false and logs an error on timeout.
+    /// </summary>
+    private IEnumerator WaitForCameraReady()
+    {
+        var scc = FindFirstObjectByType<SharedCameraCapture>();
+        if (scc == null)
+            yield break;   // no SharedCameraCapture in scene — skip wait
+
+        float waitStart = Time.unscaledTime;
+        while (!scc.IsReady)
+        {
+            if (Time.unscaledTime - waitStart > 15f)
+            {
+                RobitLogger.LogError(
+                    "[GazeFollowerRunner] Webcam never delivered a frame after 15 s. " +
+                    "Check that a camera is connected and not in use by another application.");
+                startupFlowRunning = false;
+                yield break;
+            }
+            yield return null;
+        }
+        RobitLogger.Log("[GazeFollowerRunner] SharedCameraCapture is ready — proceeding to spawn EXEs.");
+    }
+
+
     private void StartGazeFollower(GazeLaunchMode launchMode)
     {
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
         if (gazeProcess != null && !gazeProcess.HasExited)
         {
-            RobitLogger.Log("[GazeFollowerRunner] GazeFollower is already running.");
+            RobitLogger.Log($"{LogPrefix} GazeFollower is already running.");
             return;
         }
+
+        // Guarantee the shared camera is running before Python starts reading from the MMF.
+        // BeginStartupFlow already waits for IsReady; this path (direct start, no prompt)
+        // delegates the same wait to a coroutine so we don't block the caller.
+        // Camera capture is now completely self-managed via its own Singleton.
+        StartCoroutine(WaitForCameraReadyThenStart(launchMode));
+    }
+
+    private IEnumerator WaitForCameraReadyThenStart(GazeLaunchMode launchMode)
+    {
+        yield return StartCoroutine(WaitForCameraReady());
+        if (!startupFlowRunning && launchMode != GazeLaunchMode.UseSaved)
+            yield break;   // WaitForCameraReady timed out
 
         string exePath = GetResolvedExePath();
         if (!File.Exists(exePath))
         {
-            RobitLogger.LogWarning($"[GazeFollowerRunner] Executable not found at {exePath}.");
-            return;
+            RobitLogger.LogWarning($"{LogPrefix} Executable not found at {exePath}.");
+            yield break;
         }
 
         try
         {
-            udpClient = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
-            int assignedPort = ((IPEndPoint)udpClient.Client.LocalEndPoint).Port;
-
-            udpCancellation = new CancellationTokenSource();
-            _ = Task.Run(() => ReceiveUdpLoop(udpCancellation.Token), udpCancellation.Token);
+            int assignedPort = SetupUdpAndGetPort();
 
             string baseArgs = $"--port {assignedPort} --mode {ToModeArgument(launchMode)}";
             if (!string.IsNullOrEmpty(activeProfileId))
-            {
                 baseArgs += $" --profile-id \"{activeProfileId}\"";
-            }
 
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = exePath,
-                Arguments = baseArgs,
-                WorkingDirectory = Path.GetDirectoryName(exePath),
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true,
-            };
+            var psi = BuildProcessStartInfo(exePath, baseArgs);
+            gazeProcess = StartManagedProcess(psi);
 
-            gazeProcess = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
-            gazeProcess.OutputDataReceived += OnOutputDataReceived;
-            gazeProcess.ErrorDataReceived += OnErrorDataReceived;
-            gazeProcess.Exited += OnProcessExited;
-
-            gazeProcess.Start();
-            gazeProcess.BeginOutputReadLine();
-            gazeProcess.BeginErrorReadLine();
-            RobitLogger.Log($"[GazeFollowerRunner] Started gaze bridge executable on dynamic port {assignedPort}.");
+            RobitLogger.Log($"{LogPrefix} Started gaze bridge on dynamic port {assignedPort}.");
         }
         catch (Exception ex)
         {
-            RobitLogger.LogError($"[GazeFollowerRunner] Failed to start gaze process: {ex.Message}");
+            RobitLogger.LogError($"{LogPrefix} Failed to start gaze process: {ex.Message}");
             CleanupUdp();
         }
 #else
-        RobitLogger.LogWarning("[GazeFollowerRunner] This runner currently supports Windows builds only.");
+        RobitLogger.LogWarning($"{LogPrefix} This runner currently supports Windows builds only.");
+        yield break;
 #endif
     }
 
-    private async Task ReceiveUdpLoop(CancellationToken token)
+    protected override async Task ReceiveUdpLoop(CancellationToken token)
     {
         while (!token.IsCancellationRequested)
         {
@@ -259,27 +276,12 @@ public class GazeFollowerRunner : MonoBehaviour
             }
             catch (Exception ex)
             {
-                RobitLogger.LogWarning($"[GazeFollowerRunner] UDP Receive Error: {ex.Message}");
+                RobitLogger.LogWarning($"{LogPrefix} UDP Receive Error: {ex.Message}");
             }
         }
     }
 
-    private void CleanupUdp()
-    {
-        if (udpCancellation != null)
-        {
-            udpCancellation.Cancel();
-            udpCancellation.Dispose();
-            udpCancellation = null;
-        }
-
-        if (udpClient != null)
-        {
-            udpClient.Close();
-            udpClient.Dispose();
-            udpClient = null;
-        }
-    }
+    // CleanupUdp() is inherited from BaseUdpProcessRunner — no local copy needed.
 
     private Task<(bool hasSaved, bool statusKnown)> QuerySavedCalibrationStatusAsync(string exePath, string profileId)
     {
@@ -315,7 +317,12 @@ public class GazeFollowerRunner : MonoBehaviour
                 statusProbeProcess.WaitForExit(15000);
 
                 if (!string.IsNullOrWhiteSpace(stderr))
-                    RobitLogger.LogWarning("[GazeFollowerRunner] Calibration status probe stderr:\n" + stderr.Trim());
+                {
+                    // Filter out harmless MediaPipe initialization info that prints to stderr
+                    string filteredStderr = stderr.Replace("INFO: Created TensorFlow Lite XNNPACK delegate for CPU.", "").Trim();
+                    if (!string.IsNullOrWhiteSpace(filteredStderr))
+                        RobitLogger.LogWarning("[GazeFollowerRunner] Calibration status probe stderr:\n" + filteredStderr);
+                }
 
                 foreach (string rawLine in stdout.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
                 {
@@ -452,21 +459,22 @@ public class GazeFollowerRunner : MonoBehaviour
         };
     }
 
-    private void OnApplicationQuit()
-    {
-        StopGazeFollower();
-    }
+    // OnApplicationQuit() and OnDestroy() (Instance cleanup + StopRunner()) are
+    // inherited from BaseProcessRunner<T>.
+    // OnErrorDataReceived() and OnProcessExited() use the base defaults.
 
-    private void OnDestroy()
+    protected override void OnDestroy()
     {
-        if (Instance == this)
-            Instance = null;
-
+        // Remove the UI prompt before the base clears Instance and calls StopRunner.
         RemoveStartupPrompt();
-        StopGazeFollower();
+        base.OnDestroy();
     }
 
-    private void OnOutputDataReceived(object sender, DataReceivedEventArgs e)
+    /// <summary>
+    /// Intercepts CALIBRATION_DONE before delegating to the base log handler.
+    /// All other stdout lines are handled identically to the base implementation.
+    /// </summary>
+    protected override void OnOutputDataReceived(object sender, DataReceivedEventArgs e)
     {
         if (string.IsNullOrWhiteSpace(e.Data))
             return;
@@ -475,36 +483,11 @@ public class GazeFollowerRunner : MonoBehaviour
 
         if (string.Equals(line, "CALIBRATION_DONE", StringComparison.Ordinal))
         {
-            RobitLogger.Log("[GazeFollowerRunner] Calibration completed. Gaze is now driving mouse movement.");
+            RobitLogger.Log($"{LogPrefix} Calibration completed. Gaze is now driving mouse movement.");
             return;
         }
 
-        RobitLogger.Log($"[GazeFollowerRunner][PY] {line}");
-    }
-
-    private void OnErrorDataReceived(object sender, DataReceivedEventArgs e)
-    {
-        if (string.IsNullOrWhiteSpace(e.Data))
-            return;
-
-        RobitLogger.LogWarning($"[GazeFollowerRunner][PY-ERR] {e.Data}");
-    }
-
-    private void OnProcessExited(object sender, EventArgs e)
-    {
-        RobitLogger.Log("[GazeFollowerRunner] Gaze process exited.");
-    }
-
-    private void CleanupProcessHandlers()
-    {
-        if (gazeProcess == null)
-            return;
-
-        gazeProcess.OutputDataReceived -= OnOutputDataReceived;
-        gazeProcess.ErrorDataReceived -= OnErrorDataReceived;
-        gazeProcess.Exited -= OnProcessExited;
-        gazeProcess.Dispose();
-        gazeProcess = null;
+        base.OnOutputDataReceived(sender, e);
     }
 
     /// <summary>
@@ -537,8 +520,6 @@ public class GazeFollowerRunner : MonoBehaviour
     /// </summary>
     private IEnumerator RunCameraCheckInCalibrationScene(GazeCalibrationController controller)
     {
-        string exePath = GetResolvedExePath();
-
         var calibDoc = controller.GetComponent<UIDocument>();
         if (calibDoc == null || calibDoc.rootVisualElement == null)
         {
@@ -574,177 +555,55 @@ public class GazeFollowerRunner : MonoBehaviour
         var retryBtn       = cameraPanel.Q<Button>("camera-retry-btn");
         var continueBtn    = cameraPanel.Q<Button>("camera-continue-btn");
 
-        // Texture updated every frame from incoming JPEG bytes
-        Texture2D previewTexture = new Texture2D(2, 2, TextureFormat.RGB24, false);
-
         bool selectionMade = false;
-        bool cameraOk      = false;
-
-        // Mutable camera-check process state (replaced on Retry)
-        UdpClient                  camUdp     = null;
-        CancellationTokenSource    camCts     = null;
-        ConcurrentQueue<byte[]>    camQueue   = new ConcurrentQueue<byte[]>();
-
-        void LaunchCameraCheckProcess()
-        {
-            // Tear down any previous instance — send graceful QUIT first so
-            // cap.release() runs in Python before we force-kill as fallback.
-            try { camCts?.Cancel(); } catch { }
-            if (cameraCheckProcess != null && !cameraCheckProcess.HasExited)
-            {
-                try
-                {
-                    cameraCheckProcess.StandardInput.WriteLine("QUIT");
-                    cameraCheckProcess.StandardInput.Flush();
-                    cameraCheckProcess.WaitForExit(800);   // up to 800 ms for clean exit
-                }
-                catch { }
-                try { if (!cameraCheckProcess.HasExited) cameraCheckProcess.Kill(); } catch { }
-            }
-            cameraCheckProcess?.Dispose();
-            cameraCheckProcess = null;
-            camUdp?.Close();
-            camUdp?.Dispose();
-
-            // Drain stale packets
-            while (camQueue.TryDequeue(out _)) { }
-
-            cameraOk = false;
-            if (statusLabel  != null) statusLabel.text                    = "Starting camera\u2026";
-            if (continueBtn  != null) 
-            {
-                continueBtn.SetEnabled(false);
-                continueBtn.style.opacity = 0.5f;
-            }
-            if (retryBtn     != null) retryBtn.style.display               = DisplayStyle.None;
-            if (errorLabel   != null) errorLabel.style.display             = DisplayStyle.None;
-            if (previewElement != null)
-                previewElement.style.backgroundImage = StyleKeyword.None;
-
-            if (!File.Exists(exePath))
-            {
-                if (statusLabel != null) statusLabel.text = "Executable Missing";
-                if (errorLabel != null)
-                {
-                    errorLabel.text = $"Bridge not found at:\n{exePath}";
-                    errorLabel.style.display = DisplayStyle.Flex;
-                }
-                if (retryBtn != null) retryBtn.style.display = DisplayStyle.Flex;
-                return;
-            }
-
-            camUdp = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
-            int camPort = ((IPEndPoint)camUdp.Client.LocalEndPoint).Port;
-            camCts = new CancellationTokenSource();
-
-            var psi = new ProcessStartInfo
-            {
-                FileName               = exePath,
-                Arguments              = $"--mode camera-check --port {camPort}",
-                WorkingDirectory       = Path.GetDirectoryName(exePath),
-                UseShellExecute        = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError  = true,
-                RedirectStandardInput  = true,   // Required for graceful QUIT signal
-                CreateNoWindow         = true,
-            };
-
-            try 
-            {
-                cameraCheckProcess = Process.Start(psi);
-            }
-            catch (System.ComponentModel.Win32Exception ex)
-            {
-                if (statusLabel != null) statusLabel.text = "Launch Failed";
-                if (errorLabel != null)
-                {
-                    errorLabel.text = $"Failed to start bridge:\n{ex.Message}";
-                    errorLabel.style.display = DisplayStyle.Flex;
-                }
-                if (retryBtn != null) retryBtn.style.display = DisplayStyle.Flex;
-                return;
-            }
-
-            // Background UDP receive loop
-            var capturedUdp = camUdp;
-            var capturedCts = camCts;
-            _ = Task.Run(async () =>
-            {
-                while (!capturedCts.IsCancellationRequested)
-                {
-                    try
-                    {
-                        var res = await capturedUdp.ReceiveAsync();
-                        camQueue.Enqueue(res.Buffer);
-                    }
-                    catch { break; }
-                }
-            }, capturedCts.Token);
-        }
-
-        // Wire up buttons before first launch
-        if (retryBtn != null)
-            retryBtn.clicked += LaunchCameraCheckProcess;
 
         if (continueBtn != null)
             continueBtn.clicked += () => selectionMade = true;
 
-        // Set initial UI state
+        if (retryBtn    != null) retryBtn.style.display    = DisplayStyle.None;
+        if (errorLabel  != null) errorLabel.style.display  = DisplayStyle.None;
+        
+        if (statusLabel != null) statusLabel.text = "Waiting for camera...";
         if (continueBtn != null) 
         {
             continueBtn.SetEnabled(false);
             continueBtn.style.opacity = 0.5f;
         }
-        if (retryBtn    != null) retryBtn.style.display    = DisplayStyle.None;
-        if (errorLabel  != null) errorLabel.style.display  = DisplayStyle.None;
 
-        LaunchCameraCheckProcess();
+        SharedCameraCapture scc = SharedCameraCapture.Instance;
 
         // ── Main coroutine loop ───────────────────────────────────────────────
         while (!selectionMade)
         {
-            while (camQueue.TryDequeue(out byte[] packet))
+            try
             {
-                // JPEG always starts with 0xFF 0xD8; text messages start with 'C' (CAM_)
-                if (packet.Length >= 2 && packet[0] == 0xFF && packet[1] == 0xD8)
+                if (scc != null && scc.IsReady)
                 {
-                    // Live JPEG frame — only render after camera confirmed OK
-                    if (cameraOk && previewElement != null)
+                    if (statusLabel != null && statusLabel.text != "Camera ready \u2713")
                     {
-                        previewTexture.LoadImage(packet);
-                        previewTexture.Apply();
-                        previewElement.style.backgroundImage =
-                            new StyleBackground(Background.FromTexture2D(previewTexture));
-                    }
-                }
-                else
-                {
-                    string text = Encoding.UTF8.GetString(packet).Trim();
-
-                    if (text == "CAM_OK")
-                    {
-                        cameraOk = true;
-                        if (statusLabel  != null) statusLabel.text            = "Camera ready \u2713";
-                        if (continueBtn  != null) 
+                        statusLabel.text = "Camera ready \u2713";
+                        if (continueBtn != null) 
                         {
                             continueBtn.SetEnabled(true);
                             continueBtn.style.opacity = 1f;
                         }
-                        if (retryBtn     != null) retryBtn.style.display      = DisplayStyle.None;
-                        if (errorLabel   != null) errorLabel.style.display    = DisplayStyle.None;
                     }
-                    else if (text.StartsWith("CAM_ERROR:", StringComparison.Ordinal))
+                    
+                    // SCC updates PreviewTexture internally from the MMF —
+                    // just assign and repaint. No GPU readback, no Graphics.Blit.
+                    if (previewElement != null && scc.PreviewTexture != null)
                     {
-                        string reason = text.Substring("CAM_ERROR:".Length);
-                        cameraOk = false;
-                        if (statusLabel  != null) statusLabel.text            = "Camera not detected.";
-                        if (errorLabel   != null)
-                        {
-                            errorLabel.text                  = reason;
-                            errorLabel.style.display         = DisplayStyle.Flex;
-                        }
-                        if (retryBtn     != null) retryBtn.style.display      = DisplayStyle.Flex;
-                        if (continueBtn  != null) 
+                        previewElement.style.backgroundImage = new StyleBackground(
+                            Background.FromTexture2D(scc.PreviewTexture));
+                        previewElement.MarkDirtyRepaint();
+                    }
+                }
+                else
+                {
+                    if (statusLabel != null && statusLabel.text == "Camera ready \u2713")
+                    {
+                        statusLabel.text = "Waiting for camera...";
+                        if (continueBtn != null) 
                         {
                             continueBtn.SetEnabled(false);
                             continueBtn.style.opacity = 0.5f;
@@ -752,75 +611,22 @@ public class GazeFollowerRunner : MonoBehaviour
                     }
                 }
             }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogError($"[CameraCheck] Coroutine exception on frame {Time.frameCount}: {e}");
+            }
 
             yield return null;
         }
-
-        // ── User clicked Continue — graceful camera-check shutdown ──────────
-        //
-        // PROBLEM THIS SOLVES:
-        //   Process.Kill() on Windows sends TerminateProcess which bypasses all
-        //   Python finally/cleanup blocks.  cap.release() never runs, the webcam
-        //   driver stays locked, and the calibration process that opens the same
-        //   camera immediately after gets no frames (or fails to open entirely).
-        //
-        // SOLUTION:
-        //   1. Cancel the UDP receive loop first (no more packets needed).
-        //   2. Write "QUIT\n" to the process's stdin — the Python stdin-watcher
-        //      thread sets stop_event, the camera loop exits, cap.release() runs.
-        //   3. Wait up to 1.5 s for the process to exit cleanly.
-        //   4. If it hasn't exited, force-kill as a fallback.
-        //   5. Wait an additional 2 s for the DirectShow/MF driver to fully
-        //      release the camera handle at the OS level before starting
-        //      calibration.
-
-        // Step 1: stop receiving UDP packets
-        try { camCts?.Cancel(); } catch { }
-        camCts?.Dispose();
-        camUdp?.Close();
-        camUdp?.Dispose();
-
-        // Step 2: send graceful QUIT via stdin
-        if (cameraCheckProcess != null && !cameraCheckProcess.HasExited)
-        {
-            try
-            {
-                cameraCheckProcess.StandardInput.WriteLine("QUIT");
-                cameraCheckProcess.StandardInput.Flush();
-            }
-            catch (Exception ex)
-            {
-                RobitLogger.LogWarning($"[GazeFollowerRunner] Could not write QUIT to camera-check stdin: {ex.Message}");
-            }
-        }
-
-        // Step 3+4: wait up to 1.5 s for clean exit, then force-kill
-        float waited = 0f;
-        while (waited < 1.5f && cameraCheckProcess != null && !cameraCheckProcess.HasExited)
-        {
-            yield return null;
-            waited += Time.unscaledDeltaTime;
-        }
-        if (cameraCheckProcess != null && !cameraCheckProcess.HasExited)
-        {
-            RobitLogger.LogWarning("[GazeFollowerRunner] Camera-check process did not exit cleanly — force killing.");
-            try { cameraCheckProcess.Kill(); } catch { }
-        }
-        cameraCheckProcess?.Dispose();
-        cameraCheckProcess = null;
 
         cameraPanel.RemoveFromHierarchy();
-        UnityEngine.Object.Destroy(previewTexture);
 
-        // Step 5: wait for the OS to release the camera driver handle.
-        // 2 seconds is conservative but reliable for DirectShow on Windows.
-        if (statusLabel != null) statusLabel.text = "Releasing camera…";
-        RobitLogger.Log("[GazeFollowerRunner] Waiting for camera to be released before starting calibration.");
-        yield return new WaitForSecondsRealtime(2.0f);
-
-        // Hand off to calibration
+        // Hand off to calibration immediately.
+        // The EXEs will be launched by the Calibration Controller which acts as a loading screen.
         controller.StartCalibration(activeProfileId);
     }
+
+
 
     /// <summary>
     /// Re-triggers the startup flow (queries calibration status and begins gaze tracking).

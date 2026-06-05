@@ -5,23 +5,27 @@ using System.IO;
 using UnityEngine;
 
 [DefaultExecutionOrder(-880)]
-public class UiAutomationRunner : MonoBehaviour
+public class UiAutomationRunner : BaseProcessRunner<UiAutomationRunner>
 {
-    public static UiAutomationRunner Instance { get; private set; }
+    // ── LogPrefix (required by BaseProcessRunner) ─────────────────────────────
+    protected override string LogPrefix => "[UiAutomationRunner]";
 
+    // ── Inspector fields ──────────────────────────────────────────────────────
     [Header("UI Automation Setup")]
     [SerializeField] private string relativeWorkingDirectory = @"D:/Projects/Robit Ui Automation System/Robit-UI-Automation";
-    [SerializeField] private string executablePath = "dotnet";
-    [SerializeField] private string arguments = "run";
-    [SerializeField] private bool autoStartOnAwake = true;
+    [SerializeField] private string executablePath           = "dotnet";
+    [SerializeField] private string arguments                = "run";
+    [SerializeField] private bool   autoStartOnAwake         = true;
 
     [Header("Runtime Env Overrides")]
-    [SerializeField] private bool loadOverridesFromEnvFile = true;
-    [SerializeField] private string envFileName = "uiautomation.env";
-    [SerializeField] private bool logResolvedPaths = true;
+    [SerializeField] private bool   loadOverridesFromEnvFile = true;
+    [SerializeField] private string envFileName              = "uiautomation.env";
+    [SerializeField] private bool   logResolvedPaths         = true;
 
+    // ── State ─────────────────────────────────────────────────────────────────
     private Process automationProcess;
 
+    // ── Bootstrap (commented out — started externally) ────────────────────────
     // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Bootstrap()
     {
@@ -32,148 +36,98 @@ public class UiAutomationRunner : MonoBehaviour
         go.AddComponent<UiAutomationRunner>();
     }
 
-    private void Awake()
+    // ── Awake hook (autostart) ────────────────────────────────────────────────
+
+    /// <summary>
+    /// Called by the base Awake() after the singleton is established.
+    /// Handles the autoStartOnAwake behaviour specific to UiAutomationRunner.
+    /// </summary>
+    protected override void OnAfterAwake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
-        Instance = this;
-        DontDestroyOnLoad(gameObject);
-
         if (autoStartOnAwake)
             StartAutomationServer();
     }
+
+    // ── Public API ────────────────────────────────────────────────────────────
 
     public void StartAutomationServer()
     {
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
         if (automationProcess != null && !automationProcess.HasExited)
         {
-            RobitLogger.Log("[UiAutomationRunner] UI Automation server is already running.");
+            RobitLogger.Log($"{LogPrefix} UI Automation server is already running.");
             return;
         }
 
         string workingDirectoryConfig = relativeWorkingDirectory;
-        string exePathConfig = executablePath;
-        string argsConfig = arguments;
+        string exePathConfig          = executablePath;
+        string argsConfig             = arguments;
         LoadEnvOverrides(ref workingDirectoryConfig, ref exePathConfig, ref argsConfig);
 
-        if (!RunnerPathResolver.TryResolvePath(workingDirectoryConfig, expectFile: false, out string workingDirectory, out string workingDetails))
+        if (!RunnerPathResolver.TryResolvePath(
+                workingDirectoryConfig,
+                expectFile: false,
+                out string workingDirectory,
+                out string workingDetails))
         {
-            RobitLogger.LogWarning("[UiAutomationRunner] Working directory could not be resolved (UI Automation unavailable).\n" + workingDetails);
+            RobitLogger.LogWarning(
+                $"{LogPrefix} Working directory could not be resolved (UI Automation unavailable).\n"
+                + workingDetails);
             return;
         }
 
         if (logResolvedPaths)
         {
-            RobitLogger.Log("[UiAutomationRunner] Using paths:\n" +
-                            $" - WorkingDir: {workingDirectory}\n" +
-                            $" - Executable: {exePathConfig}\n" +
-                            $" - Arguments : {argsConfig}");
+            RobitLogger.Log(
+                $"{LogPrefix} Using paths:\n"
+                + $" - WorkingDir: {workingDirectory}\n"
+                + $" - Executable: {exePathConfig}\n"
+                + $" - Arguments : {argsConfig}");
         }
 
-        var startInfo = new ProcessStartInfo
+        // BuildProcessStartInfo derives WorkingDirectory from exePath, but
+        // UiAutomationRunner's working directory is configured independently
+        // (it may run dotnet from a project folder, not next to an exe).
+        // We therefore build the PSI manually for this runner.
+        var psi = new ProcessStartInfo
         {
-            FileName = exePathConfig,
-            Arguments = argsConfig,
-            WorkingDirectory = workingDirectory,
-            UseShellExecute = false,
+            FileName               = exePathConfig,
+            Arguments              = argsConfig,
+            WorkingDirectory       = workingDirectory,
+            UseShellExecute        = false,
             RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true,
+            RedirectStandardError  = true,
+            CreateNoWindow         = true,
         };
-
-        automationProcess = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
-        automationProcess.OutputDataReceived += OnOutputDataReceived;
-        automationProcess.ErrorDataReceived += OnErrorDataReceived;
-        automationProcess.Exited += OnProcessExited;
 
         try
         {
-            automationProcess.Start();
-            automationProcess.BeginOutputReadLine();
-            automationProcess.BeginErrorReadLine();
-            RobitLogger.Log("[UiAutomationRunner] Started UI Automation server.");
+            automationProcess = StartManagedProcess(psi);
+            RobitLogger.Log($"{LogPrefix} Started UI Automation server.");
         }
         catch (Exception ex)
         {
-            RobitLogger.LogError($"[UiAutomationRunner] Failed to start UI Automation server: {ex.Message}");
+            RobitLogger.LogError($"{LogPrefix} Failed to start UI Automation server: {ex.Message}");
         }
 #else
-        RobitLogger.LogWarning("[UiAutomationRunner] This runner currently supports Windows builds only.");
+        RobitLogger.LogWarning($"{LogPrefix} This runner currently supports Windows builds only.");
 #endif
     }
 
     public void StopAutomationServer()
     {
-        if (automationProcess == null)
-            return;
-
-        try
-        {
-            if (!automationProcess.HasExited)
-                automationProcess.Kill();
-        }
-        catch (Exception ex)
-        {
-            RobitLogger.LogWarning($"[UiAutomationRunner] Failed to stop UI Automation process: {ex.Message}");
-        }
-        finally
-        {
-            CleanupProcessHandlers();
-        }
+        TerminateProcess(ref automationProcess);
     }
 
-    private void OnApplicationQuit()
-    {
-        StopAutomationServer();
-    }
+    /// <summary>Required by BaseProcessRunner — called on quit and destroy.</summary>
+    public override void StopRunner() => StopAutomationServer();
 
-    private void OnDestroy()
-    {
-        if (Instance == this)
-            Instance = null;
+    // ── Env file overrides ────────────────────────────────────────────────────
 
-        StopAutomationServer();
-    }
-
-    private void OnOutputDataReceived(object sender, DataReceivedEventArgs e)
-    {
-        if (string.IsNullOrWhiteSpace(e.Data))
-            return;
-
-        RobitLogger.Log($"[UiAutomationRunner][Server] {e.Data.Trim()}");
-    }
-
-    private void OnErrorDataReceived(object sender, DataReceivedEventArgs e)
-    {
-        if (string.IsNullOrWhiteSpace(e.Data))
-            return;
-
-        RobitLogger.LogWarning($"[UiAutomationRunner][Server-ERR] {e.Data.Trim()}");
-    }
-
-    private void OnProcessExited(object sender, EventArgs e)
-    {
-        RobitLogger.Log("[UiAutomationRunner] UI Automation process exited.");
-    }
-
-    private void CleanupProcessHandlers()
-    {
-        if (automationProcess == null)
-            return;
-
-        automationProcess.OutputDataReceived -= OnOutputDataReceived;
-        automationProcess.ErrorDataReceived -= OnErrorDataReceived;
-        automationProcess.Exited -= OnProcessExited;
-        automationProcess.Dispose();
-        automationProcess = null;
-    }
-
-    private void LoadEnvOverrides(ref string workingDirectoryConfig, ref string exePathConfig, ref string argsConfig)
+    private void LoadEnvOverrides(
+        ref string workingDirectoryConfig,
+        ref string exePathConfig,
+        ref string argsConfig)
     {
         if (!loadOverridesFromEnvFile)
             return;
@@ -181,11 +135,12 @@ public class UiAutomationRunner : MonoBehaviour
         if (!RunnerPathResolver.TryResolveEnvFilePath(envFileName, out string envPath, out string details))
         {
             if (logResolvedPaths)
-                RobitLogger.Log("[UiAutomationRunner] Env file not found. Using inspector values.\n" + details);
+                RobitLogger.Log($"{LogPrefix} Env file not found. Using inspector values.\n" + details);
             return;
         }
 
         Dictionary<string, string> values = RunnerPathResolver.ParseEnvFile(envPath);
+
         if (values.TryGetValue("UI_AUTO_WORKING_DIR", out string wd) && !string.IsNullOrWhiteSpace(wd))
             workingDirectoryConfig = wd.Trim();
 
@@ -195,7 +150,6 @@ public class UiAutomationRunner : MonoBehaviour
         if (values.TryGetValue("UI_AUTO_ARGS", out string args) && !string.IsNullOrWhiteSpace(args))
             argsConfig = args.Trim();
 
-        RobitLogger.Log($"[UiAutomationRunner] Loaded env overrides from: {envPath}");
+        RobitLogger.Log($"{LogPrefix} Loaded env overrides from: {envPath}");
     }
-
 }

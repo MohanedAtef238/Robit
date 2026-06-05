@@ -54,22 +54,62 @@ public class GazeCalibrationController : MonoBehaviour
     private static readonly Color DOT_BORDER_COLOR     = Color.white;
     private static readonly Color DEBUG_DOT_COLOR      = new Color(1.00f, 0.20f, 0.20f);
 
+    // ── Phase background colours ──────────────────────────────────────────
+    private static readonly Color BG_LIGHT = new Color(0.85f, 0.94f, 0.86f, 1f);
+    private static readonly Color BG_DARK  = new Color(0.10f, 0.12f, 0.10f, 1f);
+
+    // ── Glow panel colours (right = warm amber, left = cool blue) ─────────
+    private static readonly Color GLOW_RIGHT = new Color(1.00f, 0.72f, 0.10f, 0f);  // starts transparent
+    private static readonly Color GLOW_LEFT  = new Color(0.20f, 0.70f, 1.00f, 0f);
+
     // ── Python-side calibration point list (must match unity_gaze_bridge.py) ─
     private static readonly (float x, float y)[] CalibrationPoints =
     {
-        (0.026f, 0.046f),  //  1  top-left
-        (0.500f, 0.046f),  //  5  top-center
-        (0.974f, 0.046f),  //  9  top-right
-        (0.263f, 0.273f),  // 12  inner top-left
-        (0.737f, 0.273f),  // 16  inner top-right
-        (0.026f, 0.500f),  // 19  mid-left
-        (0.974f, 0.500f),  // 27  mid-right
-        (0.263f, 0.726f),  // 30  inner bottom-left
-        (0.737f, 0.726f),  // 34  inner bottom-right
-        (0.026f, 0.954f),  // 37  bottom-left
-        (0.500f, 0.954f),  // 41  bottom-center
-        (0.974f, 0.954f),  // 45  bottom-right
-        (0.500f, 0.500f),  // 23  center
+        (0.500f, 0.500f),  // 23 center (start)
+        (0.026f, 0.046f),  //  1 top-left
+        (0.263f, 0.046f),  //  3 top-inner-left
+        (0.500f, 0.046f),  //  5 top-center
+        (0.737f, 0.046f),  //  7 top-inner-right
+        (0.974f, 0.046f),  //  9 top-right
+        (0.026f, 0.273f),  // 10 row 2 left
+        (0.263f, 0.273f),  // 12 row 2 inner-left
+        (0.737f, 0.273f),  // 16 row 2 inner-right
+        (0.974f, 0.273f),  // 18 row 2 right
+        (0.026f, 0.500f),  // 19 mid-left
+        (0.263f, 0.500f),  // 21 mid-inner-left
+        (0.737f, 0.500f),  // 25 mid-inner-right
+        (0.974f, 0.500f),  // 27 mid-right
+        (0.026f, 0.727f),  // 28 row 4 left
+        (0.263f, 0.727f),  // 30 row 4 inner-left
+        (0.737f, 0.727f),  // 34 row 4 inner-right
+        (0.974f, 0.727f),  // 36 row 4 right
+        (0.026f, 0.954f),  // 37 bottom-left
+        (0.263f, 0.954f),  // 39 bottom-inner-left
+        (0.500f, 0.954f),  // 41 bottom-center
+        (0.974f, 0.954f),  // 45 bottom-right
+        (0.500f, 0.500f),  // 23 center (end)
+    };
+
+    private static readonly (float x, float y)[] CalibrationPoints_RightTilt =
+    {
+        (0.974f, 0.046f),  //  9
+        (0.737f, 0.273f),  // 16
+        (0.974f, 0.273f),  // 18
+        (0.974f, 0.500f),  // 27
+        (0.737f, 0.727f),  // 34
+        (0.974f, 0.727f),  // 36
+        (0.974f, 0.954f),  // 45
+    };
+
+    private static readonly (float x, float y)[] CalibrationPoints_LeftTilt =
+    {
+        (0.026f, 0.046f),  //  1
+        (0.026f, 0.273f),  // 10
+        (0.263f, 0.273f),  // 12
+        (0.026f, 0.500f),  // 19
+        (0.026f, 0.727f),  // 28
+        (0.263f, 0.727f),  // 30
+        (0.026f, 0.954f),  // 37
     };
 
     [Tooltip("Scene to load after calibration finishes.")]
@@ -88,6 +128,9 @@ public class GazeCalibrationController : MonoBehaviour
     private Label         statusLabel;
     private Label         pointLabel;
     private VisualElement fittingOverlay;
+    private VisualElement promptCard;
+    private VisualElement glowRight;   // right-edge glow panel
+    private VisualElement glowLeft;    // left-edge glow panel
 
     // ── Live dot animation state ───────────────────────────────────────────
     private float dotTargetX;
@@ -151,6 +194,7 @@ public class GazeCalibrationController : MonoBehaviour
         statusLabel     = root.Q<Label>("status-label");
         pointLabel      = root.Q<Label>("point-label");
         fittingOverlay  = root.Q<VisualElement>("fitting-overlay");
+        promptCard      = root.Q<VisualElement>("prompt-card");
 
         if (fittingOverlay != null)
             fittingOverlay.style.display = DisplayStyle.None;
@@ -158,6 +202,29 @@ public class GazeCalibrationController : MonoBehaviour
         // ── Apply inline styles to live dot (immune to CSS loading) ──────
         ApplyDotInlineStyle(dot, DOT_COLOR_IDLE);
         if (dot != null) dot.style.opacity = 0;
+
+        // ── Build glow panels (right and left edge) ───────────────────────
+        glowRight = new VisualElement();
+        glowRight.style.position    = Position.Absolute;
+        glowRight.style.right       = 0;
+        glowRight.style.top         = 0;
+        glowRight.style.bottom      = 0;
+        glowRight.style.width       = 320f;
+        glowRight.style.backgroundColor = GLOW_RIGHT;
+        glowRight.style.opacity     = 0;
+        glowRight.pickingMode       = PickingMode.Ignore;
+        calibrationRoot?.Add(glowRight);
+
+        glowLeft = new VisualElement();
+        glowLeft.style.position     = Position.Absolute;
+        glowLeft.style.left         = 0;
+        glowLeft.style.top          = 0;
+        glowLeft.style.bottom       = 0;
+        glowLeft.style.width        = 320f;
+        glowLeft.style.backgroundColor = GLOW_LEFT;
+        glowLeft.style.opacity      = 0;
+        glowLeft.pickingMode        = PickingMode.Ignore;
+        calibrationRoot?.Add(glowLeft);
 
         GazeFollowerRunner.Instance?.OnCalibrationSceneReady(this);
     }
@@ -261,9 +328,17 @@ public class GazeCalibrationController : MonoBehaviour
             calibrationProcess.ErrorDataReceived += (_, e) =>
             {
                 if (!string.IsNullOrWhiteSpace(e.Data))
-                    RobitLogger.LogWarning($"[GazeCalib][PY-ERR] {e.Data}");
+                {
+                    if (e.Data.Contains("INFO:"))
+                        RobitLogger.Log($"[GazeCalib][PY-INFO] {e.Data}");
+                    else if (e.Data.Contains("WARNING:"))
+                        RobitLogger.LogWarning($"[GazeCalib][PY-WARN] {e.Data}");
+                    else
+                        RobitLogger.LogError($"[GazeCalib][PY-ERR] {e.Data}");
+                }
             };
             calibrationProcess.Start();
+            ChildProcessTracker.AddProcess(calibrationProcess);
             calibrationProcess.BeginOutputReadLine();
             calibrationProcess.BeginErrorReadLine();
             SetStatus("Initializing gaze model…\nThis may take a few seconds.");
@@ -428,10 +503,151 @@ public class GazeCalibrationController : MonoBehaviour
         {
             SetStatus("Calibration starting…\nFocus on each dot as it appears.");
         }
+
+        // ── CALI_PAUSED ────────────────────────────────────────────────
+        // Camera feed stalled — hide dot, warn user, tint progress bar amber.
+        else if (msg == "CALI_PAUSED")
+        {
+            if (dot != null) dot.style.opacity = 0;
+
+            if (progressFill != null)
+                progressFill.style.backgroundColor = new Color(1.00f, 0.72f, 0.10f); // amber
+
+            SetStatus("⚠ Camera feed lost.\nPlease check your connection — calibration will resume automatically.");
+        }
+
+        // ── CALI_RESUMED ───────────────────────────────────────────────
+        // Camera feed recovered — restore dot and progress bar colour.
+        else if (msg == "CALI_RESUMED")
+        {
+            if (dot != null) dot.style.opacity = 1;
+
+            if (progressFill != null)
+                progressFill.style.backgroundColor = new Color(0.12f, 0.42f, 1.00f); // collecting blue
+
+            SetStatus("Camera reconnected — resuming calibration…");
+        }
+
+        // ── CALI_PHASE {phase_id} ──────────────────────────────────────
+        else if (msg.StartsWith("CALI_PHASE ", StringComparison.Ordinal))
+        {
+            string phase = msg.Substring("CALI_PHASE ".Length).Trim();
+            HandlePhaseTransition(phase);
+        }
+    }
+
+    // ── Phase transition ──────────────────────────────────────────────────
+
+    private void HandlePhaseTransition(string phase)
+    {
+        // Reset glow panels
+        if (glowRight != null) glowRight.style.opacity = 0;
+        if (glowLeft  != null) glowLeft.style.opacity  = 0;
+
+        switch (phase)
+        {
+            case "PHASE_LIGHT":
+                SetCameraBackground(BG_LIGHT);
+                SetLabelColors(new Color(0.20f, 0.27f, 0.18f));  // dark green text
+                SetPromptCardColors(new Color(1f, 1f, 1f, 0.78f), new Color(0.31f, 0.63f, 0.39f, 0.78f));
+                SetStatus("Phase 1 — Light\nFocus on each dot as it appears.");
+                firstPointReceived = false;
+                break;
+
+            case "PHASE_DARK":
+                SetCameraBackground(BG_DARK);
+                SetLabelColors(new Color(0.85f, 0.90f, 0.84f));  // near-white text
+                SetPromptCardColors(new Color(0.15f, 0.18f, 0.15f, 0.78f), new Color(0.25f, 0.35f, 0.25f, 0.78f));
+                SetStatus("Phase 2 — Dark\nFocus on each dot as it appears.");
+                firstPointReceived = false;
+                break;
+
+            case "PHASE_RIGHT_TILT":
+                SetCameraBackground(BG_LIGHT);
+                SetLabelColors(new Color(0.20f, 0.27f, 0.18f));
+                SetPromptCardColors(new Color(1f, 1f, 1f, 0.78f), new Color(0.31f, 0.63f, 0.39f, 0.78f));
+                SetStatus("Phase 3 — Tilt Right\nTilt your head slightly to the right,\nthen follow the dots.");
+                firstPointReceived = false;
+                StartCoroutine(GlowAndFade(glowRight, GLOW_RIGHT, 3, 1.2f));
+                break;
+
+            case "PHASE_LEFT_TILT":
+                SetCameraBackground(BG_LIGHT);
+                SetLabelColors(new Color(0.20f, 0.27f, 0.18f));
+                SetPromptCardColors(new Color(1f, 1f, 1f, 0.78f), new Color(0.31f, 0.63f, 0.39f, 0.78f));
+                SetStatus("Phase 4 — Tilt Left\nTilt your head slightly to the left,\nthen follow the dots.");
+                firstPointReceived = false;
+                StartCoroutine(GlowAndFade(glowLeft, GLOW_LEFT, 3, 1.2f));
+                break;
+        }
+    }
+
+    private void SetCameraBackground(Color color)
+    {
+        if (sceneCamera != null)
+            sceneCamera.backgroundColor = color;
+            
+        if (calibrationRoot != null)
+            calibrationRoot.style.backgroundColor = color;
+    }
+
+    private void SetLabelColors(Color color)
+    {
+        if (statusLabel != null) statusLabel.style.color = color;
+        if (pointLabel  != null) pointLabel.style.color  = color;
+    }
+
+    private void SetPromptCardColors(Color bgColor, Color borderColor)
+    {
+        if (promptCard != null)
+        {
+            promptCard.style.backgroundColor = bgColor;
+            promptCard.style.borderLeftColor = borderColor;
+            promptCard.style.borderRightColor = borderColor;
+            promptCard.style.borderTopColor = borderColor;
+            promptCard.style.borderBottomColor = borderColor;
+        }
+    }
+
+    // ── Glow animation coroutine ──────────────────────────────────────────
+    // Pulses the panel opacity from 0 → peak → 0, repeated `pulses` times.
+    // Each pulse takes `pulseDuration` seconds.
+
+    private System.Collections.IEnumerator GlowAndFade(VisualElement panel, Color baseColor, int pulses, float pulseDuration)
+    {
+        if (panel == null) yield break;
+        panel.style.backgroundColor = new Color(baseColor.r, baseColor.g, baseColor.b, 1f);
+
+        for (int i = 0; i < pulses; i++)
+        {
+            // Fade in
+            float elapsed = 0f;
+            float half = pulseDuration * 0.5f;
+            while (elapsed < half)
+            {
+                elapsed += Time.deltaTime;
+                panel.style.opacity = Mathf.Clamp01(elapsed / half);
+                yield return null;
+            }
+            panel.style.opacity = 1f;
+
+            // Fade out
+            elapsed = 0f;
+            while (elapsed < half)
+            {
+                elapsed += Time.deltaTime;
+                panel.style.opacity = Mathf.Clamp01(1f - elapsed / half);
+                yield return null;
+            }
+            panel.style.opacity = 0f;
+        }
+
+        // Leave panel fully invisible after animation completes
+        panel.style.opacity = 0;
     }
 
     // ── Debug Grid ────────────────────────────────────────────────────────
-    // Spawns ALL 13 calibration points simultaneously as numbered red circles.
+    // Spawns ALL 23 calibration points simultaneously as numbered red circles.
     // Each dot uses IDENTICAL positioning and styling to the live calibration dot.
     // What you see in the debug grid = exactly where Python will place each point.
 
