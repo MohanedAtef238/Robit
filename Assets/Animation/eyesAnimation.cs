@@ -1,58 +1,51 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
-public class EyeSocketLockYZ : MonoBehaviour
+public class LocalSpaceLookAt : MonoBehaviour
 {
-    [Header("Rotation Limits")]
-    public float horizontalLimit = 5f;
-    public float verticalLimit = 10f;
-    public float smoothing = 15f;
+    [Header("Targeting Settings")]
+    public Camera mainCamera;
+    public float turnSpeed = 15f;
 
-    private Vector3 socketRelativePos;
-    private Quaternion initialLocalRot;
+    private Quaternion targetLocalRotation;
+    private Quaternion originalLocalRotation;
 
     void Start()
     {
-        socketRelativePos = transform.localPosition;
-        initialLocalRot = transform.localRotation;
+        if (mainCamera == null) mainCamera = Camera.main;
+
+        // Cache the starting local rotation from the rig template
+        originalLocalRotation = transform.localRotation;
     }
 
+    void Update()
+    {
+        if (mainCamera == null) return;
+
+        // 1. Find where the mouse is pointing in the world
+        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+        Plane plane = new Plane(transform.forward, transform.position);
+
+        if (plane.Raycast(ray, out float enterDistance))
+        {
+            Vector3 targetWorldPoint = ray.GetPoint(enterDistance);
+
+            // 2. CONVERT the world point into local space relative to the eye's parent bone
+            Vector3 localTargetPoint = transform.parent.InverseTransformPoint(targetWorldPoint);
+            Vector3 localEyePos = transform.localPosition;
+            Vector3 localLookDir = localTargetPoint - localEyePos;
+
+            if (localLookDir != Vector3.zero)
+            {
+                // Calculate target rotation purely in local space coordinates
+                targetLocalRotation = Quaternion.LookRotation(localLookDir, Vector3.up);
+            }
+        }
+    }
+
+    // Since the PlayableGraph handles bone evaluation right before rendering, 
+    // using localRotation here lets us slip our changes into the local matrix space.
     void LateUpdate()
     {
-        // HARD LOCK to the socket
-        transform.localPosition = socketRelativePos;
-
-        ApplyLookRotation();
-    }
-
-    void ApplyLookRotation()
-    {
-        if (Mouse.current == null) return;
-
-        // 1. Get Mouse relative to screen center
-        Vector2 currentMousePos = Mouse.current.position.ReadValue();
-        Vector2 mousePos = new Vector2(
-            (currentMousePos.x / Screen.width) - 0.5f,
-            (currentMousePos.y / Screen.height) - 0.5f
-        );
-
-        // 2. Map Mouse X to Target Z and Mouse Y to Target Y
-        // (Adjust the negative signs if the eye moves opposite to the mouse)
-        float targetZ = mousePos.x * horizontalLimit * 2f;
-        float targetY = -mousePos.y * verticalLimit * 2f;
-
-        // 3. Construct the rotations for Y and Z only
-        Quaternion yRot = Quaternion.AngleAxis(targetY, Vector3.forward);
-        Quaternion zRot = Quaternion.AngleAxis(targetZ, -Vector3.up);
-
-        // 4. Combine with initial rotation (X remains locked to the Editor value)
-        Quaternion targetRotation = initialLocalRot * yRot * zRot;
-
-        // 5. Smoothly apply
-        transform.localRotation = Quaternion.Slerp(
-            transform.localRotation,
-            targetRotation,
-            Time.deltaTime * smoothing
-        );
+        transform.localRotation = Quaternion.Slerp(transform.localRotation, targetLocalRotation, Time.deltaTime * turnSpeed);
     }
 }

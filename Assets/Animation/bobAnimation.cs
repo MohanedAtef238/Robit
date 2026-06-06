@@ -1,123 +1,134 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class BouncyLifeCycle : MonoBehaviour
 {
     public enum BobDirection { X, Y, Z }
 
-    [Header("Bouncy Birth (On Start)")]
-    public float birthDuration = 0.6f;
-    public float startZScale = 0.01f;
-    [Range(1f, 5f)] public float bounciness = 1.7f;
-
-    [Header("Model Scaling (The Bob)")]
-    public BobDirection scaleAxis = BobDirection.Z;
-    public float scaleIncrease = 5f;
-    public float stretchSqueeze = 2f;
+    [Header("Main Character Shrink Settings")]
+    public BobDirection compressAxis = BobDirection.Y;
+    [Tooltip("How much the body shrinks along the main axis (e.g., top-to-bottom).")]
+    public float shrinkMainAmount = 0.5f;
+    [Tooltip("How much the body shrinks inward from the sides simultaneously.")]
+    public float shrinkSidesAmount = 0.3f;
     public float speed = 10f;
     public bool pinBackSide = true;
 
-    [Header("The Eye List (Displacement Only)")]
-    public List<Transform> eyesToMove;
+    [Header("The Eye Setup")]
+    [Tooltip("Drag your eye objects straight from your normal hierarchy here.")]
+    public List<Transform> eyesToAnimate;
 
-    [Header("Scaling Objects (Growth + Displacement)")]
-    public List<Transform> objectsToScale;
-    public float scaleObjectsIncrease = 2f;
+    [Tooltip("How much the eyes push forward out of their sockets.")]
+    public float eyePopIntensity = 5f; // Bumped up because your model's scale is large!
+
+    [Tooltip("MULTIPLIER: 2 means the eyes will DOUBLE in size (60 -> 120). 3 means TRIPLE.")]
+    public float eyeScaleMultiplier = 100f;
 
     private Vector3 originalScale;
-    private Vector3 originalPos;
-    private List<Vector3> originalObjectScales = new List<Vector3>();
+    private Vector3 originalLocalPos;
+
+    private List<Vector3> originalEyeLocalPositions = new List<Vector3>();
+    private List<Vector3> originalEyeLocalScales = new List<Vector3>();
+
     private bool isAnimating = false;
 
     void Start()
     {
         originalScale = transform.localScale;
-        originalPos = transform.position;
+        originalLocalPos = transform.localPosition;
 
-        foreach (Transform obj in objectsToScale)
+        // Snapshot original baseline values safely
+        foreach (Transform eye in eyesToAnimate)
         {
-            if (obj != null) originalObjectScales.Add(obj.localScale);
+            if (eye != null)
+            {
+                originalEyeLocalPositions.Add(eye.localPosition);
+                originalEyeLocalScales.Add(eye.localScale);
+            }
         }
 
-        // Start the random bobbing loop here
         StartCoroutine(RandomBobBrain());
+    }
+
+    void Update()
+    {
+        Keyboard keyboard = Keyboard.current;
+        if (keyboard != null && keyboard.bKey.wasPressedThisFrame)
+        {
+            if (!isAnimating)
+            {
+                Debug.Log("[BouncyLifeCycle] 'B' Key Pressed! Scaling relative to base factor.");
+                StartCoroutine(BobRoutine());
+            }
+        }
     }
 
     private IEnumerator RandomBobBrain()
     {
         while (true)
         {
-            // Wait for a random duration (e.g., between 2 and 6 seconds)
             float waitTime = Random.Range(2f, 6f);
             yield return new WaitForSeconds(waitTime);
 
             if (!isAnimating)
             {
-                // We "yield return" the routine so it waits for the 
-                // animation to finish before starting the next wait timer
                 yield return StartCoroutine(BobRoutine());
             }
         }
     }
 
-
-
-    private Vector3 CalculateNewScale(float addedForward, float addedSqueeze, out Vector3 localDir)
+    private Vector3 CalculateNewScale(float currentMainShrink, float currentSideShrink, out Vector3 localDir)
     {
         Vector3 newScale = originalScale;
-        switch (scaleAxis)
+        switch (compressAxis)
         {
             case BobDirection.X:
-                newScale.x += addedForward; newScale.y -= addedSqueeze; newScale.z -= addedSqueeze;
+                newScale.x -= currentMainShrink; newScale.y -= currentSideShrink; newScale.z -= currentSideShrink;
                 localDir = Vector3.right;
                 break;
             case BobDirection.Y:
-                newScale.y += addedForward; newScale.x -= addedSqueeze; newScale.z -= addedSqueeze;
+                newScale.y -= currentMainShrink; newScale.x -= currentSideShrink; newScale.z -= currentSideShrink;
                 localDir = Vector3.up;
                 break;
             default:
-                newScale.z += addedForward; newScale.x -= addedSqueeze; newScale.y -= addedSqueeze;
+                newScale.z -= currentMainShrink; newScale.x -= currentSideShrink; newScale.y -= currentSideShrink;
                 localDir = Vector3.forward;
                 break;
         }
         return newScale;
     }
 
-    private void ApplyDisplacement(Vector3 startModelPos, Vector3[] startEyePositions, Vector3[] startObjPositions, float addedObjScale)
+    private void ApplyEyeExplosion(float sineWave)
     {
-        Vector3 displacement = transform.position - startModelPos;
-
-        for (int i = 0; i < eyesToMove.Count; i++)
+        for (int i = 0; i < eyesToAnimate.Count; i++)
         {
-            if (eyesToMove[i] != null) eyesToMove[i].position = startEyePositions[i] + displacement;
-        }
-
-        for (int i = 0; i < objectsToScale.Count; i++)
-        {
-            if (objectsToScale[i] != null)
+            if (eyesToAnimate[i] != null)
             {
-                objectsToScale[i].position = startObjPositions[i] + displacement;
-                objectsToScale[i].localScale = originalObjectScales[i] + (Vector3.one * addedObjScale);
+                // 1. Position: Push forward relative to your larger scale space
+                Vector3 forwardPush = Vector3.forward * (sineWave * eyePopIntensity);
+                eyesToAnimate[i].localPosition = originalEyeLocalPositions[i] + forwardPush;
+
+                // 2. Scale: Multiply instead of add! 
+                // When sineWave is 1, this scales the eye by your multiplier factor smoothly.
+                float scaleFactor = 1f + (sineWave * (eyeScaleMultiplier - 1f));
+                eyesToAnimate[i].localScale = originalEyeLocalScales[i] * scaleFactor;
             }
         }
     }
 
-    private void ResetAnimationState(Vector3 startModelPos, Vector3[] startEyePositions, Vector3[] startObjPositions)
+    private void ResetAnimationState()
     {
         transform.localScale = originalScale;
-        transform.position = startModelPos;
+        transform.localPosition = originalLocalPos;
 
-        for (int i = 0; i < eyesToMove.Count; i++)
+        for (int i = 0; i < eyesToAnimate.Count; i++)
         {
-            if (eyesToMove[i] != null) eyesToMove[i].position = startEyePositions[i];
-        }
-        for (int i = 0; i < objectsToScale.Count; i++)
-        {
-            if (objectsToScale[i] != null)
+            if (eyesToAnimate[i] != null)
             {
-                objectsToScale[i].position = startObjPositions[i];
-                objectsToScale[i].localScale = originalObjectScales[i];
+                eyesToAnimate[i].localPosition = originalEyeLocalPositions[i];
+                eyesToAnimate[i].localScale = originalEyeLocalScales[i];
             }
         }
     }
@@ -125,42 +136,30 @@ public class BouncyLifeCycle : MonoBehaviour
     IEnumerator BobRoutine()
     {
         isAnimating = true;
-        Vector3 startModelPos = transform.position;
-
-        Vector3[] startEyePositions = new Vector3[eyesToMove.Count];
-        for (int i = 0; i < eyesToMove.Count; i++)
-        {
-            if (eyesToMove[i] != null) startEyePositions[i] = eyesToMove[i].position;
-        }
-
-        Vector3[] startObjPositions = new Vector3[objectsToScale.Count];
-        for (int i = 0; i < objectsToScale.Count; i++)
-        {
-            if (objectsToScale[i] != null) startObjPositions[i] = objectsToScale[i].position;
-        }
+        Vector3 startingLocalPos = transform.localPosition;
 
         float t = 0;
         while (t < Mathf.PI)
         {
             t += Time.deltaTime * speed;
-            float sineWave = Mathf.Sin(t);
-            float addedForward = sineWave * scaleIncrease;
-            float addedSqueeze = sineWave * stretchSqueeze;
-            float addedObjScale = sineWave * scaleObjectsIncrease;
+            float currentT = Mathf.Min(t, Mathf.PI);
+            float sineWave = Mathf.Sin(currentT);
 
-            transform.localScale = CalculateNewScale(addedForward, addedSqueeze, out Vector3 localDir);
+            float currentMainShrink = sineWave * shrinkMainAmount;
+            float currentSideShrink = sineWave * shrinkSidesAmount;
+
+            transform.localScale = CalculateNewScale(currentMainShrink, currentSideShrink, out Vector3 localDir);
 
             if (pinBackSide)
             {
-                Vector3 worldMoveDir = transform.TransformDirection(localDir);
-                transform.position = startModelPos + (worldMoveDir * (addedForward / 2f));
+                transform.localPosition = startingLocalPos - (localDir * (currentMainShrink / 2f));
             }
 
-            ApplyDisplacement(startModelPos, startEyePositions, startObjPositions, addedObjScale);
+            ApplyEyeExplosion(sineWave);
             yield return null;
         }
 
-        ResetAnimationState(startModelPos, startEyePositions, startObjPositions);
+        ResetAnimationState();
         isAnimating = false;
     }
 }

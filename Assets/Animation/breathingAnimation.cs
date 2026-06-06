@@ -1,14 +1,17 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public partial class CharacterBreather : MonoBehaviour
+public class CharacterBreather : MonoBehaviour
 {
     [Header("Breathing Settings")]
     [Tooltip("How fast the character breathes.")]
     public float breathSpeed = 2f;
 
-    [Tooltip("How much the Z-axis scales (subtle values like 0.02 to 0.05 work best).")]
-    public float zScaleIntensity = 0.05f;
+    [Tooltip("How much the character expands horizontally (X and Z axes).")]
+    public float horizontalScaleIntensity = 0.03f;
+
+    [Tooltip("How much the character expands vertically (Y axis).")]
+    public float verticalScaleIntensity = 0.02f;
 
     [Header("Follower Settings")]
     [Tooltip("Objects that move upward as the character inhales.")]
@@ -38,10 +41,13 @@ public partial class CharacterBreather : MonoBehaviour
         // Create a sine wave that fluctuates between -1 and 1
         float wave = Mathf.Sin(Time.time * breathSpeed);
 
-        // --- Handle Z-Scale ---
-        // We only modify the Z component of the scale
-        float newZ = initialScale.z + (wave * zScaleIntensity);
-        transform.localScale = new Vector3(initialScale.x, initialScale.y, newZ);
+        // --- Handle Squash and Stretch Scale ---
+        // Expand outward on X and Z, and subtly expand upward on Y for a full lung expansion
+        float newX = initialScale.x + (wave * horizontalScaleIntensity);
+        float newY = initialScale.y + (wave * verticalScaleIntensity);
+        float newZ = initialScale.z + (wave * horizontalScaleIntensity);
+
+        transform.localScale = new Vector3(newX, newY, newZ);
 
         // --- Handle Follower Translation ---
         for (int i = 0; i < followers.Count; i++)
@@ -49,10 +55,10 @@ public partial class CharacterBreather : MonoBehaviour
             if (followers[i] != null)
             {
                 // Calculate new Y position based on the same wave
-                float newY = followerInitialPositions[i].y + (wave * followTranslateAmount);
+                float followerNewY = followerInitialPositions[i].y + (wave * followTranslateAmount);
                 followers[i].localPosition = new Vector3(
                     followerInitialPositions[i].x,
-                    newY,
+                    followerNewY,
                     followerInitialPositions[i].z
                 );
             }
