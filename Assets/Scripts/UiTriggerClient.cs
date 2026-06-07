@@ -38,6 +38,7 @@ public class UiTriggerClient : MonoBehaviour
     private readonly Label[] optionTitles = new Label[6];
 
     private bool uiBound;
+    private bool eventsBound;
     private int availableOptionCount;
     private bool wasHPressed;
     private readonly bool[] wasDigitPressed = new bool[6];
@@ -48,12 +49,6 @@ public class UiTriggerClient : MonoBehaviour
 
     private void Awake()
     {
-        if (SceneManager.GetActiveScene().name != OverlaySceneName)
-        {
-            enabled = false;
-            return;
-        }
-
         uiDocument = GetComponent<UIDocument>();
         if (uiDocument == null)
         {
@@ -61,27 +56,17 @@ public class UiTriggerClient : MonoBehaviour
             enabled = false;
             return;
         }
+
+        SceneManager.activeSceneChanged += OnActiveSceneChanged;
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        SceneManager.sceneUnloaded += OnSceneUnloaded;
+        RefreshEventBindings();
     }
 
     private IEnumerator Start()
     {
         yield return StartCoroutine(BindWhenReady());
-
-        if (UiAutomationRunner.Instance != null)
-        {
-            Debug.Log("[UiTriggerClient] UI Automation Runner Initialized");
-            UiAutomationRunner.Instance.OnMessageReceived += HandleAutomationMessage;
-        }
-
-        var faceGestureRunner = FindFirstObjectByType<FaceGestureRunner>();
-        if (faceGestureRunner != null)
-        {
-            faceGestureRunner.OnGestureDetected += OnFaceGestureDetected;
-        }
-        else
-        {
-            Debug.LogWarning("[UiTriggerClient] FaceGestureRunner not found yet; eyebrow-triggered automation will not work until it is spawned.");
-        }
+        RefreshEventBindings();
     }
 
     private IEnumerator BindWhenReady()
@@ -272,8 +257,62 @@ public class UiTriggerClient : MonoBehaviour
         }
     }
 
-    private void OnDestroy()
+    private void OnActiveSceneChanged(Scene previousScene, Scene newScene)
     {
+        RefreshEventBindings();
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        RefreshEventBindings();
+    }
+
+    private void OnSceneUnloaded(Scene scene)
+    {
+        RefreshEventBindings();
+    }
+
+    private void RefreshEventBindings()
+    {
+        bool shouldBind = SceneManager.GetActiveScene().name == OverlaySceneName;
+        if (shouldBind == eventsBound)
+            return;
+
+        if (shouldBind)
+            BindAutomationEvents();
+        else
+            UnbindAutomationEvents();
+    }
+
+    private void BindAutomationEvents()
+    {
+        if (eventsBound)
+            return;
+
+        if (UiAutomationRunner.Instance != null)
+        {
+            UiAutomationRunner.Instance.OnMessageReceived += HandleAutomationMessage;
+            Debug.Log("[UiTriggerClient] UI Automation Runner events enabled");
+        }
+
+        var faceGestureRunner = FindFirstObjectByType<FaceGestureRunner>();
+        if (faceGestureRunner != null)
+        {
+            faceGestureRunner.OnGestureDetected += OnFaceGestureDetected;
+        }
+        else
+        {
+            Debug.LogWarning("[UiTriggerClient] FaceGestureRunner not found yet; eyebrow-triggered automation will not work until it is spawned.");
+        }
+
+        eventsBound = true;
+    }
+
+    private void UnbindAutomationEvents()
+    {
+        if (!eventsBound)
+            return;
+
         if (UiAutomationRunner.Instance != null)
         {
             UiAutomationRunner.Instance.OnMessageReceived -= HandleAutomationMessage;
@@ -284,5 +323,15 @@ public class UiTriggerClient : MonoBehaviour
         {
             faceGestureRunner.OnGestureDetected -= OnFaceGestureDetected;
         }
+
+        eventsBound = false;
+    }
+
+    private void OnDestroy()
+    {
+        UnbindAutomationEvents();
+        SceneManager.activeSceneChanged -= OnActiveSceneChanged;
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.sceneUnloaded -= OnSceneUnloaded;
     }
 }
