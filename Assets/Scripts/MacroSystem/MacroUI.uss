@@ -18,8 +18,10 @@
     right: 12%; /* Anchored to bottom right near mascot */
     bottom: 12%;
     margin-bottom: 200px; /* Bring it 200px higher to avoid overlap */
-    width: 100px;
-    height: 100px;
+    
+    /* MODIFIED: Grow container to fit buttons vertically */
+    width: 120px;
+    height: auto; 
     translate: 50% 50%;
     
     /* Make the central container/pivot completely invisible */
@@ -27,6 +29,7 @@
     border-width: 0;
     
     display: flex;
+    flex-direction: column; /* FORCES VERTICAL LINE STACKING */
     justify-content: center;
     align-items: center;
     
@@ -35,16 +38,17 @@
 }
 
 .button-grid {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
+    /* MODIFIED: Switched from absolute to flex flow to safely hold the vertical buttons */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px; /* Adjust this value to change spacing between buttons in the line */
     overflow: visible;
 }
 
 .macro-button {
-    position: absolute;
+    /* MODIFIED: Changed to relative layout so Flexbox gaps can handle spacing automatically */
+    position: relative; 
     width: var(--button-size);
     height: var(--button-size);
     border-radius: 50%;
@@ -55,9 +59,10 @@
     justify-content: center;
     overflow: visible;
     
+    /* Transition translate property alongside opacity and scale */
     transition-duration: 0.3s;
     transition-timing-function: ease-out-back;
-    transition-property: all;
+    transition-property: opacity, scale, translate, background-color;
 }
 
 /* Active MVVM State Classes */
@@ -83,19 +88,14 @@
     scale: 0.92;
 }
 
-/* ── Declarative Radial Slots (Radius = 220px) ── */
-/* Calculated offsets from center (100x100 container -> origin is at top-left, so center is 50x50) */
-.slot-prev { left: -207px; top: -75px; }
-.slot-0    { left: -126px; top: -180px; }
-.slot-1    { left: 0px;    top: -220px; }
-.slot-2    { left: 126px;  top: -180px; }
-.slot-next { left: 207px;  top: -75px; }
-
+/* ── REMOVED RADIAL SLOTS ── */
+/* Custom individual left/top positions are deleted to let Flexbox drop everything in a clean line */
 
 /* Group Label */
 .group-name-label {
     position: absolute;
-    top: 120px; /* Below the hub for visibility */
+    top: 100%; /* Keeps it neatly below the entire vertical button list */
+    margin-top: 15px;
     font-size: 20px;
     -unity-font-style: bold;
     color: rgba(170, 200, 245, 0.95);
@@ -113,9 +113,9 @@
 /* Tooltips */
 .button-tooltip {
     position: absolute;
-    top: -55px; /* Above the button */
-    left: 50%;
-    translate: -50% 0; /* Perfectly center horizontally */
+    top: 50%;
+    right: 120%; /* MODIFIED: Flips tooltips to the LEFT side of the vertical line */
+    translate: 0 -50%; /* Centers them vertically against the button */
     -unity-text-align: middle-center;
     font-size: 18px;
     -unity-font-style: bold;
