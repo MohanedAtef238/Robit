@@ -29,7 +29,7 @@ public class GazeFollowerRunner : BaseUdpProcessRunner<GazeFollowerRunner>
     private const string CalibrationSceneName = "GazeCalibrationScene";
 
     [Header("Multimodal Setup")]
-    [SerializeField] private string relativeExePath = @"Multimodal_UDP/unity_gaze_bridge.exe";
+    [SerializeField] private string relativeExePath = @"Multimodal_UDP/unity_gaze_bridge/unity_gaze_bridge.exe";
     [SerializeField] private bool promptForCalibrationChoice = true;
 
     [Header("Debug")]

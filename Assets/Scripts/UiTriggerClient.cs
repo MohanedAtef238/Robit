@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using NativeWebSocket;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -28,15 +27,9 @@ public class UiTriggerClient : MonoBehaviour
 {
     private const string OverlaySceneName = "OverlayScene";
 
-    [Header("Configuration")]
-    [SerializeField] private string serverUrl = "ws://127.0.0.1:8181";
-    [SerializeField] private bool autoConnect = true;
-
     [Header("Selection Overlay")]
     [SerializeField] private int maxVisibleOptions = 6;
-    [SerializeField] private float emgHoldThresholdSeconds = 2f;
 
-    private WebSocket websocket;
     private UIDocument uiDocument;
     private VisualElement selectorRoot;
     private Label selectorSubtitle;
@@ -49,9 +42,6 @@ public class UiTriggerClient : MonoBehaviour
     private bool wasHPressed;
     private readonly bool[] wasDigitPressed = new bool[6];
     private bool wasEscapePressed;
-    private bool wasEmgPressed;
-    private float emgPressedAt;
-    private bool emgHoldTriggered;
 
     [DllImport("user32.dll")]
     private static extern short GetAsyncKeyState(int vKey);
@@ -75,30 +65,27 @@ public class UiTriggerClient : MonoBehaviour
 
     private IEnumerator Start()
     {
-        if (!enabled)
-            yield break;
-
         yield return StartCoroutine(BindWhenReady());
 
-        if (!autoConnect)
-            yield break;
+        if (UiAutomationRunner.Instance != null)
+        {
+            Debug.Log("[UiTriggerClient] UI Automation Runner Initialized");
+            UiAutomationRunner.Instance.OnMessageReceived += HandleAutomationMessage;
+        }
 
-        websocket = new WebSocket(serverUrl);
-
-        websocket.OnOpen += () => Debug.Log("Connected to .NET app");
-        websocket.OnError += e => Debug.Log("Error: " + e);
-        websocket.OnClose += _ => Debug.Log("Connection closed");
-        websocket.OnMessage += HandleWebSocketMessage;
-
-        var connectTask = websocket.Connect();
-        while (!connectTask.IsCompleted)
-            yield return null;
+        var faceGestureRunner = FindFirstObjectByType<FaceGestureRunner>();
+        if (faceGestureRunner != null)
+        {
+            faceGestureRunner.OnGestureDetected += OnFaceGestureDetected;
+        }
+        else
+        {
+            Debug.LogWarning("[UiTriggerClient] FaceGestureRunner not found yet; eyebrow-triggered automation will not work until it is spawned.");
+        }
     }
 
     private IEnumerator BindWhenReady()
     {
-        yield return null;
-
         var root = uiDocument.rootVisualElement;
         if (root == null)
         {
@@ -141,12 +128,8 @@ public class UiTriggerClient : MonoBehaviour
 
     private void Update()
     {
-        websocket?.DispatchMessageQueue();
-
         if (!uiBound)
             return;
-
-        UpdateEmgHold();
 
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
         bool isHPressed = (GetAsyncKeyState(0x48) & 0x8000) != 0;
@@ -181,32 +164,8 @@ public class UiTriggerClient : MonoBehaviour
 #endif
     }
 
-    private void UpdateEmgHold()
+    private void HandleAutomationMessage(string message)
     {
-        bool isEmgPressed = VirtualInputState.Instance.IsEmgActive;
-        if (isEmgPressed && !wasEmgPressed)
-        {
-            emgPressedAt = Time.unscaledTime;
-            emgHoldTriggered = false;
-        }
-        else if (!isEmgPressed && wasEmgPressed)
-        {
-            emgHoldTriggered = false;
-        }
-
-        if (isEmgPressed && !emgHoldTriggered && Time.unscaledTime - emgPressedAt >= emgHoldThresholdSeconds)
-        {
-            SendGetClosest();
-            emgHoldTriggered = true;
-        }
-
-        wasEmgPressed = isEmgPressed;
-    }
-
-    private void HandleWebSocketMessage(byte[] bytes)
-    {
-        string message = System.Text.Encoding.UTF8.GetString(bytes).Trim();
-
         if (string.Equals(message, "hold done", StringComparison.OrdinalIgnoreCase))
         {
             ShowSelectionOverlay(maxVisibleOptions, "Choose an index to invoke");
@@ -221,18 +180,28 @@ public class UiTriggerClient : MonoBehaviour
         }
         catch (Exception ex)
         {
-            Debug.LogWarning("[UiTriggerClient] Failed to parse WebSocket message: " + ex.Message);
+            Debug.LogWarning("[UiTriggerClient] Failed to parse automation message: " + ex.Message);
         }
     }
 
-    private async void SendGetClosest()
+    private void OnFaceGestureDetected(string gestureName)
     {
-        if (websocket == null || websocket.State != WebSocketState.Open)
+        if (!string.Equals(gestureName, "raise_eyebrow", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(gestureName, "eyebrow_up", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(gestureName, "eyebrows raised", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        SendGetClosest();
+    }
+
+    private void SendGetClosest()
+    {
+        if (UiAutomationRunner.Instance == null)
             return;
 
         HideSelectionOverlay();
-        await websocket.SendText("{\"type\":\"getClosest\"}");
-        Debug.Log("Requested closest elements");
+        UiAutomationRunner.Instance.SendCmd("{\"type\":\"getClosest\"}");
+        Debug.Log("[UiTriggerClient] Requested closest elements");
     }
 
     private void OnOptionPressed(PointerDownEvent evt)
@@ -257,15 +226,15 @@ public class UiTriggerClient : MonoBehaviour
         InvokeIndex(index);
     }
 
-    private async void InvokeIndex(int index)
+    private void InvokeIndex(int index)
     {
-        if (websocket == null || websocket.State != WebSocketState.Open)
+        if (UiAutomationRunner.Instance == null)
             return;
 
         HideSelectionOverlay();
 
         string msg = $"{{\"type\":\"invokeIndex\",\"index\":{index}}}";
-        await websocket.SendText(msg);
+        UiAutomationRunner.Instance.SendCmd(msg);
         Debug.Log("Invoked index: " + index);
     }
 
@@ -303,9 +272,17 @@ public class UiTriggerClient : MonoBehaviour
         }
     }
 
-    private async void OnDestroy()
+    private void OnDestroy()
     {
-        if (websocket != null)
-            await websocket.Close();
+        if (UiAutomationRunner.Instance != null)
+        {
+            UiAutomationRunner.Instance.OnMessageReceived -= HandleAutomationMessage;
+        }
+
+        var faceGestureRunner = FindFirstObjectByType<FaceGestureRunner>();
+        if (faceGestureRunner != null)
+        {
+            faceGestureRunner.OnGestureDetected -= OnFaceGestureDetected;
+        }
     }
 }

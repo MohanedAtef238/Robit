@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using UnityEngine;
 
 [DefaultExecutionOrder(-880)]
@@ -24,6 +25,9 @@ public class UiAutomationRunner : BaseProcessRunner<UiAutomationRunner>
 
     // ── State ─────────────────────────────────────────────────────────────────
     private Process automationProcess;
+    private SynchronizationContext mainThreadContext;
+
+    public event Action<string> OnMessageReceived;
 
     // ── Bootstrap (commented out — started externally) ────────────────────────
     // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -44,6 +48,8 @@ public class UiAutomationRunner : BaseProcessRunner<UiAutomationRunner>
     /// </summary>
     protected override void OnAfterAwake()
     {
+        mainThreadContext = SynchronizationContext.Current;
+
         if (autoStartOnAwake)
             StartAutomationServer();
     }
@@ -95,6 +101,7 @@ public class UiAutomationRunner : BaseProcessRunner<UiAutomationRunner>
             Arguments              = argsConfig,
             WorkingDirectory       = workingDirectory,
             UseShellExecute        = false,
+            RedirectStandardInput  = true,
             RedirectStandardOutput = true,
             RedirectStandardError  = true,
             CreateNoWindow         = true,
@@ -119,8 +126,53 @@ public class UiAutomationRunner : BaseProcessRunner<UiAutomationRunner>
         TerminateProcess(ref automationProcess);
     }
 
+    public void SendCmd(string json)
+    {
+        if (automationProcess == null || automationProcess.HasExited)
+            return;
+
+        try
+        {
+            automationProcess.StandardInput.WriteLine(json);
+            automationProcess.StandardInput.Flush();
+        }
+        catch (Exception ex)
+        {
+            RobitLogger.LogWarning($"{LogPrefix} Failed to send cmd: {ex.Message}");
+        }
+    }
+
     /// <summary>Required by BaseProcessRunner — called on quit and destroy.</summary>
     public override void StopRunner() => StopAutomationServer();
+
+    protected override void OnOutputDataReceived(object sender, DataReceivedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(e.Data))
+            return;
+
+        string line = e.Data.Trim();
+        if (line.StartsWith("CMD_RESPONSE:", StringComparison.OrdinalIgnoreCase))
+        {
+            string payload = line.Substring("CMD_RESPONSE:".Length);
+
+            if (mainThreadContext != null)
+                mainThreadContext.Post(_ => OnMessageReceived?.Invoke(payload), null);
+            else
+                OnMessageReceived?.Invoke(payload);
+
+            return;
+        }
+
+        base.OnOutputDataReceived(sender, e);
+    }
+
+    protected override void OnErrorDataReceived(object sender, DataReceivedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(e.Data))
+            return;
+
+        RobitLogger.LogWarning($"{LogPrefix}[Server-ERR] {e.Data.Trim()}");
+    }
 
     // ── Env file overrides ────────────────────────────────────────────────────
 

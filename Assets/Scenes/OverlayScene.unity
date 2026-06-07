@@ -593,6 +593,95 @@ MonoBehaviour:
   homePageController: {fileID: 1748671727}
   menuAnchorOffset: {x: 0, y: 1.2, z: 0}
   panelPixelOffset: {x: 0, y: 211}
+--- !u!1 &155197161
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 155197164}
+  - component: {fileID: 155197163}
+  - component: {fileID: 155197162}
+  - component: {fileID: 155197165}
+  m_Layer: 0
+  m_Name: UiAutomationClient
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &155197162
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 155197161}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c4b4f2f071941540a89bf23d070ee8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Robit::UiTriggerClient
+  maxVisibleOptions: 6
+--- !u!114 &155197163
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 155197161}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: 6fe11cb326cfddc40a65cb70996999fc, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: 84be1c8a97b24cfe8e119182df8140cb, type: 3}
+  m_SortingOrder: 0
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
+--- !u!4 &155197164
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 155197161}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &155197165
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 155197161}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 565948b8fc1bc744c828d1860658cbfa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Robit::UiAutomationRunner
+  relativeWorkingDirectory: D:/Projects/Robit Ui Automation System/Robit-UI-Automation
+  executablePath: dotnet
+  arguments: run
+  autoStartOnAwake: 1
+  loadOverridesFromEnvFile: 1
+  envFileName: uiautomation.env
+  logResolvedPaths: 1
 --- !u!1 &158503165
 GameObject:
   m_ObjectHideFlags: 0
@@ -870,6 +959,58 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RelativeEyelid
   closedXOffset: 35
   blinkSpeed: 30
+--- !u!1 &592275678
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 592275680}
+  - component: {fileID: 592275679}
+  m_Layer: 0
+  m_Name: FaceGesturesClassifier
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &592275679
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 592275678}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 167afec8d561a6f45bebfb253876c368, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Robit::FaceGestureRunner
+  relativeWorkingDirectory: D:/Projects/face_gestures
+  relativeExecutablePath: D:/Projects/face_gestures/dist/main/main.exe
+  executableArguments: 
+  autoStartOnAwake: 1
+  eyebrowGestureName: raise_eyebrow
+  loadOverridesFromEnvFile: 1
+  envFileName: face.env
+  logResolvedPaths: 1
+--- !u!4 &592275680
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 592275678}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0, y: -0, z: -0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &748051258
 GameObject:
   m_ObjectHideFlags: 0
@@ -2099,7 +2240,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Robit::GazeFollowerRunner
   relativeExePath: Multimodal_UDP/unity_gaze_bridge.exe
-  autoStartOnAwake: 1
   promptForCalibrationChoice: 0
   simulateGazeWithArrowKeys: 1
 --- !u!114 &1454036238
@@ -2115,7 +2255,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Robit::EmgPredictionRunner
   relativeExePath: Multimodal_UDP/unity_emg_bridge.exe
-  autoStartOnAwake: 1
+  comPort: COM4
   simulateEmgWithSpaceKey: 1
 --- !u!4 &1454036239
 Transform:
@@ -4707,3 +4847,5 @@ SceneRoots:
   - {fileID: 91883970}
   - {fileID: 33811928}
   - {fileID: 1454036239}
+  - {fileID: 592275680}
+  - {fileID: 155197164}
