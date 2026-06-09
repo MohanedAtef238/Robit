@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class LocalSpaceLookAt : MonoBehaviour
 {
@@ -22,7 +23,8 @@ public class LocalSpaceLookAt : MonoBehaviour
         if (mainCamera == null) return;
 
         // 1. Find where the mouse is pointing in the world
-        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+        if (Mouse.current == null) return;
+        Ray ray = mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
         Plane plane = new Plane(transform.forward, transform.position);
 
         if (plane.Raycast(ray, out float enterDistance))

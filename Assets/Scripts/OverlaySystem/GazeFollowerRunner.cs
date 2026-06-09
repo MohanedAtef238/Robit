@@ -644,6 +644,7 @@ public class GazeFollowerRunner : BaseUdpProcessRunner<GazeFollowerRunner>
     /// </summary>
     public void TriggerCalibrationFlow(string profileId)
     {
+        StopGazeFollower();
         activeProfileId = profileId;
         SceneManager.LoadScene(CalibrationSceneName);
     }

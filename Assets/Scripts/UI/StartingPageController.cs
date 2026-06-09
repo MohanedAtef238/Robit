@@ -193,7 +193,16 @@ public class StartingPageController : MonoBehaviour
     {
         PlayerPrefs.SetString("ActiveProfileID", profileId);
         PlayerPrefs.Save();
-        UnityEngine.SceneManagement.SceneManager.LoadScene("GazeCalibrationScene");
+        
+        var runner = FindFirstObjectByType<GazeFollowerRunner>();
+        if (runner != null)
+        {
+            runner.TriggerCalibrationFlow(profileId);
+        }
+        else
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene("GazeCalibrationScene");
+        }
     }
 
     private void SelectProfile(string profileId)
