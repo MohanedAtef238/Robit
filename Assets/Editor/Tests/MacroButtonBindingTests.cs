@@ -133,16 +133,16 @@ namespace Robit.Tests
         /// </summary>
         [Test]
         [Category("Unit")]
-        public void ActionType_CanBeSetToCalibration_BoundaryMax()
+        public void ActionType_CanBeSetToSettings_BoundaryMax()
         {
             // Arrange
             var binding = new MacroButtonBinding();
 
             // Act
-            binding.actionType = MacroActionType.Calibration; // BVA max
+            binding.actionType = MacroActionType.Settings; // BVA max
 
             // Assert
-            Assert.AreEqual(MacroActionType.Calibration, binding.actionType);
+            Assert.AreEqual(MacroActionType.Settings, binding.actionType);
         }
 
         // ─────────────────────────────────────────────────────────────────────

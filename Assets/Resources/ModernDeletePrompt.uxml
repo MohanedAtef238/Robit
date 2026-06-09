@@ -1,0 +1,13 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Resources/ModernNamePrompt.uss" />
+    <ui:VisualElement name="overlay" class="prompt-overlay">
+        <ui:VisualElement name="panel" class="prompt-panel">
+            <ui:Label text="Delete this profile?" class="prompt-title" />
+            <ui:Label text="This action cannot be undone." class="prompt-subtitle" style="color: #ff6b6b; margin-bottom: 20px; -unity-text-align: middle-center; font-size: 14px;" />
+            <ui:VisualElement class="btn-container">
+                <ui:Button name="btn-confirm" text="Delete" class="btn btn-create" style="background-color: #d9534f;" />
+                <ui:Button name="btn-cancel" text="Cancel" class="btn btn-cancel" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

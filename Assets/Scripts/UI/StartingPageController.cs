@@ -35,7 +35,9 @@ public class StartingPageController : MonoBehaviour
 
     // UI Toolkit Prompt
     private UIDocument _modernPromptDoc;
-    private TextField _modernNameInput;
+    private TextField  _modernNameInput;
+    private UIDocument _modernDeleteDoc;
+    private string     _profileToDeleteId;
 
     // ── Lifecycle ───────────────────────────────────────────────────────────
 
@@ -147,7 +149,14 @@ public class StartingPageController : MonoBehaviour
         {
             Sprite avatar = LoadAvatar(profile.pfpPath);
             ProfileCard card = Instantiate(profileCardPrefab, profilesContainer);
-            card.Setup(profile, avatar, () => SelectProfile(profile.id));
+            card.Setup(profile, avatar, 
+                () => {
+                    if (profile.isCalibrated) SelectProfile(profile.id);
+                    else RecalibrateProfile(profile.id);
+                },
+                () => RecalibrateProfile(profile.id),
+                () => DeleteProfile(profile.id)
+            );
             
             if (animate)
             {
@@ -180,6 +189,13 @@ public class StartingPageController : MonoBehaviour
 
     // ── Profile selection ────────────────────────────────────────────────────
 
+    private void RecalibrateProfile(string profileId)
+    {
+        PlayerPrefs.SetString("ActiveProfileID", profileId);
+        PlayerPrefs.Save();
+        UnityEngine.SceneManagement.SceneManager.LoadScene("GazeCalibrationScene");
+    }
+
     private void SelectProfile(string profileId)
     {
         PlayerPrefs.SetString("ActiveProfileID", profileId);
@@ -209,6 +225,11 @@ public class StartingPageController : MonoBehaviour
         {
             SceneManager.LoadScene("OverlayScene");
         }
+    }
+
+    private void DeleteProfile(string profileId)
+    {
+        ShowDeletePrompt(profileId);
     }
 
     // ── Name prompt ──────────────────────────────────────────────────────────
@@ -261,6 +282,54 @@ public class StartingPageController : MonoBehaviour
 
         HidePrompt();
         RebuildCards(false); // No animation needed when adding a new one, it'll just appear
+    }
+
+    // ── Delete prompt ────────────────────────────────────────────────────────
+
+    private void SetupDeletePromptIfMissing()
+    {
+        if (_modernDeleteDoc == null)
+        {
+            var go = new GameObject("DeletePromptDoc");
+            go.transform.SetParent(this.transform);
+            _modernDeleteDoc = go.AddComponent<UIDocument>();
+            _modernDeleteDoc.visualTreeAsset = Resources.Load<VisualTreeAsset>("ModernDeletePrompt");
+            _modernDeleteDoc.panelSettings   = Resources.Load<PanelSettings>("New Panel Settings");
+            _modernDeleteDoc.sortingOrder = 101;
+            
+            var root = _modernDeleteDoc.rootVisualElement;
+            root.style.display = DisplayStyle.None;
+            
+            var btnConfirm = root.Q<Button>("btn-confirm");
+            var btnCancel = root.Q<Button>("btn-cancel");
+            
+            if (btnConfirm != null) btnConfirm.clicked += OnDeleteConfirmed;
+            if (btnCancel != null) btnCancel.clicked += HideDeletePrompt;
+        }
+    }
+
+    private void ShowDeletePrompt(string profileId)
+    {
+        _profileToDeleteId = profileId;
+        SetupDeletePromptIfMissing();
+        if (_modernDeleteDoc != null) _modernDeleteDoc.rootVisualElement.style.display = DisplayStyle.Flex;
+    }
+
+    private void HideDeletePrompt()
+    {
+        if (_modernDeleteDoc != null) _modernDeleteDoc.rootVisualElement.style.display = DisplayStyle.None;
+        _profileToDeleteId = null;
+    }
+
+    private void OnDeleteConfirmed()
+    {
+        if (!string.IsNullOrEmpty(_profileToDeleteId))
+        {
+            _data.profiles.RemoveAll(p => p.id == _profileToDeleteId);
+            ProfileManager.SaveProfiles(_data);
+            RebuildCards(false);
+        }
+        HideDeletePrompt();
     }
 
     private void OpenOnScreenKeyboard()

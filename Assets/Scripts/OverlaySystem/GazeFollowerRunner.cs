@@ -28,7 +28,7 @@ public class GazeFollowerRunner : BaseUdpProcessRunner<GazeFollowerRunner>
 
     private const string CalibrationSceneName = "GazeCalibrationScene";
 
-    [Header("Multimodal Setup")]
+    [Tooltip("Path to the Python bridge exe, relative to StreamingAssets.")]
     [SerializeField] private string relativeExePath = @"Multimodal_UDP/unity_gaze_bridge/unity_gaze_bridge.exe";
     [SerializeField] private bool promptForCalibrationChoice = true;
 
@@ -636,5 +636,15 @@ public class GazeFollowerRunner : BaseUdpProcessRunner<GazeFollowerRunner>
     {
         activeProfileId = profileId;
         StartCoroutine(BeginStartupFlow());
+    }
+
+    /// <summary>
+    /// Forces the calibration flow for a specific profile (ignoring whether it is already calibrated).
+    /// Used by the "Recalibrate" button.
+    /// </summary>
+    public void TriggerCalibrationFlow(string profileId)
+    {
+        activeProfileId = profileId;
+        SceneManager.LoadScene(CalibrationSceneName);
     }
 }

@@ -116,7 +116,7 @@ public class GazeCalibrationController : MonoBehaviour
     [SerializeField] private string returnSceneName = "OverlayScene";
 
     [Tooltip("Path to the Python bridge exe, relative to StreamingAssets.")]
-    [SerializeField] private string relativeExePath = @"Multimodal_UDP/unity_gaze_bridge.exe";
+    [SerializeField] private string relativeExePath = @"Multimodal_UDP/unity_gaze_bridge/unity_gaze_bridge.exe";
 
     [Tooltip("Optional explicit camera reference. Leave empty to use Camera.main.")]
     [SerializeField] private Camera sceneCamera;
@@ -263,6 +263,10 @@ public class GazeCalibrationController : MonoBehaviour
     public void StartCalibration(string profileId = null)
     {
         calibrationProfileId = profileId;
+        if (string.IsNullOrEmpty(calibrationProfileId))
+        {
+            calibrationProfileId = PlayerPrefs.GetString("ActiveProfileID", null);
+        }
         StartCoroutine(LaunchBridge());
     }
 
@@ -481,7 +485,7 @@ public class GazeCalibrationController : MonoBehaviour
                 if (profile != null)
                 {
                     profile.isCalibrated        = true;
-                    profile.lastCalibrationDate = DateTime.Now.ToString("MMM d, yyyy h:mm tt");
+                    profile.lastCalibrationDate = DateTime.Now.ToString("dd/MM/yy HH:mm");
                     ProfileManager.SaveProfiles(data);
                     RobitLogger.Log($"[GazeCalib] Profile '{profile.name}' marked as calibrated.");
                 }

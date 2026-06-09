@@ -20,11 +20,17 @@ public class ProfileCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     public TextMeshProUGUI nameText;
     public TextMeshProUGUI statusText;
 
+    [Header("Calibration UI")]
+    public Button recalibrateButton;
+    public Button deleteButton;
+
     [Header("Hover Scale")]
     public float hoverScale = 1.08f;
     public float hoverSpeed = 8f;
 
     private Action _onClick;
+    private Action _onRecalibrate;
+    private Action _onDelete;
     private Vector3 _baseScale;
     private Vector3 _contentBaseScale;
     private UIEffect _uiEffect;
@@ -44,17 +50,44 @@ public class ProfileCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             _uiEffect.edgeShinyAutoPlaySpeed = 0f;
             _uiEffect.edgeShinyRate = 0f;
         }
+
+        if (recalibrateButton != null)
+        {
+            recalibrateButton.onClick.AddListener(() => _onRecalibrate?.Invoke());
+        }
+        if (deleteButton != null)
+        {
+            deleteButton.onClick.AddListener(() => _onDelete?.Invoke());
+        }
     }
 
     // ── Setup ───────────────────────────────────────────────────────────────
 
-    /// <summary>Populate a normal profile card.</summary>
-    public void Setup(UserProfile profile, Sprite avatar, Action onClick)
+    public void Setup(UserProfile profile, Sprite avatar, Action onClick, Action onRecalibrate, Action onDelete)
     {
         if (profileImage != null) profileImage.sprite = avatar;
         if (nameText    != null) nameText.text  = profile.name;
-        if (statusText  != null) statusText.text = profile.isCalibrated ? "Calibrated" : "Setup Required";
+        
+        if (statusText  != null) 
+        {
+            if (profile.isCalibrated) {
+                statusText.text = string.IsNullOrEmpty(profile.lastCalibrationDate) || profile.lastCalibrationDate == "Never" 
+                                    ? "Calibrated" 
+                                    : "Calibrated : " + profile.lastCalibrationDate;
+            } else {
+                statusText.text = "Setup Required";
+            }
+        }
+
+        if (recalibrateButton != null)
+        {
+            var txt = recalibrateButton.GetComponentInChildren<TextMeshProUGUI>();
+            if (txt != null) txt.text = profile.isCalibrated ? "Recalibrate" : "Setup Now";
+        }
+
         _onClick = onClick;
+        _onRecalibrate = onRecalibrate;
+        _onDelete = onDelete;
     }
 
     /// <summary>Populate the Plus card.</summary>
@@ -62,6 +95,8 @@ public class ProfileCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     {
         if (nameText   != null) nameText.text = "Add Profile";
         if (statusText != null) statusText.gameObject.SetActive(false);
+        if (recalibrateButton != null) recalibrateButton.gameObject.SetActive(false);
+        if (deleteButton != null) deleteButton.gameObject.SetActive(false);
         _onClick = onClick;
     }
 
@@ -71,7 +106,7 @@ public class ProfileCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     {
         if (_scaleCoroutine != null) StopCoroutine(_scaleCoroutine);
         
-        Vector3 target = contentContainer != null ? _contentBaseScale * hoverScale : _baseScale * hoverScale;
+        Vector3 target = _baseScale * hoverScale;
         _scaleCoroutine = StartCoroutine(ScaleTo(target));
         
         if (_uiEffect != null) _uiEffect.edgeShinyAutoPlaySpeed = 2f;
@@ -82,7 +117,7 @@ public class ProfileCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     {
         if (_scaleCoroutine != null) StopCoroutine(_scaleCoroutine);
         
-        Vector3 target = contentContainer != null ? _contentBaseScale : _baseScale;
+        Vector3 target = _baseScale;
         _scaleCoroutine = StartCoroutine(ScaleTo(target));
         
         if (_uiEffect != null) 
@@ -98,7 +133,7 @@ public class ProfileCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     private IEnumerator ScaleTo(Vector3 target)
     {
-        Transform targetTransform = contentContainer != null ? contentContainer : transform;
+        Transform targetTransform = transform;
         while (Vector3.Distance(targetTransform.localScale, target) > 0.001f)
         {
             targetTransform.localScale = Vector3.Lerp(targetTransform.localScale, target, Time.deltaTime * hoverSpeed);

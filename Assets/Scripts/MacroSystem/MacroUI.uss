@@ -18,8 +18,6 @@
     right: 12%; /* Anchored to bottom right near mascot */
     bottom: 12%;
     margin-bottom: 200px; /* Bring it 200px higher to avoid overlap */
-    
-    /* MODIFIED: Grow container to fit buttons vertically */
     width: 120px;
     height: auto; 
     translate: 50% 50%;
@@ -38,17 +36,15 @@
 }
 
 .button-grid {
-    /* MODIFIED: Switched from absolute to flex flow to safely hold the vertical buttons */
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 15px; /* Adjust this value to change spacing between buttons in the line */
     overflow: visible;
 }
 
 .macro-button {
-    /* MODIFIED: Changed to relative layout so Flexbox gaps can handle spacing automatically */
     position: relative; 
+    margin-bottom: 15px;
     width: var(--button-size);
     height: var(--button-size);
     border-radius: 50%;
@@ -88,9 +84,6 @@
     scale: 0.92;
 }
 
-/* ── REMOVED RADIAL SLOTS ── */
-/* Custom individual left/top positions are deleted to let Flexbox drop everything in a clean line */
-
 /* Group Label */
 .group-name-label {
     position: absolute;
@@ -114,7 +107,7 @@
 .button-tooltip {
     position: absolute;
     top: 50%;
-    right: 120%; /* MODIFIED: Flips tooltips to the LEFT side of the vertical line */
+    right: 120%;
     translate: 0 -50%; /* Centers them vertically against the button */
     -unity-text-align: middle-center;
     font-size: 18px;

@@ -1,7 +1,7 @@
 /* --- MAIN DASHBOARD LAYOUT --- */
 .app-launcher-root {
     flex-grow: 1;
-    background-color: transparent; /* Removed blackout effect */
+    background-color: transparent;
     padding: 40px;
     align-items: center;
     justify-content: center;
