@@ -160,8 +160,6 @@ private Texture2D ExtractHighQualityIcon(string filePath)
         // Cache the highest resolution texture as PNG
         try
         {
-            // Note: We don't use fileSystem for directory creation/writing in the real version yet
-            // to avoid complicating the mock for now, but we'll use it for FileExists above.
             if (!Directory.Exists(iconsFolder))
                 Directory.CreateDirectory(iconsFolder);
             

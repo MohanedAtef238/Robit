@@ -24,7 +24,6 @@ public static class MacroActionFactory
     {
         RuntimeHelpers.RunClassConstructor(typeof(AppCyclerAction).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(BackAction).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(CalibrationAction).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(CloseTabAction).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(CloseWindowAction).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(FindOnPageAction).TypeHandle);

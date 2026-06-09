@@ -114,18 +114,18 @@ namespace Robit.Tests
         /// </summary>
         [Test]
         [Category("Unit")]
-        public void Create_ReturnsCalibrationAction_ForBoundaryMaxType()
+        public void Create_ReturnsSettingsAction_ForBoundaryMaxType()
         {
             // Arrange
-            const MacroActionType type = MacroActionType.Calibration; // last defined
+            const MacroActionType type = MacroActionType.Settings; // last defined
 
             // Act
             IMacroAction result = MacroActionFactory.Create(type);
 
             // Assert
             Assert.IsNotNull(result);
-            Assert.AreEqual("calibration", result.ActionId,
-                "Calibration is the BVA upper boundary — ActionId must be 'calibration'.");
+            Assert.AreEqual("settings", result.ActionId,
+                "Settings is the BVA upper boundary — ActionId must be 'settings'.");
         }
 
         /// <summary>

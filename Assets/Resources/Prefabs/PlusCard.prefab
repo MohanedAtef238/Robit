@@ -56,6 +56,8 @@ MonoBehaviour:
   profileImage: {fileID: 0}
   nameText: {fileID: 8641106931407716857}
   statusText: {fileID: 0}
+  recalibrateButton: {fileID: 0}
+  deleteButton: {fileID: 0}
   hoverScale: 1.08
   hoverSpeed: 8
 --- !u!222 &6246593524322815327
@@ -185,7 +187,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4290442148
+    rgba: 4278190080
   m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 0
@@ -586,7 +588,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4292467161
+    rgba: 4278190080
   m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -710,7 +712,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.29411766, g: 0, b: 0.50980395, a: 0.7176471}
+  m_Color: {r: 0.3921569, g: 0.75294125, b: 0.5176471, a: 0.7176471}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1

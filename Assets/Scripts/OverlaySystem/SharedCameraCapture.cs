@@ -42,7 +42,8 @@ public class SharedCameraCapture : MonoBehaviour
     const int MAX_HEIGHT  = 1080;
 
     [SerializeField] string memoryName    = "RobitCameraFrame";
-    [SerializeField] string relativeExePath = @"Multimodal_UDP/share_camera.exe";
+    [Tooltip("Path to the Python shared camera capture executable relative to StreamingAssets.")]
+    [SerializeField] string relativeExePath = @"Multimodal_UDP/share_camera/share_camera.exe";
     [SerializeField] int    deviceIndex   = 0;
     [SerializeField] int    requestedWidth  = 1280;
     [SerializeField] int    requestedHeight = 720;

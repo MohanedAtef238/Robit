@@ -36,7 +36,5 @@ public enum MacroActionType
     HomeDashboard,
     AppCycler,
     Settings,
-    // Legacy (kept for compatibility)
-    Calibration,
 }
 

@@ -2352,7 +2352,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 036630b74d7ac8749bb8684faed4f5cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Robit::GazeFollowerRunner
-  relativeExePath: Multimodal_UDP/unity_gaze_bridge.exe
+  relativeExePath: Multimodal_UDP/unity_gaze_bridge/unity_gaze_bridge.exe
   promptForCalibrationChoice: 0
   simulateGazeWithArrowKeys: 1
 --- !u!114 &1454036238
