@@ -542,9 +542,8 @@ public class GazeCalibrationController : MonoBehaviour
 
     // ── Phase transition ──────────────────────────────────────────────────
 
-    private void HandlePhaseTransition(string phase)
+        private void HandlePhaseTransition(string phase)
     {
-        // Reset glow panels
         if (glowRight != null) glowRight.style.opacity = 0;
         if (glowLeft  != null) glowLeft.style.opacity  = 0;
 
@@ -552,36 +551,10 @@ public class GazeCalibrationController : MonoBehaviour
         {
             case "PHASE_LIGHT":
                 SetCameraBackground(BG_LIGHT);
-                SetLabelColors(new Color(0.20f, 0.27f, 0.18f));  // dark green text
-                SetPromptCardColors(new Color(1f, 1f, 1f, 0.78f), new Color(0.31f, 0.63f, 0.39f, 0.78f));
-                SetStatus("Phase 1 — Light\nFocus on each dot as it appears.");
-                firstPointReceived = false;
-                break;
-
-            case "PHASE_DARK":
-                SetCameraBackground(BG_DARK);
-                SetLabelColors(new Color(0.85f, 0.90f, 0.84f));  // near-white text
-                SetPromptCardColors(new Color(0.15f, 0.18f, 0.15f, 0.78f), new Color(0.25f, 0.35f, 0.25f, 0.78f));
-                SetStatus("Phase 2 — Dark\nFocus on each dot as it appears.");
-                firstPointReceived = false;
-                break;
-
-            case "PHASE_RIGHT_TILT":
-                SetCameraBackground(BG_LIGHT);
                 SetLabelColors(new Color(0.20f, 0.27f, 0.18f));
                 SetPromptCardColors(new Color(1f, 1f, 1f, 0.78f), new Color(0.31f, 0.63f, 0.39f, 0.78f));
-                SetStatus("Phase 3 — Tilt Right\nTilt your head slightly to the right,\nthen follow the dots.");
+                SetStatus("Follow the dot as it appears.");
                 firstPointReceived = false;
-                StartCoroutine(GlowAndFade(glowRight, GLOW_RIGHT, 3, 1.2f));
-                break;
-
-            case "PHASE_LEFT_TILT":
-                SetCameraBackground(BG_LIGHT);
-                SetLabelColors(new Color(0.20f, 0.27f, 0.18f));
-                SetPromptCardColors(new Color(1f, 1f, 1f, 0.78f), new Color(0.31f, 0.63f, 0.39f, 0.78f));
-                SetStatus("Phase 4 — Tilt Left\nTilt your head slightly to the left,\nthen follow the dots.");
-                firstPointReceived = false;
-                StartCoroutine(GlowAndFade(glowLeft, GLOW_LEFT, 3, 1.2f));
                 break;
         }
     }
@@ -739,3 +712,4 @@ public class GazeCalibrationController : MonoBehaviour
     private void OnDestroy()    { if (Instance == this) Instance = null; Cleanup(); }
     private void OnApplicationQuit() => Cleanup();
 }
+
