@@ -78,23 +78,23 @@ public class GlobalCursorManager : MonoBehaviour
             Win32Interop.SetSystemCursor(_hoverHandle, Win32Interop.OCR_HAND);
 
         // Extended cursors
-        ApplyCursor("I.ani", Win32Interop.OCR_IBEAM);
+        ApplyCursor("Text_Input.ani", Win32Interop.OCR_IBEAM);
         ApplyCursor("load.ani", Win32Interop.OCR_WAIT);
-        ApplyCursor("no.ani", Win32Interop.OCR_NO);
+        ApplyCursor("not_allowed.ani", Win32Interop.OCR_NO);
         ApplyCursor("load.ani", Win32Interop.OCR_APPSTARTING);
-        ApplyCursor("horizontal_vertical.cur", Win32Interop.OCR_SIZEALL);
-        ApplyCursor("what.ani", Win32Interop.OCR_HELP);
+        ApplyCursor("horizontal_vertical.ani", Win32Interop.OCR_SIZEALL);
+        ApplyCursor("question_mark.ani", Win32Interop.OCR_HELP);
         
         // Additional states requested
-        ApplyCursor("horizontal_vertical.cur", Win32Interop.OCR_CROSS); // Precision Select
+        ApplyCursor("horizontal_vertical.ani", Win32Interop.OCR_CROSS); // Precision Select
         ApplyCursor("default.ani", Win32Interop.OCR_UP);                // Alternate Select
         ApplyCursor("default.ani", Win32Interop.OCR_NWPEN);             // Handwriting
 
         // Resizing cursors (rotated variants)
-        ApplyCursor("horizontal.cur", Win32Interop.OCR_SIZEWE);
-        ApplyCursor("vertical.cur", Win32Interop.OCR_SIZENS);
-        ApplyCursor("diagonal_left.cur", Win32Interop.OCR_SIZENWSE);
-        ApplyCursor("diagonal_right.cur", Win32Interop.OCR_SIZENESW);
+        ApplyCursor("horizontal.ani", Win32Interop.OCR_SIZEWE);
+        ApplyCursor("vertical.ani", Win32Interop.OCR_SIZENS);
+        ApplyCursor("diagonal_left.ani", Win32Interop.OCR_SIZENWSE);
+        ApplyCursor("diagonal_right.ani", Win32Interop.OCR_SIZENESW);
 
         RobitLogger.Log("[GlobalCursorManager] All custom cursors applied.");
     }

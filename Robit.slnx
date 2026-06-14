@@ -7,5 +7,4 @@
   <Project Path="Robit.Editor.csproj" />
   <Project Path="Mediapipe.Holistic.Runtime.csproj" />
   <Project Path="Nicrom.Editor.csproj" />
-  <Project Path="LoadingEffect.Editor.csproj" />
 </Solution>
