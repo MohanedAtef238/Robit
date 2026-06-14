@@ -58,26 +58,33 @@ namespace LnkParser
 
         private void Parse(Stream istream)
         {
-            var linkFlags = this.ParseHeader(istream);
-            if ((linkFlags & Constants.LinkFlags.HasLinkTargetIdList) == Constants.LinkFlags.HasLinkTargetIdList)
+            try
             {
-                this.ParseTargetIDList(istream);
-            }
-            else
-            {
-                // Ensure we skip the full 76-byte ShellLinkHeader even if IDList is missing
-                if (istream.CanSeek)
+                var linkFlags = this.ParseHeader(istream);
+                if ((linkFlags & Constants.LinkFlags.HasLinkTargetIdList) == Constants.LinkFlags.HasLinkTargetIdList)
                 {
-                    istream.Seek(76, SeekOrigin.Begin);
+                    this.ParseTargetIDList(istream);
                 }
-            }
+                else
+                {
+                    // Ensure we skip the full 76-byte ShellLinkHeader even if IDList is missing
+                    if (istream.CanSeek)
+                    {
+                        istream.Seek(76, SeekOrigin.Begin);
+                    }
+                }
 
-            if ((linkFlags & Constants.LinkFlags.HasLinkInfo) == Constants.LinkFlags.HasLinkInfo)
+                if ((linkFlags & Constants.LinkFlags.HasLinkInfo) == Constants.LinkFlags.HasLinkInfo)
+                {
+                    this.ParseLinkInfo(istream);
+                }
+
+                this.ParseStringData(istream, linkFlags);
+            }
+            catch (Exception ex)
             {
-                this.ParseLinkInfo(istream);
+                throw new Exception("Failed to parse shortcut", ex);
             }
-
-            this.ParseStringData(istream, linkFlags);
         }
 
         // Reads flags and file attributes from header.

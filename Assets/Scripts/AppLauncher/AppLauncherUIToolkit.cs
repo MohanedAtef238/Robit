@@ -39,7 +39,6 @@ public class AppLauncherUIToolkit : MonoBehaviour
     private bool               _isTransitioning;
     private Coroutine          _spinnerCoroutine;
     private bool               _isOpen;
-    private bool               _initialized;    // carousel is ready
     private bool               _ownedWindowState; // did we set acrylic/click-through?
 
     private static readonly string[] SpinnerFrames =
@@ -101,7 +100,6 @@ public class AppLauncherUIToolkit : MonoBehaviour
         RobitLogger.Log($"[AppLauncherUIToolkit] Ready — {_shortcuts.Count} shortcuts.");
 
         yield return StartCoroutine(BuildCarousel());
-        _initialized = true;
     }
 
     // ── Public API ────────────────────────────────────────────────────────────

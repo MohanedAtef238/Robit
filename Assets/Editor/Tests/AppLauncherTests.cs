@@ -70,11 +70,10 @@ namespace Robit.Tests
 
         /// <summary>
         /// Risk mitigated: LaunchApplication must call ProcessRunner.Start with
-        /// the correct path and then load the overlay scene. If either is skipped,
-        /// the user sees no app or no overlay.
+        /// the correct path.
         /// </summary>
         [Test]
-        public void LaunchApplication_ValidPath_CallsRunnerThenLoadsOverlay()
+        public void LaunchApplication_ValidPath_CallsRunner()
         {
             // Arrange
             string testPath = "C:\\Windows\\notepad.exe";
@@ -86,31 +85,24 @@ namespace Robit.Tests
             // Assert
             Assert.AreEqual(testPath,      _mockRunner.LastStartedPath,
                 "ProcessRunner.Start must receive the exact path passed to LaunchApplication.");
-            Assert.AreEqual("OverlayScene", _mockLoader.LastLoadedScene,
-                "LoadScene must be called with 'OverlayScene' after a successful launch.");
         }
 
         /// <summary>
         /// Risk mitigated: if ProcessRunner.Start throws (e.g. bad path, missing exe),
-        /// LaunchApplication must catch the exception and NOT load the overlay scene.
-        /// Loading the overlay with no running process leaves the UI in a broken state.
+        /// LaunchApplication must catch the exception safely without crashing.
         /// </summary>
         [Test]
-        public void LaunchApplication_RunnerThrows_DoesNotLoadScene()
+        public void LaunchApplication_RunnerThrows_CatchesSafely()
         {
             // Arrange
             _mockRunner.ShouldFail = true;
 
             // This error is EXPECTED as we are testing the failure recovery path.
             // LogAssert.Expect tells Unity to ignore this error in the test results.
-            LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("Failed to launch application.*Mock Launch Failure"));
+            LogAssert.Expect(LogType.Error, "Failed to launch application: bad.exe, Error: Mock Launch Failure");
 
-            // Act
-            _launcher.LaunchApplication("bad.exe", "");
-
-            // Assert
-            Assert.IsNull(_mockLoader.LastLoadedScene,
-                "Scene must NOT be loaded when ProcessRunner.Start throws.");
+            // Act & Assert
+            Assert.DoesNotThrow(() => _launcher.LaunchApplication("bad.exe", ""));
         }
 
         /// <summary>

@@ -128,6 +128,7 @@ namespace Robit.Tests
             while (routine.MoveNext()) yield return null;
 
             // Assert
+            LogAssert.Expect(LogType.Warning, "[DesktopParser] Icon failed: MyApp");
             Assert.IsTrue(_parser.parsingComplete);
             Assert.AreEqual(1, _parser.shortcuts.Count, "Should have added 1 shortcut.");
             Assert.AreEqual("MyApp", _parser.shortcuts[0].Name);
@@ -169,6 +170,8 @@ namespace Robit.Tests
             
             // Provide invalid image data (just some random bytes that aren't a PNG)
             _mockFS.Files[cachePath] = new byte[] { 0xDE, 0xAD, 0xBE, 0xEF };
+
+            LogAssert.Expect(LogType.Warning, "[DesktopParser] Failed to load cached PNG, falling back to extraction");
 
             // Act
             var method = _parser.GetType().GetMethod("ExtractHighQualityIcon", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
