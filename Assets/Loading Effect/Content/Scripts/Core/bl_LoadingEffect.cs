@@ -2,48 +2,24 @@
 using UnityEngine.UI;
 
 [RequireComponent(typeof(CanvasGroup))]
-public class bl_LoadingEffect : MonoBehaviour
-{
+public class bl_LoadingEffect : MonoBehaviour {
 
     [Header("Settings")]
-    // 1. FIXED: Restored 'ID' as a public field so bl_LoadingUtils can read it
-    public int ID;
-
-    // 2. FIXED: Kept private 'Loading' with lowercase 'isLoading' property for protection level matching
-    [SerializeField] private bool Loading = false;
+    [SerializeField]public int ID;//Unique id of loading component for get reference for another script easy.
+    [SerializeField]private bool Loading = false;//if loading? for get the public value use isLoading instead.
     public float FadeSpeed = 4;
+    [Header("References")]
+    [SerializeField]private LoadingUIInfo[] LoadingUI;//all UI component.
 
-    [Header("Firefly Asset References")]
-    [SerializeField] private Image BackgroundImage;
-    [SerializeField] private Image OverlayImage;
-    [Space(5)]
-    [Tooltip("The parent 3D firefly object that will fly around.")]
-    [SerializeField] private Transform FireflyTarget;
-    [Tooltip("The left wing transform that will rotate.")]
-    [SerializeField] private Transform LeftWing;
-    [Tooltip("The right wing transform that will rotate.")]
-    [SerializeField] private Transform RightWing;
-
-    [Header("Firefly Flight Settings")]
-    [SerializeField] private float FlightSpeed = 2f;
-    [SerializeField] private float FlightRadiusX = 300f;
-    [SerializeField] private float FlightRadiusY = 150f;
-
-    [Header("Firefly Wing Flap Settings")]
-    [SerializeField] private float FlapSpeed = 15f;
-    [SerializeField] private float MaxFlapAngle = 35f;
-
-    [Header("Legacy References")]
-    [SerializeField] private LoadingUIInfo[] LoadingUI;
-
-    [HideInInspector] public bool ShowList = true;
+    [HideInInspector]public bool ShowList = true;//use for editor only
     private CanvasGroup m_CanvasGroup;
 
-    private Vector3 fireflyStartPosition;
-    private float flightTimer;
-
+    /// <summary>
+    /// 
+    /// </summary>
     void Awake()
     {
+        //Get canvas group or add it.
         if (GetComponent<CanvasGroup>() != null)
         {
             m_CanvasGroup = GetComponent<CanvasGroup>();
@@ -52,27 +28,30 @@ public class bl_LoadingEffect : MonoBehaviour
         {
             m_CanvasGroup = gameObject.AddComponent<CanvasGroup>();
         }
+        //if not loading set alpha to 0 for avoid render on start
         m_CanvasGroup.alpha = (Loading) ? 1 : 0;
-
-        if (FireflyTarget != null)
-        {
-            fireflyStartPosition = FireflyTarget.localPosition;
-        }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     void Start()
     {
-        if (LoadingUI != null)
+        //setup all loadings components in start
+        for (int i = 0; i < LoadingUI.Length; i++)
         {
-            for (int i = 0; i < LoadingUI.Length; i++)
-            {
-                LoadingUI[i].Init();
-            }
+            LoadingUI[i].Init();
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     void Update()
     {
+        if (LoadingUI == null || LoadingUI.Length <= 0)
+            return;
+
         if (Loading)
         {
             OnLoading();
@@ -83,86 +62,123 @@ public class bl_LoadingEffect : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// When is loading
+    /// </summary>
     void OnLoading()
     {
-        if (m_CanvasGroup.alpha > 0)
+        for (int i = 0; i < LoadingUI.Length; i++)
         {
-            AnimateCustomFirefly();
-        }
-
-        if (LoadingUI != null && LoadingUI.Length > 0)
-        {
-            for (int i = 0; i < LoadingUI.Length; i++)
+            if (LoadingUI[i].UI != null)
             {
-                if (LoadingUI[i].UI != null)
+                //Delay 
+                if (LoadingUI[i].NextDelay > Time.time)
                 {
-                    if (LoadingUI[i].NextDelay > Time.time)
+                    return;
+                }
+                //for rotate loading effect
+                if (LoadingUI[i].m_Type == LoadingEffectType.Rotate)
+                {
+                    //rotate the transform of UI in the desired axis.
+                    LoadingUI[i].UI.Rotate(((LoadingUI[i].Axis * (LoadingUI[i].Speed * 10)) * Time.deltaTime), Space.World);
+                }//for filled image loading effect
+                else if (LoadingUI[i].m_Type == LoadingEffectType.Filled)
+                {
+                    //pingpong for forward and reverse
+                    if (LoadingUI[i].PingPong)// If PingPong
                     {
-                        continue;
-                    }
-                    if (LoadingUI[i].m_Type == LoadingEffectType.Rotate)
-                    {
-                        LoadingUI[i].UI.Rotate(((LoadingUI[i].Axis * (LoadingUI[i].Speed * 10)) * Time.deltaTime), Space.World);
-                    }
-                    else if (LoadingUI[i].m_Type == LoadingEffectType.Filled)
-                    {
-                        if (LoadingUI[i].PingPong)
+                        if (LoadingUI[i].Forward)
                         {
-                            if (LoadingUI[i].Forward)
+                            LoadingUI[i].Value += Time.deltaTime * (LoadingUI[i].Speed / 10);
+                            LoadingUI[i].Image.fillAmount = LoadingUI[i].Curve.Evaluate(LoadingUI[i].Value);
+                            if (LoadingUI[i].Image.fillAmount >= 1)
                             {
-                                LoadingUI[i].Value += Time.deltaTime * (LoadingUI[i].Speed / 10);
-                                LoadingUI[i].Image.fillAmount = LoadingUI[i].Curve.Evaluate(LoadingUI[i].Value);
-                                if (LoadingUI[i].Image.fillAmount >= 1) { LoadingUI[i].Forward = !LoadingUI[i].Forward; }
+                                LoadingUI[i].Forward = !LoadingUI[i].Forward;
                             }
-                            else
+                        }
+                        else
+                        {
+                            LoadingUI[i].Value -= Time.deltaTime * (LoadingUI[i].Speed / 10);
+                            LoadingUI[i].Image.fillAmount = LoadingUI[i].Curve.Evaluate(LoadingUI[i].Value);
+                            if (LoadingUI[i].Image.fillAmount <= 0)
                             {
-                                LoadingUI[i].Value -= Time.deltaTime * (LoadingUI[i].Speed / 10);
-                                LoadingUI[i].Image.fillAmount = LoadingUI[i].Curve.Evaluate(LoadingUI[i].Value);
-                                if (LoadingUI[i].Image.fillAmount <= 0) { LoadingUI[i].Forward = !LoadingUI[i].Forward; }
+                                LoadingUI[i].Forward = !LoadingUI[i].Forward;
+                            }
+                        }
+                    }
+                    else //If not pingpong restart filled amount and change the direction
+                    {
+                        if (LoadingUI[i].Forward)
+                        {
+                            LoadingUI[i].Value += Time.deltaTime * (LoadingUI[i].Speed / 10);
+                            LoadingUI[i].Image.fillAmount = LoadingUI[i].Curve.Evaluate(LoadingUI[i].Value);
+                            if (LoadingUI[i].Image.fillAmount >= 1)
+                            {
+                                LoadingUI[i].Forward = !LoadingUI[i].Forward;
+                                LoadingUI[i].Image.fillClockwise = !LoadingUI[i].Image.fillClockwise;
+                                if (LoadingUI[i].Image.fillMethod == Image.FillMethod.Horizontal || LoadingUI[i].Image.fillMethod == Image.FillMethod.Vertical)
+                                {
+                                    if (LoadingUI[i].Image.fillOrigin == (int)Image.OriginHorizontal.Left) { LoadingUI[i].Image.fillOrigin = (int)Image.OriginHorizontal.Right; }
+                                    else
+                                    {
+                                        LoadingUI[i].Image.fillOrigin = (int)Image.OriginHorizontal.Left;
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            LoadingUI[i].Value -= Time.deltaTime * (LoadingUI[i].Speed / 10);
+                            LoadingUI[i].Image.fillAmount = LoadingUI[i].Curve.Evaluate(LoadingUI[i].Value);
+                            if (LoadingUI[i].Image.fillAmount <= 0)
+                            {
+                                LoadingUI[i].Forward = !LoadingUI[i].Forward;
+                                LoadingUI[i].Image.fillClockwise = !LoadingUI[i].Image.fillClockwise;
+                                if (LoadingUI[i].Image.fillMethod == Image.FillMethod.Horizontal || LoadingUI[i].Image.fillMethod == Image.FillMethod.Vertical)
+                                {
+                                    if (LoadingUI[i].Image.fillOrigin == (int)Image.OriginHorizontal.Left) { LoadingUI[i].Image.fillOrigin = (int)Image.OriginHorizontal.Right; }
+                                    else
+                                    {
+                                        LoadingUI[i].Image.fillOrigin = (int)Image.OriginHorizontal.Left;
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
         }
-
+        //set alpha to 1
         if (m_CanvasGroup.alpha < 1)
         {
             m_CanvasGroup.alpha = Mathf.Lerp(m_CanvasGroup.alpha, 1, Time.deltaTime * FadeSpeed);
         }
     }
 
-    private void AnimateCustomFirefly()
-    {
-        flightTimer += Time.deltaTime * FlightSpeed;
-
-        if (FireflyTarget != null)
-        {
-            float xOffset = Mathf.Sin(flightTimer) * FlightRadiusX;
-            float yOffset = Mathf.Sin(flightTimer * 2f) * FlightRadiusY;
-            FireflyTarget.localPosition = fireflyStartPosition + new Vector3(xOffset, yOffset, 0f);
-        }
-
-        if (LeftWing != null && RightWing != null)
-        {
-            float flapAngle = Mathf.Sin(Time.time * FlapSpeed) * MaxFlapAngle;
-            LeftWing.localRotation = Quaternion.Euler(0f, flapAngle, 0f);
-            RightWing.localRotation = Quaternion.Euler(0f, -flapAngle, 0f);
-        }
-    }
-
+    /// <summary>
+    /// When is not loading
+    /// </summary>
     void OnUnLoading()
     {
+        //set alpha to 0
         if (m_CanvasGroup.alpha > 0)
         {
             m_CanvasGroup.alpha = Mathf.Lerp(m_CanvasGroup.alpha, 0, Time.deltaTime * FadeSpeed);
         }
     }
 
-    // 3. FIXED: Ensured lowercase 'isLoading' matches exact spelling and public getter/setter rules
+    /// <summary>
+    /// 
+    /// </summary>
     public bool isLoading
     {
-        get { return Loading; }
-        set { Loading = value; }
+        get
+        {
+            return Loading;
+        }
+        set
+        {
+            Loading = value;
+        }
     }
 }
