@@ -3,7 +3,7 @@
     <Style src="project://database/Assets/UI/documents/HoverStyle.uss?fileID=7433441132597879392&amp;guid=f839dfd7a9425d146b9d7b099f5fbf17&amp;type=3#HoverStyle"/>
     <Style src="project://database/Assets/UI/starter.uss?fileID=7433441132597879392&amp;guid=a08abad5717a70d47a173c4f4d4a8832&amp;type=3#starter"/>
     <Style src="project://database/Assets/UI/buttonSwap.uss?fileID=7433441132597879392&amp;guid=6196617ce9a402b4dad4811a91c8e22c&amp;type=3#buttonSwap"/>
-    <Style src="project://database/Assets/UI/documents/home-dashboard.uss" />
+    <Style src="project://database/Assets/UI/documents/home-dashboard.uss?fileID=7433441132597879392&amp;guid=638afb89b35376049a8412c1df5543e0&amp;type=3#home-dashboard"/>
     <ui:VisualElement picking-mode="Ignore" class="bubble-element dashboard-element-1">
         <ui:VisualElement class="dashboard-element-2"/>
         <ui:VisualElement name="VisualElement" class="dashboard-element-3"/>
@@ -12,7 +12,7 @@
         <ui:VisualElement name="VisualElement" class="dashboard-element-6"/>
     </ui:VisualElement>
     <ui:VisualElement name="clock-tab" class="bubble-element clock-tab-style-7"/>
-    <ui:VisualElement name="clock-panel" class="hover-scaler bubble-element clock-panel-style-8">
+    <ui:VisualElement name="clock-panel" class="hover-scaler bubble-element clock-panel-style-8" style="display: flex;">
         <ui:Button text="Button" name="locationPin" class="locationPin-style-9">
             <ui:Label text="Label" name="locationLabel" class="locationLabel-style-10"/>
         </ui:Button>
@@ -29,24 +29,24 @@
             <ui:Label text="Label" name="statusLabel" class="statusLabel-style-20"/>
         </ui:Button>
     </ui:VisualElement>
-    <ui:VisualElement name="signal" class="signal-style-21">
+    <ui:VisualElement name="signal" class="signal-style-21" style="overflow: visible; display: flex; visibility: visible; background-image: url(&quot;project://database/Assets/UI/icons2/flower7.png?fileID=2800000&amp;guid=d24f8011bb24c624eb7e60c3685560bb&amp;type=3#flower7&quot;);">
         <ui:Image class="dashboard-element-22"/>
         <ui:Image class="dashboard-element-23"/>
     </ui:VisualElement>
-    <ui:VisualElement name="wiggle1" enabled="true" class="wiggle1-style-24">
+    <ui:VisualElement name="wiggle1" enabled="true" class="wiggle1-style-24" style="display: flex; visibility: visible;">
         <ui:Button text="&#10;" class="dashboard-element-25"/>
     </ui:VisualElement>
-    <ui:Button name="viewAppsBtn" text="View All Apps" class="viewAppsBtn-style-26"/>
-    <ui:VisualElement name="dialogue" focusable="true" class="bubble-element dialogue-style-27">
+    <ui:Button name="viewAppsBtn" text="View All Apps" class="viewAppsBtn-style-26" style="display: flex; visibility: visible;"/>
+    <ui:VisualElement name="dialogue" focusable="true" class="bubble-element dialogue-style-27" style="visibility: visible; display: flex;">
         <ui:Button text="" name="closeButton" class="closeButton-style-28"/>
     </ui:VisualElement>
     <ui:VisualElement name="sliders" class="bubble-element sliders-style-29"/>
-    <ui:VisualElement name="sliders" class="hover-scaler bubble-element sliders-style-30">
+    <ui:VisualElement name="sliders" class="hover-scaler bubble-element sliders-style-30" style="display: none; visibility: hidden;">
         <ui:VisualElement name="brightness" class="brightness-style-31">
             <ui:Label name="brightnessValueLabel" text="100%&#10;" class="brightnessValueLabel-style-32"/>
             <ui:VisualElement name="sunIcon" class="sunIcon-style-33"/>
             <ui:Button name="brightnessDecBtn" text="" class="hover-scaler brightnessDecBtn-style-34"/>
-            <ui:Slider label="Slider" value="42" high-value="100" name="brightnessSlider" class="brightnessSlider-style-35"/>
+            <ui:Slider label="Slider" value="42" high-value="100" name="brightnessSlider" class="brightnessSlider-style-35" style="display: flex; visibility: visible;"/>
             <ui:Button name="brightnessIncBtn" text="" class="hover-scaler brightnessIncBtn-style-36">
                 <ui:VisualElement picking-mode="Ignore" class="dashboard-element-37"/>
             </ui:Button>
