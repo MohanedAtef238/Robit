@@ -13,10 +13,15 @@ public class AppCyclerAction : IMacroAction
 
     public void Execute()
     {
-        var launcher = Object.FindFirstObjectByType<AppLauncherUIToolkit>();
-        if (launcher != null)
-            launcher.Toggle();
+        RobitLogger.Log($"[{nameof(AppCyclerAction)}] Executing AppCycler Action via ViewCoordinator.");
+        
+        if (ViewCoordinator.Instance != null)
+        {
+            ViewCoordinator.Instance.ToggleAppCycler();
+        }
         else
-            RobitLogger.LogWarning("[AppCyclerAction] AppLauncherUIToolkit not found in scene.");
+        {
+            RobitLogger.LogWarning($"[{nameof(AppCyclerAction)}] ViewCoordinator not found in scene!");
+        }
     }
 }

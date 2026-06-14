@@ -20,6 +20,7 @@ namespace Robit.LauncherSystem
         {
             if (process != null && !process.HasExited)
             {
+                process.Kill();
                 process.Dispose();
             }
         }
