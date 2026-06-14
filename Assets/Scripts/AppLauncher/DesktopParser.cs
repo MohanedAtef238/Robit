@@ -27,7 +27,7 @@ public class DesktopParser : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            // No DontDestroyOnLoad — DesktopParser lives in OverlayScene permanently.
         }
         else
         {

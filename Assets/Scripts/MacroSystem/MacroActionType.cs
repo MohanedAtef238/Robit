@@ -17,7 +17,6 @@ public enum MacroActionType
     // Scroll
     PageUp,
     PageDown,
-    ReturnToDesktop,
     // Snap
     SnapLeft,
     SnapRight,

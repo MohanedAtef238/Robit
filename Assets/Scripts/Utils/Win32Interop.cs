@@ -271,6 +271,9 @@ public static class Win32Interop
     public const uint OCR_SIZENWSE = 32642;
     public const uint OCR_SIZENESW = 32643;
     public const uint OCR_HELP = 32651;
+    public const uint OCR_CROSS = 32515;
+    public const uint OCR_UP = 32516;
+    public const uint OCR_NWPEN = 32631;
     public const uint SPI_SETCURSORS = 0x0057;
 
     // ═══════════════════════════════════════════════════════════════════════════

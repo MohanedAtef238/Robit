@@ -1,0 +1,121 @@
+/* ──────────────────────────────────────────────────────────────────────────────
+   AppLauncherView.uss
+   Styles for the App Launcher UIDocument — a separate document from the home
+   page that slides over it when "View Apps" is pressed.
+   ────────────────────────────────────────────────────────────────────────────── */
+
+.launcher-panel {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 75%; /* Push to the left 75% of the screen */
+    background-color: transparent; /* No background, just the glass effect */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    /* Entrance / exit animation */
+    opacity: 0;
+    translate: -22px 0; /* Slide in from left instead of bottom */
+    transition-duration: 250ms;
+    transition-timing-function: ease-out;
+    transition-property: opacity, translate;
+}
+
+.launcher-panel.view-visible {
+    opacity: 1;
+    translate: 0 0;
+}
+
+.launcher-panel.view-hidden {
+    opacity: 0;
+    translate: -22px 0;
+}
+
+.launcher-header-accent {
+    position: absolute;
+    top: 0;
+    left: 0; right: 0;
+    height: 3px;
+    background-color: rgba(153, 204, 153, 0.4);
+}
+
+.launcher-footer-accent {
+    position: absolute;
+    bottom: 0;
+    left: 0; right: 0;
+    height: 1px;
+    background-color: rgba(153, 204, 153, 0.2);
+}
+
+.status-text {
+    font-size: 28px;
+    color: rgba(207, 255, 207, 0.9);
+    margin-bottom: 20px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    letter-spacing: 3px;
+}
+
+.carousel-shell {
+    flex-grow: 1;
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.carousel-center {
+    flex-grow: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.cards-container {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.page-indicator {
+    color: rgba(153, 204, 153, 0.6);
+    font-size: 20px;
+    letter-spacing: 4px;
+    -unity-font-style: bold;
+    margin-top: 30px;
+}
+
+/* Big, rounded, side-spanning nav buttons */
+.nav-button {
+    width: 80px;
+    height: 90%;
+    border-radius: 40px;
+    border-width: 2px;
+    border-color: rgba(153, 204, 153, 0.3);
+    background-color: rgba(20, 35, 25, 0.6);
+    color: #cfffcf;
+    font-size: 40px;
+    -unity-font-style: bold;
+    transition-duration: 200ms;
+}
+
+.nav-button:hover {
+    background-color: rgba(153, 204, 153, 0.2);
+    border-color: rgba(153, 204, 153, 0.9);
+    color: white;
+    scale: 1.02;
+}
+
+.nav-button:active {
+    scale: 0.98;
+    background-color: rgba(153, 204, 153, 0.4);
+}
+
+.nav-button:disabled {
+    opacity: 0.15;
+}
