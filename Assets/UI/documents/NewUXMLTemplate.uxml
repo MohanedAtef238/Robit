@@ -12,18 +12,18 @@
         <ui:VisualElement name="VisualElement" class="dashboard-element-6"/>
     </ui:VisualElement>
     <ui:VisualElement name="clock-tab" class="bubble-element clock-tab-style-7"/>
-    <ui:VisualElement name="clock-panel" class="hover-scaler bubble-element clock-panel-style-8" style="display: flex;">
-        <ui:Button text="Button" name="locationPin" class="locationPin-style-9">
+    <ui:VisualElement name="clock-panel" class="hover-scaler bubble-element clock-panel-style-8" style="display: flex; background-image: url(&quot;project://database/Assets/UI/assets/clock/clock%20frame.svg?fileID=7388822144124034973&amp;guid=0e42e1c03991606489b3e95c1be62d5b&amp;type=3#clock frame&quot;);">
+        <ui:Button text="Button" name="locationPin" class="locationPin-style-9" style="background-image: url(&quot;project://database/Assets/UI/assets/clock/pointer.svg?fileID=7388822144124034973&amp;guid=9ea9fe602e6be0d4b980847a92732403&amp;type=3#pointer&quot;);">
             <ui:Label text="Label" name="locationLabel" class="locationLabel-style-10"/>
         </ui:Button>
-        <ui:Button text="Button" name="clock" class="clock-style-11">
+        <ui:Button text="Button" name="clock" class="clock-style-11" style="background-image: url(&quot;project://database/Assets/UI/assets/clock/clock.svg?fileID=7388822144124034973&amp;guid=46321f6703c1cfa45b15c419b491b747&amp;type=3#clock&quot;);">
             <ui:Label text="Label" name="digitalClockLabel" class="digitalClockLabel-style-12"/>
             <ui:Label text="amPM" name="digitalClockM" class="digitalClockM-style-13"/>
-            <ui:Button text="Button" name="minuteHand" class="minuteHand-style-14"/>
+            <ui:Button text="Button" name="minuteHand" class="minuteHand-style-14" style="background-image: url(&quot;project://database/Assets/UI/assets/clock/seconds.svg?fileID=7388822144124034973&amp;guid=d8aa672018aaa5748aededd641d6d41d&amp;type=3#seconds&quot;);"/>
             <ui:Button text="Button" name="hourHand" class="hourHand-style-15"/>
-            <ui:Button text="Button" class="dashboard-element-16"/>
+            <ui:Button text="Button" class="dashboard-element-16" style="background-image: url(&quot;project://database/Assets/UI/assets/wiggler/circle.svg?fileID=7388822144124034973&amp;guid=8a9555bc7595be746ae4c584c1987e3a&amp;type=3#circle&quot;);"/>
         </ui:Button>
-        <ui:Button text="" name="weather" class="weather-style-17">
+        <ui:Button text="" name="weather" class="weather-style-17" style="background-image: url(&quot;project://database/Assets/UI/assets/clock/weather.svg?fileID=7388822144124034973&amp;guid=1ba991b9373b8f3458ab66cd7f1c1fea&amp;type=3#weather&quot;);">
             <ui:Label text="2" name="celsiusLabel" class="celsiusLabel-style-18"/>
             <ui:Label text="1" name="degreeLabel" class="degreeLabel-style-19"/>
             <ui:Label text="Label" name="statusLabel" class="statusLabel-style-20"/>
@@ -36,7 +36,6 @@
     <ui:VisualElement name="wiggle1" enabled="true" class="wiggle1-style-24" style="display: flex; visibility: visible;">
         <ui:Button text="&#10;" class="dashboard-element-25"/>
     </ui:VisualElement>
-    <ui:Button name="viewAppsBtn" text="View All Apps" class="viewAppsBtn-style-26" style="display: flex; visibility: visible;"/>
     <ui:VisualElement name="dialogue" focusable="true" class="bubble-element dialogue-style-27" style="visibility: visible; display: flex;">
         <ui:Button text="" name="closeButton" class="closeButton-style-28"/>
     </ui:VisualElement>
@@ -91,5 +90,4 @@
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
-
 </ui:UXML>
