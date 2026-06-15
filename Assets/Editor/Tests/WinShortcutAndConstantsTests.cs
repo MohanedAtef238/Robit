@@ -94,6 +94,22 @@ namespace Robit.Tests
             StringAssert.Contains("Failed to parse", ex.Message);
         }
 
+        [Test]
+        [Category("Unit")]
+        public void Constructor_TruncatedStream_ThrowsException()
+        {
+            // Arrange — A stream that is too short to even read the 76-byte header
+            byte[] truncated = new byte[10];
+            using var stream = new MemoryStream(truncated);
+
+            // Act / Assert
+            var ex = Assert.Throws<Exception>(
+                () => new WinShortcut(stream),
+                "A truncated stream must produce Exception(\"Failed to parse…\").");
+
+            StringAssert.Contains("Failed to parse", ex.Message);
+        }
+
         // ─────────────────────────────────────────────────────────────────────
         // EP: valid header, no flags set — HotKey is empty
         // BVA: hotKeyLow = 0x00, hotKeyHigh = 0x00 (no hotkey boundary)

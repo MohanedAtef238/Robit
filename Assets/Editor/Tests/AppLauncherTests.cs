@@ -169,6 +169,52 @@ namespace Robit.Tests
                 "CloseCurrentApp() with no running process must be a safe no-op.");
         }
 
+        private class ThrowingCloseRunner : IProcessRunner
+        {
+            public IProcess Start(string path, string workingDir) => new MockProcess { HasExited = false };
+            public void Close(IProcess process) => throw new System.Exception("Mock Close Failure");
+        }
+
+        private class MockProcess : IProcess
+        {
+            public int Id => 1;
+            public string ProcessName => "MockProcess";
+            public bool HasExited { get; set; }
+            public void Kill() {}
+            public void Dispose() {}
+            public void WaitForExit() {}
+        }
+
+        [Test]
+        public void CloseCurrentApp_RunnerThrows_LogsWarningAndClearsReference()
+        {
+            // Arrange
+            _launcher.ProcessRunner = new ThrowingCloseRunner();
+            _launcher.LaunchApplication("test.exe", "");
+
+            LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("Mock Close Failure"));
+
+            // Act
+            Assert.DoesNotThrow(() => _launcher.CloseCurrentApp());
+
+            // Assert
+            Assert.IsNull(_launcher.CurrentProcess, "CurrentProcess MUST be cleared even if Close throws an exception.");
+        }
+
+        [Test]
+        public void GoHome_ClosesProcessAndCallsReturnToDesktop()
+        {
+            // Arrange
+            _launcher.LaunchApplication("test.exe", "");
+            
+            // Act
+            _launcher.GoHome();
+            
+            // Assert
+            Assert.IsNull(_launcher.CurrentProcess);
+            Assert.IsTrue(_mockRunner.CloseCalled);
+        }
+
         // ── WindowsProcessRunner Tests ──────────────────────────────────────────
 
         [Test]

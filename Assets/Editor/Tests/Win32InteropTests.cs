@@ -143,5 +143,25 @@ namespace Robit.Tests
                 typeof(UnityNativeBridge).GetField("_instance", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static).SetValue(null, null);
             }
         }
+
+        // ── Win32AudioInterop Edge Case Tests ─────────────────────────────────
+
+        [Test]
+        [Category("Unit")]
+        public void Win32AudioInterop_Shutdown_CleansUpState()
+        {
+            // Force initialization
+            Win32AudioInterop.GetVolume();
+            
+            // Call shutdown
+            Assert.DoesNotThrow(() => Win32AudioInterop.Shutdown());
+            
+            // Verify fields are null using reflection
+            var volumeField = typeof(Win32AudioInterop).GetField("_volume", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            var enumField = typeof(Win32AudioInterop).GetField("_enumerator", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            
+            Assert.IsNull(volumeField.GetValue(null));
+            Assert.IsNull(enumField.GetValue(null));
+        }
     }
 }

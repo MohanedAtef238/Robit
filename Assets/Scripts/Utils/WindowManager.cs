@@ -1,7 +1,10 @@
 using System;
 using System.Runtime.InteropServices;
 using UnityEngine;
+using System.Diagnostics.CodeAnalysis;
 
+// Excluded from code coverage because simulating Win32/COM errors within managed tests is highly dangerous and can irreparably crash or break the host Windows environment.
+[ExcludeFromCodeCoverage]
 public static class WindowManager
 {
     private static IntPtr unityHwnd = IntPtr.Zero;

@@ -182,6 +182,43 @@ namespace Robit.Tests
             Assert.IsNull(result, "Should return null because extraction fails after cache load failure.");
         }
 
+        private class ThrowingMockFileSystem : IFileSystem
+        {
+            public bool DirectoryExists(string path) => true;
+            public bool FileExists(string path) => true;
+            public string[] GetFiles(string path, string searchPattern, bool recursive)
+            {
+                return new string[] { "/mock/Desktop/Locked.lnk" };
+            }
+            public string GetSpecialFolderPath(System.Environment.SpecialFolder folder) => "/mock/Desktop";
+            public byte[] ReadAllBytes(string path)
+            {
+                throw new System.UnauthorizedAccessException("Access Denied");
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator ParseShortcuts_WhenFileAccessFails_CatchesExceptionAndLogs()
+        {
+            // Arrange
+            _parser.FileSystem = new ThrowingMockFileSystem();
+
+            // Act
+            IEnumerator routine = (IEnumerator)_parser.GetType()
+                .GetMethod("ParseShortcuts", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                .Invoke(_parser, null);
+
+            while (routine.MoveNext()) yield return null;
+
+            // Assert
+            // The mock returns the file for both user Desktop and Common Desktop, so it logs twice.
+            LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("Failed: .*Locked.lnk"));
+            LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("Failed: .*Locked.lnk"));
+            
+            Assert.IsTrue(_parser.parsingComplete);
+            Assert.AreEqual(0, _parser.shortcuts.Count);
+        }
+
         private static byte[] BuildLnkWithTargetPath(string targetPath)
         {
             using (MemoryStream ms = new MemoryStream())

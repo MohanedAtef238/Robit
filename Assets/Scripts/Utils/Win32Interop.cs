@@ -2,8 +2,11 @@ using System;
 using System.Runtime.InteropServices;
 using UnityEngine.InputSystem;
 using LnkParser.Constants;
+using System.Diagnostics.CodeAnalysis;
 
 // Centralised Win32 P/Invoke declarations for the overlay system.
+// Excluded from code coverage because simulating Win32/COM errors within managed tests is highly dangerous and can irreparably crash or break the host Windows environment.
+[ExcludeFromCodeCoverage]
 public static class Win32Interop
 {
     // ═══════════════════════════════════════════════════════════════════════════

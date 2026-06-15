@@ -48,6 +48,33 @@ namespace Robit.Tests
                 updateMethod.Invoke(runner, null);
 
                 Assert.IsFalse(VirtualInputState.Instance.IsEmgActive, "PipeRunner failed to update VirtualInputState from console string '0'");
+
+                // Edge Case 1: Empty String
+                var emptyArgs = (DataReceivedEventArgs)constructor.Invoke(new object[] { "   " });
+                method.Invoke(runner, new object[] { null, emptyArgs });
+                updateMethod.Invoke(runner, null); // Should not crash
+
+                // Edge Case 2: EMG_STATUS: ERROR
+                var errorArgs = (DataReceivedEventArgs)constructor.Invoke(new object[] { "EMG_STATUS: ERROR COM4" });
+                UnityEngine.TestTools.LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("Sensor Connection Failed"));
+                method.Invoke(runner, new object[] { null, errorArgs });
+
+                // Edge Case 3: EMG_STATUS: OK
+                var okArgs = (DataReceivedEventArgs)constructor.Invoke(new object[] { "EMG_STATUS: OK" });
+                UnityEngine.TestTools.LogAssert.Expect(LogType.Log, new System.Text.RegularExpressions.Regex("Sensor Connection Successful"));
+                method.Invoke(runner, new object[] { null, okArgs });
+
+                // Edge Case 4: Garbage Data (Should pass through to base OnOutputDataReceived and log)
+                var garbageArgs = (DataReceivedEventArgs)constructor.Invoke(new object[] { "GarbageData" });
+                UnityEngine.TestTools.LogAssert.Expect(LogType.Log, new System.Text.RegularExpressions.Regex("GarbageData"));
+                method.Invoke(runner, new object[] { null, garbageArgs });
+
+                // Edge Case 5: OnProcessExited sets state to false
+                var exitMethod = typeof(EmgPredictionRunnerPipe).GetMethod("OnProcessExited", BindingFlags.Instance | BindingFlags.NonPublic);
+                VirtualInputState.Instance.SetEmgPrediction(true);
+                exitMethod.Invoke(runner, new object[] { null, EventArgs.Empty });
+                updateMethod.Invoke(runner, null);
+                Assert.IsFalse(VirtualInputState.Instance.IsEmgActive, "Process exit should reset EMG state");
             }
             finally
             {
