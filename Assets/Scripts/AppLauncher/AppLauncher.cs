@@ -25,7 +25,17 @@ public class AppLauncher : MonoBehaviour, IAppLauncher
         QualitySettings.vSyncCount = 0;
     }
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void AutoCreate()
+    {
+        if (Instance != null) return;
+        var go = new GameObject("AppLauncher");
+        go.AddComponent<AppLauncher>();
+        DontDestroyOnLoad(go);
+    }
+
     protected void Awake() => Initialize();
+
 
     internal void Initialize()
     {

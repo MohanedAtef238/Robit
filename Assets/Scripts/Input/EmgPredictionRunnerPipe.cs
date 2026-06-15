@@ -12,7 +12,7 @@ public class EmgPredictionRunnerPipe : BaseProcessRunner<EmgPredictionRunnerPipe
     protected override string LogPrefix => "[EmgPredictionRunnerPipe]";
 
     [Header("Multimodal Setup")]
-    [SerializeField] private string relativeExePath = @"Multimodal_UDP/unity_emg_bridge/unity_emg_bridge.exe";
+    [SerializeField] private string relativeExePath = @"Multimodal_UDP/unity_emg_bridge.exe";
     [SerializeField] private string comPort = "COM4";
     [SerializeField] private bool autoStartOnAwake = true;
 
