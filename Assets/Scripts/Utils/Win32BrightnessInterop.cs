@@ -1,10 +1,13 @@
 using System;
 using System.Runtime.InteropServices;
 using UnityEngine;
+using System.Diagnostics.CodeAnalysis;
 
 /// Provides static helpers to get/set Windows monitor brightness
 /// using the Dxva2.dll (Monitor Configuration API).
 /// Works on most laptop displays and DDC/CI-capable external monitors.
+// Excluded from code coverage because simulating Win32/COM errors within managed tests is highly dangerous and can irreparably crash or break the host Windows environment.
+[ExcludeFromCodeCoverage]
 public static class Win32BrightnessInterop
 {
     // ── Structs ────────────────────────────────────────────────────────────

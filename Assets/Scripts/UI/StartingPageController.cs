@@ -7,7 +7,7 @@ using TMPro;
 
 /// <summary>
 /// Drives the Starting Page scene.
-/// Spawns profile cards, handles the name prompt, and plays the intro animation.
+/// Spawns profile cards, handles name/delete prompts, and runs the custom loading overlay with an existing scene firefly.
 /// </summary>
 public class StartingPageController : MonoBehaviour
 {
@@ -30,14 +30,46 @@ public class StartingPageController : MonoBehaviour
     public float introDelay = 0.3f;           // pause before animation starts
     public float animDuration = 1.4f;         // how long the float-up takes
 
+    [Header("Custom Loading Customizer")]
+    [Tooltip("Drag your loading screen background texture/sprite asset here.")]
+    public Sprite loadingBackgroundSprite;
+
+    [Tooltip("Drag your foreground overlay image/sprite asset here.")]
+    public Sprite loadingOverlaySprite;
+
+    [Tooltip("Set the explicit pixel size (Width, Height) for your overlay image. Leave at (0,0) to stretch full-screen.")]
+    public Vector2 overlaySize = new Vector2(0f, 0f);
+
+    [Tooltip("Controls the repeating pattern density of your tiled image overlay.")]
+    [Range(0.01f, 10f)] public float pixelsPerUnitMultiplier = 1f;
+
+    [Tooltip("DRAG your existing Scene Firefly GameObject straight from the hierarchy into this slot.")]
+    public GameObject activeFirefly;
+
+    [Header("Firefly Flight Settings")]
+    [Tooltip("The movement speed of the firefly across the screen.")]
+    public float flySpeed = 5f;
+    [Tooltip("How fast the firefly rotates toward its flight direction.")]
+    public float turnSpeed = 10f;
+    [Tooltip("Scale size modifier for the firefly object.")]
+    public Vector3 flyScale = new Vector3(5f, 5f, 5f);
+    [Tooltip("Screen boundaries for random movement (X and Y limits).")]
+    public Vector2 movementBounds = new Vector2(8f, 4.5f);
+    [Tooltip("Distance threshold to consider a waypoint reached.")]
+    public float waypointReachedDistance = 0.5f;
+
+    [Header("Debug Settings")]
+    [Tooltip("Minimum time in seconds the loading screen will stay visible for testing.")]
+    public float minimumLoadingTime = 5f;
+
     private ProfileData _data;
     private GameObject loadingOverlay;
 
-    // UI Toolkit Prompt
+    // UI Toolkit Prompts
     private UIDocument _modernPromptDoc;
-    private TextField  _modernNameInput;
+    private TextField _modernNameInput;
     private UIDocument _modernDeleteDoc;
-    private string     _profileToDeleteId;
+    private string _profileToDeleteId;
 
     // ── Lifecycle ───────────────────────────────────────────────────────────
 
@@ -52,51 +84,100 @@ public class StartingPageController : MonoBehaviour
             welcomeText.text = "Robit";
         }
 
-        // Dynamically create the loading overlay using the Loading15 prefab
-        GameObject prefab = Resources.Load<GameObject>("Loading15");
-        if (prefab != null)
+        // Dynamically create the custom layout layers inside the active UI Canvas
+        Canvas canvas = Object.FindFirstObjectByType<Canvas>();
+        if (canvas != null)
         {
-            Canvas canvas = Object.FindFirstObjectByType<Canvas>();
-            if (canvas != null)
+            loadingOverlay = new GameObject("CustomLoadingOverlay");
+            loadingOverlay.transform.SetParent(canvas.transform, false);
+
+            RectTransform rtRoot = loadingOverlay.AddComponent<RectTransform>();
+            rtRoot.anchorMin = Vector2.zero;
+            rtRoot.anchorMax = Vector2.one;
+            rtRoot.offsetMin = Vector2.zero;
+            rtRoot.offsetMax = Vector2.zero;
+
+            // 1. Custom Background Layer
+            GameObject bg = new GameObject("LoadingBackground");
+            bg.transform.SetParent(loadingOverlay.transform, false);
+            RectTransform rtBg = bg.AddComponent<RectTransform>();
+            rtBg.anchorMin = Vector2.zero;
+            rtBg.anchorMax = Vector2.one;
+            rtBg.offsetMin = Vector2.zero;
+            rtBg.offsetMax = Vector2.zero;
+
+            UnityEngine.UI.Image bgImage = bg.AddComponent<UnityEngine.UI.Image>();
+            if (loadingBackgroundSprite != null)
             {
-                loadingOverlay = new GameObject("LoadingOverlay");
-                loadingOverlay.transform.SetParent(canvas.transform, false);
-                RectTransform rtRoot = loadingOverlay.AddComponent<RectTransform>();
-                rtRoot.anchorMin = Vector2.zero;
-                rtRoot.anchorMax = Vector2.one;
-                rtRoot.offsetMin = Vector2.zero;
-                rtRoot.offsetMax = Vector2.zero;
-
-                // Dark Background
-                GameObject bg = new GameObject("Background");
-                bg.transform.SetParent(loadingOverlay.transform, false);
-                RectTransform rtBg = bg.AddComponent<RectTransform>();
-                rtBg.anchorMin = Vector2.zero;
-                rtBg.anchorMax = Vector2.one;
-                rtBg.offsetMin = Vector2.zero;
-                rtBg.offsetMax = Vector2.zero;
-                UnityEngine.UI.Image bgImage = bg.AddComponent<UnityEngine.UI.Image>();
-                bgImage.color = new Color(0.04f, 0.05f, 0.08f, 1f); // Dark background
-
-                // Spinner
-                GameObject spinner = Instantiate(prefab, loadingOverlay.transform);
-                RectTransform rtSpinner = spinner.GetComponent<RectTransform>();
-                if (rtSpinner != null)
-                {
-                    rtSpinner.anchoredPosition = Vector2.zero;
-                    rtSpinner.localScale = Vector3.one * 1.5f; // scale it slightly for better visibility
-                }
-                
-                loadingOverlay.SetActive(false);
+                bgImage.sprite = loadingBackgroundSprite;
+                bgImage.color = Color.white;
             }
-        }
-        else
-        {
-            UnityEngine.Debug.LogWarning("Loading15 prefab not found in Resources folder.");
+            else
+            {
+                bgImage.color = new Color(0.04f, 0.05f, 0.08f, 1f);
+            }
+
+            // 2. UI Component TILED Overlay Layer
+            if (loadingOverlaySprite != null)
+            {
+                GameObject overlayImgObj = new GameObject("LoadingOverlayImage");
+                overlayImgObj.transform.SetParent(loadingOverlay.transform, false);
+                RectTransform rtOverlay = overlayImgObj.AddComponent<RectTransform>();
+
+                if (overlaySize.x > 0.001f && overlaySize.y > 0.001f)
+                {
+                    rtOverlay.anchorMin = new Vector2(0.5f, 0.5f);
+                    rtOverlay.anchorMax = new Vector2(0.5f, 0.5f);
+                    rtOverlay.pivot = new Vector2(0.5f, 0.5f);
+                    rtOverlay.sizeDelta = overlaySize;
+                }
+                else
+                {
+                    rtOverlay.anchorMin = Vector2.zero;
+                    rtOverlay.anchorMax = Vector2.one;
+                    rtOverlay.offsetMin = Vector2.zero;
+                    rtOverlay.offsetMax = Vector2.zero;
+                }
+
+                UnityEngine.UI.Image overlayImage = overlayImgObj.AddComponent<UnityEngine.UI.Image>();
+                overlayImage.sprite = loadingOverlaySprite;
+
+                // Forces it to act as a tiled runtime UI asset
+                overlayImage.type = UnityEngine.UI.Image.Type.Tiled;
+
+                // NEW: Applies your custom slider scale to the tiled pattern generation
+                overlayImage.pixelsPerUnitMultiplier = pixelsPerUnitMultiplier;
+
+                overlayImage.color = Color.white;
+            }
+
+            // 3. Setup Scene Firefly Component Control Logic
+            if (activeFirefly != null)
+            {
+                activeFirefly.transform.localScale = flyScale;
+
+                SmoothFireflyMover mover = activeFirefly.GetComponent<SmoothFireflyMover>();
+                if (mover == null)
+                {
+                    mover = activeFirefly.AddComponent<SmoothFireflyMover>();
+                }
+
+                mover.moveSpeed = flySpeed;
+                mover.rotationSpeed = turnSpeed;
+                mover.movementBounds = movementBounds;
+                mover.waypointReachedDistance = waypointReachedDistance;
+
+                activeFirefly.SetActive(false);
+            }
+            else
+            {
+                UnityEngine.Debug.LogWarning("No Scene Firefly assigned in the controller slot!");
+            }
+
+            loadingOverlay.SetActive(false);
         }
 
         _data = ProfileManager.LoadProfiles();
-
         StartCoroutine(PlayIntro());
     }
 
@@ -106,14 +187,12 @@ public class StartingPageController : MonoBehaviour
     {
         RectTransform rt = welcomeText.rectTransform;
 
-        // Rest position: -80px from top (set in Editor, we animate TO here)
-        Vector2 restPos  = new Vector2(0f, -80f);
-        // Start position: push it 400px further down so it begins near screen centre
+        Vector2 restPos = new Vector2(0f, -80f);
         Vector2 startPos = new Vector2(0f, -480f);
         float startScale = 1.4f;
-        float endScale   = 1.0f;
+        float endScale = 1.0f;
 
-        rt.anchoredPosition              = startPos;
+        rt.anchoredPosition = startPos;
         welcomeText.transform.localScale = Vector3.one * startScale;
 
         yield return new WaitForSeconds(introDelay);
@@ -122,16 +201,15 @@ public class StartingPageController : MonoBehaviour
         while (elapsed < animDuration)
         {
             float t = Mathf.SmoothStep(0f, 1f, elapsed / animDuration);
-            rt.anchoredPosition              = Vector2.Lerp(startPos, restPos, t);
+            rt.anchoredPosition = Vector2.Lerp(startPos, restPos, t);
             welcomeText.transform.localScale = Vector3.one * Mathf.Lerp(startScale, endScale, t);
             elapsed += Time.deltaTime;
             yield return null;
         }
 
-        rt.anchoredPosition              = restPos;
+        rt.anchoredPosition = restPos;
         welcomeText.transform.localScale = Vector3.one * endScale;
 
-        // Intro finished, now spawn and pop the cards
         RebuildCards(true);
     }
 
@@ -139,7 +217,6 @@ public class StartingPageController : MonoBehaviour
 
     private void RebuildCards(bool animate = false)
     {
-        // Clear existing cards
         foreach (Transform child in profilesContainer)
             Destroy(child.gameObject);
 
@@ -149,7 +226,7 @@ public class StartingPageController : MonoBehaviour
         {
             Sprite avatar = LoadAvatar(profile.pfpPath);
             ProfileCard card = Instantiate(profileCardPrefab, profilesContainer);
-            card.Setup(profile, avatar, 
+            card.Setup(profile, avatar,
                 () => {
                     if (profile.isCalibrated) SelectProfile(profile.id);
                     else RecalibrateProfile(profile.id);
@@ -157,20 +234,19 @@ public class StartingPageController : MonoBehaviour
                 () => RecalibrateProfile(profile.id),
                 () => DeleteProfile(profile.id)
             );
-            
+
             if (animate)
             {
                 card.AnimatePopIn(popDelay);
-                popDelay += 0.15f; // Stagger the pop-in
+                popDelay += 0.15f;
             }
         }
 
-        // Show Plus button only when below the max
         if (_data.profiles.Count < ProfileManager.MaxProfiles)
         {
             ProfileCard plus = Instantiate(plusCardPrefab, profilesContainer);
             plus.SetupAsPlus(ShowPrompt);
-            
+
             if (animate) plus.AnimatePopIn(popDelay);
         }
     }
@@ -182,27 +258,18 @@ public class StartingPageController : MonoBehaviour
             Sprite s = Resources.Load<Sprite>($"ProfilePictures/{pfpPath}");
             if (s != null) return s;
         }
-        // Fallback: pick any available placeholder
         Sprite[] all = Resources.LoadAll<Sprite>("ProfilePictures");
         return all.Length > 0 ? all[0] : null;
     }
 
-    // ── Profile selection ────────────────────────────────────────────────────
+    // ── Profile selection & Navigation ───────────────────────────────────────
 
     private void RecalibrateProfile(string profileId)
     {
         PlayerPrefs.SetString("ActiveProfileID", profileId);
         PlayerPrefs.Save();
-        
-        var runner = FindFirstObjectByType<GazeFollowerRunner>();
-        if (runner != null)
-        {
-            runner.TriggerCalibrationFlow(profileId);
-        }
-        else
-        {
-            UnityEngine.SceneManagement.SceneManager.LoadScene("GazeCalibrationScene");
-        }
+
+        StartCoroutine(ExecuteLoadingFlowWithDelay(profileId, isCalibrationFlow: true));
     }
 
     private void SelectProfile(string profileId)
@@ -210,7 +277,11 @@ public class StartingPageController : MonoBehaviour
         PlayerPrefs.SetString("ActiveProfileID", profileId);
         PlayerPrefs.Save();
 
-        // Provide immediate visual feedback that a profile was selected
+        StartCoroutine(ExecuteLoadingFlowWithDelay(profileId, isCalibrationFlow: false));
+    }
+
+    private IEnumerator ExecuteLoadingFlowWithDelay(string profileId, bool isCalibrationFlow)
+    {
         if (loadingOverlay != null)
         {
             loadingOverlay.SetActive(true);
@@ -220,19 +291,42 @@ public class StartingPageController : MonoBehaviour
             welcomeText.text = "Loading...";
         }
 
+        if (activeFirefly != null)
+        {
+            activeFirefly.SetActive(true);
+            UnityEngine.Debug.Log($"Debug: Active Firefly set to TRUE at position {activeFirefly.transform.position}");
+        }
+
         if (profilesContainer != null)
         {
             profilesContainer.gameObject.SetActive(false);
         }
 
+        yield return new WaitForSeconds(minimumLoadingTime);
+
         var runner = FindFirstObjectByType<GazeFollowerRunner>();
-        if (runner != null)
+
+        if (isCalibrationFlow)
         {
-            runner.TriggerStartupFlow(profileId);
+            if (runner != null)
+            {
+                runner.TriggerCalibrationFlow(profileId);
+            }
+            else
+            {
+                SceneManager.LoadScene("GazeCalibrationScene");
+            }
         }
         else
         {
-            SceneManager.LoadScene("OverlayScene");
+            if (runner != null)
+            {
+                runner.TriggerStartupFlow(profileId);
+            }
+            else
+            {
+                SceneManager.LoadScene("OverlayScene");
+            }
         }
     }
 
@@ -249,16 +343,16 @@ public class StartingPageController : MonoBehaviour
         {
             _modernPromptDoc = gameObject.AddComponent<UIDocument>();
             _modernPromptDoc.visualTreeAsset = Resources.Load<VisualTreeAsset>("ModernNamePrompt");
-            _modernPromptDoc.panelSettings   = Resources.Load<PanelSettings>("New Panel Settings");
+            _modernPromptDoc.panelSettings = Resources.Load<PanelSettings>("New Panel Settings");
             _modernPromptDoc.sortingOrder = 100;
-            
+
             var root = _modernPromptDoc.rootVisualElement;
             root.style.display = DisplayStyle.None;
-            
+
             _modernNameInput = root.Q<TextField>("input-name");
             var btnCreate = root.Q<Button>("btn-create");
             var btnCancel = root.Q<Button>("btn-cancel");
-            
+
             if (btnCreate != null) btnCreate.clicked += OnCreateConfirmed;
             if (btnCancel != null) btnCancel.clicked += HidePrompt;
         }
@@ -269,8 +363,7 @@ public class StartingPageController : MonoBehaviour
         SetupModernPromptIfMissing();
         if (_modernNameInput != null) _modernNameInput.value = string.Empty;
         if (_modernPromptDoc != null) _modernPromptDoc.rootVisualElement.style.display = DisplayStyle.Flex;
-        
-        // Hide the old uGUI one just in case
+
         if (namePromptPanel != null) namePromptPanel.SetActive(false);
         OpenOnScreenKeyboard();
     }
@@ -290,7 +383,7 @@ public class StartingPageController : MonoBehaviour
         ProfileManager.SaveProfiles(_data);
 
         HidePrompt();
-        RebuildCards(false); // No animation needed when adding a new one, it'll just appear
+        RebuildCards(false);
     }
 
     // ── Delete prompt ────────────────────────────────────────────────────────
@@ -303,15 +396,15 @@ public class StartingPageController : MonoBehaviour
             go.transform.SetParent(this.transform);
             _modernDeleteDoc = go.AddComponent<UIDocument>();
             _modernDeleteDoc.visualTreeAsset = Resources.Load<VisualTreeAsset>("ModernDeletePrompt");
-            _modernDeleteDoc.panelSettings   = Resources.Load<PanelSettings>("New Panel Settings");
+            _modernDeleteDoc.panelSettings = Resources.Load<PanelSettings>("New Panel Settings");
             _modernDeleteDoc.sortingOrder = 101;
-            
+
             var root = _modernDeleteDoc.rootVisualElement;
             root.style.display = DisplayStyle.None;
-            
+
             var btnConfirm = root.Q<Button>("btn-confirm");
             var btnCancel = root.Q<Button>("btn-cancel");
-            
+
             if (btnConfirm != null) btnConfirm.clicked += OnDeleteConfirmed;
             if (btnCancel != null) btnCancel.clicked += HideDeletePrompt;
         }
@@ -343,8 +436,60 @@ public class StartingPageController : MonoBehaviour
 
     private void OpenOnScreenKeyboard()
     {
-        // try   { Process.Start("tabtip.exe"); }
-        // catch { try { Process.Start("osk.exe"); } catch { /* silent */ } }
         UnityEngine.Debug.Log("OnScreenKeyboard triggered (exe starters disabled).");
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireCube(transform.position, new Vector3(movementBounds.x * 2, movementBounds.y * 2, 0.1f));
+    }
+}
+
+/// <summary>
+/// Handles wide, oriented flight paths for the existing 3D Scene Firefly locked completely to Z-axis rotation.
+/// </summary>
+public class SmoothFireflyMover : MonoBehaviour
+{
+    [HideInInspector] public float moveSpeed;
+    [HideInInspector] public float rotationSpeed;
+    [HideInInspector] public Vector2 movementBounds;
+    [HideInInspector] public float waypointReachedDistance;
+
+    private Vector3 targetPosition;
+    private float constantZDepth;
+
+    void Start()
+    {
+        constantZDepth = transform.position.z;
+        PickRandomTarget();
+    }
+
+    void Update()
+    {
+        transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
+
+        Vector3 direction = targetPosition - transform.position;
+        direction.z = 0f;
+
+        if (direction.sqrMagnitude > 0.001f)
+        {
+            float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+            Quaternion targetRotation = Quaternion.Euler(0f, 0f, angle - 90f);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+        }
+
+        if (Vector3.Distance(transform.position, targetPosition) < waypointReachedDistance)
+        {
+            PickRandomTarget();
+        }
+    }
+
+    private void PickRandomTarget()
+    {
+        float randomX = Random.Range(-movementBounds.x, movementBounds.x);
+        float randomY = Random.Range(-movementBounds.y, movementBounds.y);
+
+        targetPosition = new Vector3(randomX, randomY, constantZDepth);
     }
 }

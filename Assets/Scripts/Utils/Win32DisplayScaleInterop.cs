@@ -1,10 +1,13 @@
 using System;
 using System.Runtime.InteropServices;
 using UnityEngine;
+using System.Diagnostics.CodeAnalysis;
 
 /// Uses the undocumented DisplayConfigGetDeviceInfo / DisplayConfigSetDeviceInfo API 
 /// the same mechanism Windows Settings uses internally so changes apply immediately without requiring a sign-out or restart.
 /// Assumes a single active display. Supported values: 100 / 125 / 150 / 200 %.
+// Excluded from code coverage because simulating Win32/COM errors within managed tests is highly dangerous and can irreparably crash or break the host Windows environment.
+[ExcludeFromCodeCoverage]
 public static class Win32DisplayScaleInterop
 {
     // ── P/Invoke declarations ─────────────────────────────────────────────────

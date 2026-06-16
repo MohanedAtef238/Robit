@@ -7,7 +7,10 @@ namespace Robit.LauncherSystem
     {
         public IProcess Start(string path, string workingDirectory)
         {
-            ProcessStartInfo startInfo = new ProcessStartInfo(path);
+            ProcessStartInfo startInfo = new ProcessStartInfo(path)
+            {
+                UseShellExecute = true  // Required for .lnk shortcuts and general app launching
+            };
             if (!string.IsNullOrEmpty(workingDirectory) && Directory.Exists(workingDirectory))
             {
                 startInfo.WorkingDirectory = workingDirectory;
@@ -20,6 +23,7 @@ namespace Robit.LauncherSystem
         {
             if (process != null && !process.HasExited)
             {
+                process.Kill();
                 process.Dispose();
             }
         }

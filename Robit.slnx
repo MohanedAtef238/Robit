@@ -1,11 +1,10 @@
 ﻿<Solution>
+  <Project Path="Robit.Editor.csproj" />
   <Project Path="Mediapipe.Runtime.csproj" />
   <Project Path="Robit.csproj" />
   <Project Path="Robit.PlayModeTests.csproj" />
   <Project Path="MediaPipe.FaceMesh.csproj" />
   <Project Path="Mediapipe.Runtime.Tests.csproj" />
-  <Project Path="Robit.Editor.csproj" />
   <Project Path="Mediapipe.Holistic.Runtime.csproj" />
   <Project Path="Nicrom.Editor.csproj" />
-  <Project Path="LoadingEffect.Editor.csproj" />
 </Solution>

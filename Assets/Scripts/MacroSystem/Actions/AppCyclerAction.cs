@@ -1,18 +1,27 @@
-using UnityEngine.SceneManagement;
+using UnityEngine;
 using UnityEngine.Scripting;
 
-/// Macro action that loads the App Launcher scene for selecting desktop shortcuts.
+/// Macro action that toggles the App Launcher carousel.
+/// Mirrors HomePageAction — finds AppLauncherUIToolkit and calls Toggle().
 public class AppCyclerAction : IMacroAction
 {
     [Preserve]
     static AppCyclerAction() => MacroActionFactory.Register(MacroActionType.AppCycler, () => new AppCyclerAction());
 
-    public string ActionId => "app_cycler";
+    public string ActionId    => "app_cycler";
     public string DisplayName => "Switch Apps";
 
     public void Execute()
     {
-        SceneManager.LoadScene("HomeScene");
+        RobitLogger.Log($"[{nameof(AppCyclerAction)}] Executing AppCycler Action via ViewCoordinator.");
+        
+        if (ViewCoordinator.Instance != null)
+        {
+            ViewCoordinator.Instance.ToggleAppCycler();
+        }
+        else
+        {
+            RobitLogger.LogWarning($"[{nameof(AppCyclerAction)}] ViewCoordinator not found in scene!");
+        }
     }
 }
-

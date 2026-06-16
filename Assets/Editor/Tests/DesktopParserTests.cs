@@ -128,6 +128,7 @@ namespace Robit.Tests
             while (routine.MoveNext()) yield return null;
 
             // Assert
+            LogAssert.Expect(LogType.Warning, "[DesktopParser] Icon failed: MyApp");
             Assert.IsTrue(_parser.parsingComplete);
             Assert.AreEqual(1, _parser.shortcuts.Count, "Should have added 1 shortcut.");
             Assert.AreEqual("MyApp", _parser.shortcuts[0].Name);
@@ -170,6 +171,8 @@ namespace Robit.Tests
             // Provide invalid image data (just some random bytes that aren't a PNG)
             _mockFS.Files[cachePath] = new byte[] { 0xDE, 0xAD, 0xBE, 0xEF };
 
+            LogAssert.Expect(LogType.Warning, "[DesktopParser] Failed to load cached PNG, falling back to extraction");
+
             // Act
             var method = _parser.GetType().GetMethod("ExtractHighQualityIcon", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             Texture2D result = (Texture2D)method.Invoke(_parser, new object[] { filePath });
@@ -177,6 +180,43 @@ namespace Robit.Tests
             // Assert
             // It should return null because extraction will fail (no real exe at that path)
             Assert.IsNull(result, "Should return null because extraction fails after cache load failure.");
+        }
+
+        private class ThrowingMockFileSystem : IFileSystem
+        {
+            public bool DirectoryExists(string path) => true;
+            public bool FileExists(string path) => true;
+            public string[] GetFiles(string path, string searchPattern, bool recursive)
+            {
+                return new string[] { "/mock/Desktop/Locked.lnk" };
+            }
+            public string GetSpecialFolderPath(System.Environment.SpecialFolder folder) => "/mock/Desktop";
+            public byte[] ReadAllBytes(string path)
+            {
+                throw new System.UnauthorizedAccessException("Access Denied");
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator ParseShortcuts_WhenFileAccessFails_CatchesExceptionAndLogs()
+        {
+            // Arrange
+            _parser.FileSystem = new ThrowingMockFileSystem();
+
+            // Act
+            IEnumerator routine = (IEnumerator)_parser.GetType()
+                .GetMethod("ParseShortcuts", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                .Invoke(_parser, null);
+
+            while (routine.MoveNext()) yield return null;
+
+            // Assert
+            // The mock returns the file for both user Desktop and Common Desktop, so it logs twice.
+            LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("Failed: .*Locked.lnk"));
+            LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("Failed: .*Locked.lnk"));
+            
+            Assert.IsTrue(_parser.parsingComplete);
+            Assert.AreEqual(0, _parser.shortcuts.Count);
         }
 
         private static byte[] BuildLnkWithTargetPath(string targetPath)

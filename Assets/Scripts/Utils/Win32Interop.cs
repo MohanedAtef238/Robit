@@ -2,8 +2,11 @@ using System;
 using System.Runtime.InteropServices;
 using UnityEngine.InputSystem;
 using LnkParser.Constants;
+using System.Diagnostics.CodeAnalysis;
 
 // Centralised Win32 P/Invoke declarations for the overlay system.
+// Excluded from code coverage because simulating Win32/COM errors within managed tests is highly dangerous and can irreparably crash or break the host Windows environment.
+[ExcludeFromCodeCoverage]
 public static class Win32Interop
 {
     // ═══════════════════════════════════════════════════════════════════════════
@@ -271,6 +274,9 @@ public static class Win32Interop
     public const uint OCR_SIZENWSE = 32642;
     public const uint OCR_SIZENESW = 32643;
     public const uint OCR_HELP = 32651;
+    public const uint OCR_CROSS = 32515;
+    public const uint OCR_UP = 32516;
+    public const uint OCR_NWPEN = 32631;
     public const uint SPI_SETCURSORS = 0x0057;
 
     // ═══════════════════════════════════════════════════════════════════════════

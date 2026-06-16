@@ -45,8 +45,8 @@ public class SharedCameraCapture : MonoBehaviour
     [Tooltip("Path to the Python shared camera capture executable relative to StreamingAssets.")]
     [SerializeField] string relativeExePath = @"Multimodal_UDP/share_camera/share_camera.exe";
     [SerializeField] int    deviceIndex   = 0;
-    [SerializeField] int    requestedWidth  = 1280;
-    [SerializeField] int    requestedHeight = 720;
+    [SerializeField] int    requestedWidth  = 640;
+    [SerializeField] int    requestedHeight = 480;
 
     public static SharedCameraCapture Instance { get; private set; }
 

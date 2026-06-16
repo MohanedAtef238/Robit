@@ -1,0 +1,40 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+
+    <!-- Styles: own panel stylesheet + card component stylesheet -->
+    <Style src="project://database/Assets/UI/documents/AppLauncherView.uss" />
+    <Style src="project://database/Assets/Scripts/AppLauncher/DesktopCard.uss" />
+
+    <!--
+        launcher-panel: full-screen dark background element.
+        HomePageController shows/hides this UIDocument's root and adds
+        .view-visible / .view-hidden to launcher-panel to drive the CSS transition.
+        AppLauncherUIToolkit.Initialize() receives launcher-panel as its root.
+    -->
+    <ui:VisualElement name="launcher-panel" class="launcher-panel" picking-mode="Ignore">
+
+        <!-- Decorative accent lines (picking-mode Ignore so they don't eat clicks) -->
+        <ui:VisualElement class="launcher-header-accent" picking-mode="Ignore" />
+        <ui:VisualElement class="launcher-footer-accent" picking-mode="Ignore" />
+
+        <!-- Spinner / error status -->
+        <ui:Label name="status-text" class="status-text" picking-mode="Ignore" />
+
+        <!-- Carousel: nav arrows + paged card grid -->
+        <ui:VisualElement name="carousel-shell" class="carousel-shell">
+
+            <ui:Button name="nav-left" text="&#8249;" class="nav-button nav-left" />
+
+            <ui:VisualElement name="carousel-center" class="carousel-center">
+                <ui:VisualElement name="cards-container" class="cards-container"
+                    style="flex-wrap: wrap; flex-direction: row; justify-content: center;" />
+                <ui:Label name="page-indicator" text="1 / 1" class="page-indicator"
+                    picking-mode="Ignore" />
+            </ui:VisualElement>
+
+            <ui:Button name="nav-right" text="&#8250;" class="nav-button nav-right" />
+
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+
+</ui:UXML>

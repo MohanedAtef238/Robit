@@ -1,10 +1,13 @@
 using System;
 using System.Runtime.InteropServices;
 using UnityEngine;
+using System.Diagnostics.CodeAnalysis;
 
 /// Provides static helpers to get/set the Windows system master volume
 /// using the Core Audio COM API (IAudioEndpointVolume).
 /// Works on Windows Vista+ without any third-party packages.
+// Excluded from code coverage because simulating Win32/COM errors within managed tests is highly dangerous and can irreparably crash or break the host Windows environment.
+[ExcludeFromCodeCoverage]
 public static class Win32AudioInterop
 {
     // ── COM class & interface GUIDs (Microsoft-defined, universal) ─────────

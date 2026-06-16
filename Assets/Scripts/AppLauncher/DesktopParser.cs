@@ -27,7 +27,7 @@ public class DesktopParser : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            // No DontDestroyOnLoad — DesktopParser lives in OverlayScene permanently.
         }
         else
         {
@@ -127,7 +127,10 @@ private Texture2D ExtractHighQualityIcon(string filePath)
         }
         else
         {
-            UnityEngine.Object.Destroy(tex);
+            if (Application.isPlaying)
+                UnityEngine.Object.Destroy(tex);
+            else
+                UnityEngine.Object.DestroyImmediate(tex);
 
             RobitLogger.LogWarning($"[DesktopParser] Failed to load cached PNG, falling back to extraction");
         }

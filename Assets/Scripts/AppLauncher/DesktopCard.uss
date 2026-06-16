@@ -1,97 +1,10 @@
-/* --- MAIN DASHBOARD LAYOUT --- */
-.app-launcher-root {
-    flex-grow: 1;
-    background-color: transparent;
-    padding: 40px;
-    align-items: center;
-    justify-content: center;
-}
+/* --- CLEAN SOFTER PASTEL GREEN CARD COMPONENT --- */
 
-.status-text {
-    font-size: 28px;
-    color: rgba(180, 160, 255, 0.9);
-    margin-bottom: 20px;
-    -unity-font-style: bold;
-    -unity-text-align: middle-center;
-    letter-spacing: 3px;
-}
-
-.carousel-shell {
-    flex-grow: 1;
-    width: 100%;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-}
-
-.carousel-shell > * {
-    margin-left: 10px;
-    margin-right: 10px;
-}
-
-.carousel-center {
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.carousel-center > * {
-    margin-top: 8px;
-    margin-bottom: 8px;
-}
-
-.cards-container {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-content: center;
-    align-items: center;
-    max-width: 1500px;
-}
-
-.page-indicator {
-    color: rgba(255, 255, 255, 0.78);
-    font-size: 18px;
-    letter-spacing: 3px;
-    -unity-font-style: bold;
-}
-
-.nav-button {
-    width: 72px;
-    height: 72px;
-    border-radius: 36px;
-    border-width: 2px;
-    border-color: rgba(0, 255, 170, 0.45);
-    background-color: rgba(10, 18, 28, 0.9);
-    color: #d8fff2;
-    font-size: 34px;
-    -unity-font-style: bold;
-    transition-duration: 180ms;
-}
-
-.nav-button:hover {
-    background-color: rgba(0, 255, 170, 0.18);
-    border-color: rgba(0, 255, 170, 0.95);
-    color: white;
-    scale: 1.08;
-}
-
-.nav-button:active {
-    scale: 0.92;
-}
-
-.nav-button:disabled {
-    opacity: 0.25;
-}
-
-/* --- CARD COMPONENT --- */
-
-/* The outer container. We add 30px margin to space cards out to prevent misclicks */
 .container {
     position: relative;
-    width: 280px;
-    height: 380px;
-    margin: 45px; 
+    width: 270px;
+    height: 360px;
+    margin: 20px; 
     transition-duration: 200ms;
     opacity: 1;
     scale: 1;
@@ -107,7 +20,6 @@
     scale: 1;
 }
 
-/* Active shrink effect. Since USS pseudo-classes are basic, we'll apply this to .container:active */
 .container:active {
     scale: 0.95;
 }
@@ -118,139 +30,20 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    border-radius: 20px;
+    border-radius: 24px;
     transition-duration: 300ms;
-    transition-property: all;
-    background-color: #1a1a1a;
-    border-width: 2px;
-    border-color: rgba(255, 255, 255, 0.1);
+    /* Soft, translucent sage base */
+    background-color: rgba(30, 45, 35, 0.4); 
+    border-width: 1.5px;
+    border-color: rgba(153, 204, 153, 0.25);
     overflow: hidden;
 }
 
 .card:hover {
     transition-duration: 200ms;
-    background-color: #1e1435; 
+    background-color: rgba(45, 65, 50, 0.6); 
     scale: 1.05;
-    border-color: #9b59f5;
-}
-
-
-.card-content {
-    position: absolute;
-    left: 0; right: 0; top: 0; bottom: 0;
-}
-
-#prompt {
-    bottom: 140px;
-    position: absolute;
-    width: 100%;
-    font-size: 16px;
-    -unity-font-style: bold;
-    letter-spacing: 2px;
-    transition-duration: 300ms;
-    transition-timing-function: ease-in-out;
-    -unity-text-align: middle-center;
-    color: rgba(255, 255, 255, 0.7);
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-}
-
-.container:hover #prompt {
-    opacity: 0;
-}
-
-.icon-container {
-    position: absolute;
-    top: 60px;
-    width: 100%;
-    height: 120px;
-    align-items: center;
-    justify-content: center;
-    opacity: 1;
-    transition-duration: 300ms;
-}
-
-/* Hide icon on hover to show full title */
-.container:hover .icon-container {
-    opacity: 0;
-}
-
-.title {
-    opacity: 0;
-    transition-duration: 300ms;
-    transition-timing-function: ease-in-out;
-    position: absolute;
-    font-size: 32px;
-    -unity-font-style: bold;
-    letter-spacing: 4px;
-    -unity-text-align: middle-center;
-    width: 100%;
-    top: 50%;
-    translate: 0 -50%;
-    color: #b388ff;
-    text-shadow: 0 0 10px rgba(140, 80, 255, 0.5);
-    white-space: normal;
-}
-
-.container:hover .title {
-    opacity: 1;
-    translate: 0 -60%; /* Slight upward movement */
-}
-
-.subtitle {
-    position: absolute;
-    bottom: 60px;
-    width: 100%;
-    -unity-text-align: middle-center;
-    font-size: 12px;
-    letter-spacing: 2px;
-    translate: 0 30px;
-    color: rgba(255, 255, 255, 0.6);
-}
-
-.tracker {
-    position: absolute;
-    left: 0; right: 0; top: 0; bottom: 0;
-}
-
-/* Hover Elements */
-
-.glowing-elements {
-    position: absolute;
-    left: 0; right: 0; top: 0; bottom: 0;
-    opacity: 0;
-    transition-property: opacity;
-    transition-duration: 0.3s;
-}
-
-.container:hover .glowing-elements {
-    opacity: 1;
-}
-
-.glow {
-    position: absolute;
-    width: 140px;
-    height: 140px;
-    border-radius: 70px;
-    background-color: rgba(120, 60, 240, 0.15); /* Substituted radial gradient */
-}
-
-.glow-1 { top: -20px; left: -20px; }
-.glow-2 { top: 30%; right: -30px; }
-.glow-3 { bottom: -20px; left: 30%; }
-
-
-/* Glare and background */
-
-.card-glare {
-    position: absolute;
-    left: 0; right: 0; top: 0; bottom: 0;
-    background-color: rgba(255, 255, 255, 0.05);
-    opacity: 0;
-    transition-duration: 300ms;
-}
-
-.container:hover .card-glare {
-    opacity: 1;
+    border-color: rgba(153, 204, 153, 0.8);
 }
 
 .card-glow-bg {
@@ -259,60 +52,102 @@
     height: 150%;
     left: -25%;
     top: -25%;
-    background-color: rgba(100, 50, 220, 0.05); /* Simulated radial blur */
+    background-color: rgba(153, 204, 153, 0.05);
     border-radius: 50%;
     opacity: 0;
     transition-duration: 300ms;
 }
 
 .container:hover .card-glow-bg {
-    opacity: 0.8;
+    opacity: 1;
 }
 
-/* Corner Elements */
-.corner-elements .corner {
+.card-border-accent {
     position: absolute;
-    width: 25px;
-    height: 25px;
-    border-color: rgba(92, 103, 255, 0.3);
-    border-width: 2px;
+    bottom: 0; left: 15%; right: 15%;
+    height: 3px;
+    border-radius: 1.5px;
+    background-color: rgba(153, 204, 153, 0.0);
     transition-duration: 300ms;
 }
 
-.container:hover .corner-elements .corner {
-    border-color: rgba(92, 103, 255, 0.8);
+.container:hover .card-border-accent {
+    background-color: rgba(153, 204, 153, 0.8);
+    bottom: 20px; /* Rises up nicely on hover */
 }
 
-.corner-1 { top: 10px; left: 10px; border-right-width: 0; border-bottom-width: 0; }
-.corner-2 { top: 10px; right: 10px; border-left-width: 0; border-bottom-width: 0; }
-.corner-3 { bottom: 10px; left: 10px; border-right-width: 0; border-top-width: 0; }
-.corner-4 { bottom: 10px; right: 10px; border-left-width: 0; border-top-width: 0; }
-
-
-/* Particle Simulation (simplified for USS without keyframes) */
-
-.card-particles {
+.card-content {
     position: absolute;
     left: 0; right: 0; top: 0; bottom: 0;
 }
 
-.particle {
+#prompt {
+    bottom: 30px;
     position: absolute;
-    width: 4px;
-    height: 4px;
-    background-color: #00ffaa;
-    border-radius: 2px;
+    width: 100%;
+    font-size: 15px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    transition-duration: 300ms;
+    -unity-text-align: middle-center;
+    color: rgba(207, 255, 207, 0.9);
+    text-shadow: 0 0 10px rgba(153, 204, 153, 0.5);
     opacity: 0;
-    transition-duration: 0.3s;
 }
 
-.container:hover .particle {
-    opacity: 0.8;
+.container:hover #prompt {
+    opacity: 1;
+    bottom: 45px; /* Appears clearly above the accent line (which is at bottom: 20px) */
 }
 
-.p-1 { top: 40%; left: 20%; }
-.p-2 { top: 60%; right: 20%; }
-.p-3 { top: 20%; left: 40%; }
-.p-4 { top: 80%; right: 40%; }
-.p-5 { top: 30%; left: 60%; }
-.p-6 { top: 70%; right: 60%; }
+.icon-container {
+    position: absolute;
+    top: 65px;
+    width: 100%;
+    height: 100px;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    transition-duration: 300ms;
+}
+
+.container:hover .icon-container {
+    opacity: 0.15; /* Fade out icon so title is clear */
+    scale: 0.85;
+}
+
+.title {
+    opacity: 1;
+    transition-duration: 300ms;
+    position: absolute;
+    font-size: 22px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    -unity-text-align: middle-center;
+    width: 100%;
+    top: 185px;
+    color: rgba(230, 245, 230, 0.9);
+    white-space: normal;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+.container:hover .title {
+    color: #ffffff;
+    text-shadow: 0 0 15px rgba(153, 204, 153, 0.6);
+}
+
+.subtitle {
+    position: absolute;
+    bottom: 25px;
+    width: 100%;
+    -unity-text-align: middle-center;
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: rgba(153, 204, 153, 0.6);
+}
+
+.tracker {
+    position: absolute;
+    left: 0; right: 0; top: 0; bottom: 0;
+}

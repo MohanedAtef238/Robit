@@ -1,32 +1,19 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
-    <!--
-        CRITICAL: Style tag must be here so USS is bundled in builds.
-        Dot visual properties are also set inline in C# as a safety net.
-        calibration-root has zero padding/margin — percentage coords are clean.
-    -->
-    <Style src="project://database/Assets/UI/GazeCalibration.uss" />
-
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/GazeCalibration.uss?fileID=7433441132597879392&amp;guid=6d0d6f2455bcbea45a850ebd9ffc6510&amp;type=3#GazeCalibration"/>
     <ui:VisualElement name="calibration-root" class="calibration-root">
-
-        <!-- Live gaze dot — C# sets left/top as absolute px from Screen.width/height -->
-        <ui:VisualElement name="calibration-dot" class="calibration-dot">
+        <ui:VisualElement name="calibration-dot" class="calibration-dot" style="background-image: url(&quot;project://database/Assets/UI/icons2/flower6.png?fileID=2800000&amp;guid=6edb4b5a6e782fb41b4071327f30df1d&amp;type=3#flower6&quot;);">
             <ui:VisualElement name="progress-track" class="progress-track">
-                <ui:VisualElement name="progress-fill" class="progress-fill" />
+                <ui:VisualElement name="progress-fill" class="progress-fill"/>
             </ui:VisualElement>
         </ui:VisualElement>
-
-        <!-- Centred prompt card — floats above the dot layer -->
-        <ui:VisualElement name="prompt-panel" class="prompt-panel">
+        <ui:VisualElement name="prompt-panel" class="prompt-panel" style="-unity-font-definition: url(&quot;project://database/Assets/Fonts/Gouttes.ttf?fileID=12800000&amp;guid=26657f46fc3c6a84b8ce76e9e82ebf64&amp;type=3#Gouttes&quot;);">
             <ui:VisualElement name="prompt-card" class="prompt-card">
-                <ui:Label name="point-label"  class="point-label"  text="" />
-                <ui:Label name="status-label" class="status-label" text="Initializing…" />
+                <ui:Label name="point-label" text="" class="point-label"/>
+                <ui:Label name="status-label" text="Initializing…" class="status-label"/>
             </ui:VisualElement>
         </ui:VisualElement>
-
-        <!-- Full-screen overlay shown while SVR model is being fitted -->
         <ui:VisualElement name="fitting-overlay" class="fitting-overlay">
-            <ui:Label name="fitting-label" class="fitting-label" text="Fitting gaze model…" />
+            <ui:Label name="fitting-label" text="Fitting gaze model…" class="fitting-label"/>
         </ui:VisualElement>
-
     </ui:VisualElement>
 </ui:UXML>

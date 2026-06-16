@@ -12,18 +12,15 @@ public class HomePageAction : IMacroAction
 
     public void Execute()
     {
-        var controller = Object.FindFirstObjectByType<HomePageController>();
-        if (controller != null)
+        RobitLogger.Log($"[{nameof(HomePageAction)}] Executing HomePage Action via ViewCoordinator.");
+        
+        if (ViewCoordinator.Instance != null)
         {
-            if (controller.IsOpen)
-                controller.Close();
-            else
-                controller.Open();
+            ViewCoordinator.Instance.ToggleHome();
         }
         else
         {
-            RobitLogger.LogWarning("[HomePageAction] No HomePageController found in scene.");
+            RobitLogger.LogWarning($"[{nameof(HomePageAction)}] ViewCoordinator not found in scene!");
         }
     }
 }
-

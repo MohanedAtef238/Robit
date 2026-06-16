@@ -25,10 +25,10 @@ public class HomePageController : MonoBehaviour
     private WindowsPopupSuppressor _suppressor;
     private Transparency _transparency;
 
-    // View-switching state
     private VisualElement _settingsView;
     private Button _viewAppsBtn;
 
+    // View-switching state
     private bool _isOpen;
     private bool _initialized;
     private bool _dialogueVisible;
@@ -143,20 +143,13 @@ public class HomePageController : MonoBehaviour
         // Ensure panel starts hidden
         homePanel.style.display = DisplayStyle.None;
 
-        // --- View Apps toggle ---
+        // --- View Apps button — delegates entirely to AppLauncherUIToolkit ---
         _settingsView = root.Q("settingsView");
         _viewAppsBtn  = root.Q<Button>("viewAppsBtn");
-
-        // Root has pickingMode=Ignore for click-through; restore Position on the button
-        // so hover and clicks actually register.
         if (_viewAppsBtn != null)
         {
             _viewAppsBtn.pickingMode = PickingMode.Position;
-            _viewAppsBtn.clicked += () =>
-            {
-                RobitLogger.Log("[HomePageController] View Apps clicked — loading HomeScene.");
-                ToggleAppView();
-            };
+            _viewAppsBtn.clicked += ToggleAppView;
         }
 
         _initialized = true;
@@ -302,20 +295,22 @@ public class HomePageController : MonoBehaviour
             _reminderIcon.style.display = DisplayStyle.Flex;
     }
 
-    // ── View Apps ────────────────────────────────────────────────
+    // ── View Apps ─────────────────────────────────────────────────────────────
 
+    /// Called by the "View Apps" button — delegates entirely to AppLauncherUIToolkit.
     private void ToggleAppView()
     {
-        // Close the home page (restores window state) then load the app launcher scene.
-        Close();
-        UnityEngine.SceneManagement.SceneManager.LoadScene("HomeScene");
+        var launcher = FindFirstObjectByType<AppLauncherUIToolkit>();
+        if (launcher != null)
+            launcher.Toggle();
+        else
+            RobitLogger.LogWarning("[HomePageController] AppLauncherUIToolkit not found in scene.");
     }
 
     private void ResetToSettingsView()
     {
         if (_settingsView != null) _settingsView.style.display = DisplayStyle.Flex;
-        if (_viewAppsBtn != null)  _viewAppsBtn.text           = "View Apps";
+        if (_viewAppsBtn  != null) _viewAppsBtn.text           = "View Apps";
     }
 
 }
-

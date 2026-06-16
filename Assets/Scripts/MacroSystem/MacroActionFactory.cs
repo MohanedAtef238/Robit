@@ -38,7 +38,6 @@ public static class MacroActionFactory
         RuntimeHelpers.RunClassConstructor(typeof(PageUpAction).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(RedoAction).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(RefreshAction).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(ReturnToDesktopAction).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(ScreenshotAction).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(SettingsAction).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(SnapLeftAction).TypeHandle);

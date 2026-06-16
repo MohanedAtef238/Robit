@@ -1,24 +1,24 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <Style src="project://database/Assets/Scripts/MacroSystem/MacroUI.uss?fileID=7433441132597879392&amp;guid=7dc99aedf7699ee4e958823f46699bce&amp;type=3#MacroUI"/>
-    <ui:VisualElement name="macro-container" class="macro-container macro-state--hidden" style="translate: 50% -81%; scale: 1 1; bottom: 45px; right: 307px;">
+    <ui:VisualElement name="macro-container" class="macro-container macro-state--hidden" style="translate: 50% -81%; bottom: 45px; right: 307px;">
         <ui:Label name="group-name-label" text="" class="group-name-label label-state--hidden"/>
-        <ui:VisualElement name="button-grid" class="button-grid">
-            <ui:Button name="BtnWheelPrev" class="macro-button slot-prev macro-state--hidden" style="border-top-width: 0; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; background-color: rgb(255, 255, 255);">
-                <ui:VisualElement class="btn-icon icon-cycle-left"/>
+        <ui:VisualElement name="button-grid" class="button-grid" style="scale: 1.8 1.8 3; translate: 0% 50%;">
+            <ui:Button name="BtnWheelPrev" class="macro-button slot-prev macro-state--hidden" style="scale: 0.8 0.8; background-color: rgba(255, 255, 255, 0.45);">
+                <ui:VisualElement class="btn-icon icon-cycle-left" style="background-color: rgba(255, 255, 255, 0); -unity-background-image-tint-color: rgb(255, 255, 255);"/>
             </ui:Button>
-            <MacroButton name="BtnSlot0" class="macro-button slot-0 macro-state--hidden" style="border-left-color: rgb(255, 255, 255); border-right-color: rgb(255, 255, 255); border-top-color: rgb(255, 255, 255); border-bottom-color: rgb(255, 255, 255); border-top-width: 6px; border-right-width: 6px; border-bottom-width: 6px; border-left-width: 6px; background-color: rgba(176, 249, 222, 0.37);">
+            <MacroButton name="BtnSlot0" class="macro-button slot-0 macro-state--hidden" style="scale: 0.8 0.8; translate: 0% -40%;">
                 <ui:VisualElement name="BtnSlot0Icon" class="btn-icon"/>
                 <ui:Label name="Tooltip0" text="Action" class="button-tooltip label-state--hidden"/>
             </MacroButton>
-            <MacroButton name="BtnSlot1" class="macro-button slot-1 macro-state--hidden" style="background-color: rgba(204, 176, 249, 0.37); border-top-width: 6px; border-right-width: 6px; border-bottom-width: 6px; border-left-width: 6px; border-left-color: rgb(255, 255, 255); border-right-color: rgb(255, 255, 255); border-top-color: rgb(255, 255, 255); border-bottom-color: rgb(255, 255, 255); scale: 1.5 1.5 0.05;">
+            <MacroButton name="BtnSlot1" class="macro-button slot-1 macro-state--hidden" style="scale: 1 1; translate: 0% -80%;">
                 <ui:VisualElement name="BtnSlot1Icon" class="btn-icon"/>
                 <ui:Label name="Tooltip1" text="Action" class="button-tooltip label-state--hidden"/>
             </MacroButton>
-            <MacroButton name="BtnSlot2" class="macro-button slot-2 macro-state--hidden" style="border-left-color: rgb(255, 255, 255); border-right-color: rgb(255, 255, 255); border-top-color: rgb(255, 255, 255); border-bottom-color: rgb(255, 255, 255); border-top-width: 6px; border-right-width: 6px; border-bottom-width: 6px; border-left-width: 6px; background-color: rgba(176, 249, 222, 0.37);">
+            <MacroButton name="BtnSlot2" class="macro-button slot-2 macro-state--hidden" style="scale: 0.8 0.8; translate: 0% -120%;">
                 <ui:VisualElement name="BtnSlot2Icon" class="btn-icon"/>
                 <ui:Label name="Tooltip2" text="Action" class="button-tooltip label-state--hidden"/>
             </MacroButton>
-            <ui:Button name="BtnWheelNext" class="macro-button slot-next macro-state--hidden" style="background-color: rgb(255, 255, 255); border-top-width: 0; border-right-width: 0; border-bottom-width: 0; border-left-width: 0;">
+            <ui:Button name="BtnWheelNext" class="macro-button slot-next macro-state--hidden" style="scale: 0.8 0.8; translate: 0% -160%; background-color: rgba(255, 255, 255, 0.45); background-image: none; -unity-background-scale-mode: scale-to-fit;">
                 <ui:VisualElement class="btn-icon icon-cycle-right"/>
             </ui:Button>
         </ui:VisualElement>

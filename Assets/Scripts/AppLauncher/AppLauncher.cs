@@ -2,7 +2,6 @@ using UnityEngine;
 using System;
 using System.Diagnostics;
 using System.Collections.Generic;
-using UnityEngine.SceneManagement;
 using System.IO;
 using Robit.LauncherSystem;
 using System.Runtime.CompilerServices;
@@ -26,7 +25,17 @@ public class AppLauncher : MonoBehaviour, IAppLauncher
         QualitySettings.vSyncCount = 0;
     }
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void AutoCreate()
+    {
+        if (Instance != null) return;
+        var go = new GameObject("AppLauncher");
+        go.AddComponent<AppLauncher>();
+        DontDestroyOnLoad(go);
+    }
+
     protected void Awake() => Initialize();
+
 
     internal void Initialize()
     {
@@ -39,7 +48,7 @@ public class AppLauncher : MonoBehaviour, IAppLauncher
             }
         }
         else if (Instance != this)
-        {   
+        {
             if (Application.isPlaying)
             {
                 Destroy(gameObject);
@@ -53,6 +62,8 @@ public class AppLauncher : MonoBehaviour, IAppLauncher
 
     public IProcess CurrentProcess => currentProcess;
 
+    /// Launches an external application and closes the home page.
+    /// No scene load is needed — we remain in OverlayScene.
     public void LaunchApplication(string path, string workingDirectory)
     {
         try
@@ -63,31 +74,34 @@ public class AppLauncher : MonoBehaviour, IAppLauncher
             }
 
             currentProcess = _processRunner.Start(path, workingDirectory);
-            
-            _sceneLoader.LoadScene("OverlayScene"); 
+
+            // Close the home page overlay; the external app takes the foreground.
+            var homeCtrl = FindFirstObjectByType<HomePageController>();
+            homeCtrl?.Close();
         }
-        catch (System.Exception e)
+        catch (Exception e)
         {
             RobitLogger.LogError($"Failed to launch application: {path}, Error: {e.Message}");
         }
     }
 
-    /// <summary>
-    /// Closes the overlay, kills the app, and shows the desktop cards again.
-    /// Called by the Home macro button.
-    /// </summary>
+    /// Shows the home page and the app launcher carousel.
+    /// Called by ReturnToDesktopAction and GoHome().
     public void ReturnToDesktop()
     {
-        // Show the AppLauncher UI again
-        var appUI = FindFirstObjectByType<AppLauncherUIToolkit>();
-        if (appUI != null)
+        var homeCtrl = FindFirstObjectByType<HomePageController>();
+        if (homeCtrl != null && !homeCtrl.IsOpen)
         {
-            var doc = appUI.GetComponent<UnityEngine.UIElements.UIDocument>();
-            if (doc != null && doc.rootVisualElement != null)
-                doc.rootVisualElement.style.display = UnityEngine.UIElements.DisplayStyle.Flex;
+            homeCtrl.Open();
         }
 
-        // Hide macros with shrink
+        var launcherCtrl = FindFirstObjectByType<AppLauncherUIToolkit>();
+        if (launcherCtrl != null)
+        {
+            launcherCtrl.Open();
+        }
+
+        // Collapse the macro button ring if it is open.
         var macroCtrl = FindFirstObjectByType<MacroButtonController>();
         if (macroCtrl != null)
             macroCtrl.HideWithShrink();
@@ -114,18 +128,10 @@ public class AppLauncher : MonoBehaviour, IAppLauncher
         }
     }
 
+    /// Closes the running app and brings up the home page + app launcher carousel.
     public void GoHome()
     {
         CloseCurrentApp();
-        StartCoroutine(GoHomeRoutine());
+        ReturnToDesktop();
     }
-
-    private System.Collections.IEnumerator GoHomeRoutine()
-    {   
-        yield return null;
-        _sceneLoader.LoadScene("MainScene");
-        RobitLogger.Log("[AppLauncher] Returning to Home.");
-    }
-
 }
-

@@ -322,7 +322,6 @@ public class MacroButtonController : MonoBehaviour
         { MacroActionType.Screenshot, "icon-screenshot" },
         { MacroActionType.PageUp, "icon-page-up" },
         { MacroActionType.PageDown, "icon-page-down" },
-        { MacroActionType.ReturnToDesktop, "icon-home" },
         { MacroActionType.SnapLeft, "icon-snap-left" },
         { MacroActionType.SnapRight, "icon-snap-right" },
         { MacroActionType.MaximizeRestore, "icon-maximize" },
