@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-$GazeDir = "D:\Projects\neo gazefollower\GazeFollower-main"
+$GazeDir = "D:\Projects\GazeFollower"
 $EmgDir  = "C:\Users\Mohaned\Downloads\robit_stuff\emg-work-main\emg-work-main"
 $OutDir  = $PSScriptRoot
 

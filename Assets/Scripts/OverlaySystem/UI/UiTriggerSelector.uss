@@ -18,30 +18,30 @@
 }
 
 .selector-shell {
-    width: 1180px;
-    max-width: 92%;
-    padding-top: 36px;
-    padding-right: 32px;
-    padding-bottom: 36px;
-    padding-left: 32px;
+    width: 1450px;
+    max-width: 96%;
+    padding-top: 48px;
+    padding-right: 40px;
+    padding-bottom: 48px;
+    padding-left: 40px;
     align-items: center;
 }
 
 .selector-title {
     color: rgba(216, 255, 242, 0.98);
-    font-size: 30px;
-    letter-spacing: 6px;
+    font-size: 38px;
+    letter-spacing: 8px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
-    margin-bottom: 10px;
+    margin-bottom: 14px;
 }
 
 .selector-subtitle {
     color: rgba(203, 222, 236, 0.9);
-    font-size: 16px;
-    letter-spacing: 2px;
+    font-size: 20px;
+    letter-spacing: 3px;
     -unity-text-align: middle-center;
-    margin-bottom: 22px;
+    margin-bottom: 30px;
 }
 
 .selector-grid {
@@ -54,12 +54,12 @@
 }
 
 .selector-option {
-    width: 260px;
-    height: 300px;
-    margin-top: 20px;
-    margin-right: 22px;
-    margin-bottom: 20px;
-    margin-left: 22px;
+    width: 380px;
+    height: 440px;
+    margin-top: 25px;
+    margin-right: 28px;
+    margin-bottom: 25px;
+    margin-left: 28px;
 }
 
 .selector-option .card {
@@ -76,9 +76,9 @@
     opacity: 1;
     top: 50%;
     translate: 0 -58%;
-    font-size: 92px;
+    font-size: 148px;
     color: rgba(179, 136, 255, 1);
-    text-shadow: 0 0 18px rgba(140, 80, 255, 0.45);
+    text-shadow: 0 0 24px rgba(140, 80, 255, 0.45);
 }
 
 .selector-option:hover .selector-number {

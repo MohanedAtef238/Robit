@@ -42,8 +42,8 @@ using UnityEngine.UIElements;
 public class GazeCalibrationController : MonoBehaviour
 {
     // ── Dot size (px) — single source of truth for both live and debug dots ──
-    private const float DOT_SIZE        = 45f;
-    private const float DOT_HALF        = DOT_SIZE / 2f;   // 22.5 px
+    private const float DOT_SIZE        = 70f;
+    private const float DOT_HALF        = DOT_SIZE / 2f;   // 35 px
     private const float DOT_BORDER      = 3f;
     private const float PROGRESS_H      = 6f;
     private const float PROGRESS_W      = 70f;
@@ -65,51 +65,20 @@ public class GazeCalibrationController : MonoBehaviour
     // ── Python-side calibration point list (must match unity_gaze_bridge.py) ─
     private static readonly (float x, float y)[] CalibrationPoints =
     {
-        (0.500f, 0.500f),  // 23 center (start)
-        (0.026f, 0.046f),  //  1 top-left
-        (0.263f, 0.046f),  //  3 top-inner-left
-        (0.500f, 0.046f),  //  5 top-center
-        (0.737f, 0.046f),  //  7 top-inner-right
-        (0.974f, 0.046f),  //  9 top-right
-        (0.026f, 0.273f),  // 10 row 2 left
-        (0.263f, 0.273f),  // 12 row 2 inner-left
-        (0.737f, 0.273f),  // 16 row 2 inner-right
-        (0.974f, 0.273f),  // 18 row 2 right
-        (0.026f, 0.500f),  // 19 mid-left
-        (0.263f, 0.500f),  // 21 mid-inner-left
-        (0.737f, 0.500f),  // 25 mid-inner-right
-        (0.974f, 0.500f),  // 27 mid-right
-        (0.026f, 0.727f),  // 28 row 4 left
-        (0.263f, 0.727f),  // 30 row 4 inner-left
-        (0.737f, 0.727f),  // 34 row 4 inner-right
-        (0.974f, 0.727f),  // 36 row 4 right
-        (0.026f, 0.954f),  // 37 bottom-left
-        (0.263f, 0.954f),  // 39 bottom-inner-left
-        (0.500f, 0.954f),  // 41 bottom-center
-        (0.974f, 0.954f),  // 45 bottom-right
-        (0.500f, 0.500f),  // 23 center (end)
-    };
-
-    private static readonly (float x, float y)[] CalibrationPoints_RightTilt =
-    {
-        (0.974f, 0.046f),  //  9
-        (0.737f, 0.273f),  // 16
-        (0.974f, 0.273f),  // 18
-        (0.974f, 0.500f),  // 27
-        (0.737f, 0.727f),  // 34
-        (0.974f, 0.727f),  // 36
-        (0.974f, 0.954f),  // 45
-    };
-
-    private static readonly (float x, float y)[] CalibrationPoints_LeftTilt =
-    {
-        (0.026f, 0.046f),  //  1
-        (0.026f, 0.273f),  // 10
+        (0.500f, 0.500f),  // 23
+        (0.026f, 0.046f),  // 1
+        (0.500f, 0.046f),  // 5
+        (0.974f, 0.046f),  // 9
         (0.263f, 0.273f),  // 12
+        (0.737f, 0.273f),  // 16
         (0.026f, 0.500f),  // 19
-        (0.026f, 0.727f),  // 28
+        (0.974f, 0.500f),  // 27
         (0.263f, 0.727f),  // 30
+        (0.737f, 0.727f),  // 34
         (0.026f, 0.954f),  // 37
+        (0.500f, 0.954f),  // 41
+        (0.974f, 0.954f),  // 45
+        (0.500f, 0.500f),  // 23
     };
 
     [Tooltip("Scene to load after calibration finishes.")]
@@ -143,6 +112,24 @@ public class GazeCalibrationController : MonoBehaviour
     // ── Debug grid ────────────────────────────────────────────────────────
     private bool debugGridVisible;
     private readonly List<VisualElement> debugDots = new List<VisualElement>();
+
+    // ── Calibration results ──────────────────────────────────────────────
+    private struct CalibrationPointResult
+    {
+        public Vector2 actual;
+        public Vector2 predicted;
+        public float   error;
+    }
+    private readonly List<CalibrationPointResult> calibrationResults = new List<CalibrationPointResult>();
+    private float meanCalibrationError;
+    private VisualElement resultsOverlay;
+
+    // Results overlay colours
+    private static readonly Color RESULT_TARGET_COLOR    = new Color(0.05f, 0.76f, 0.30f);   // green
+    private static readonly Color RESULT_ESTIMATED_COLOR = new Color(1.00f, 0.45f, 0.15f);   // orange
+    private static readonly Color RESULT_LINE_COLOR      = new Color(1f, 1f, 1f, 0.5f);      // white 50%
+    private const float RESULT_TARGET_SIZE   = 30f;
+    private const float RESULT_ESTIMATED_SIZE = 24f;
 
     // ── Singleton ────────────────────────────────────────────────────────
     public static GazeCalibrationController Instance { get; private set; }
@@ -256,6 +243,31 @@ public class GazeCalibrationController : MonoBehaviour
         ve.style.borderRightWidth  = DOT_BORDER;
         ve.style.borderTopWidth    = DOT_BORDER;
         ve.style.borderBottomWidth = DOT_BORDER;
+
+        // Centered focus point inside the dot
+        VisualElement focusPoint = ve.Q<VisualElement>("focus-point");
+        if (focusPoint == null)
+        {
+            focusPoint = new VisualElement();
+            focusPoint.name = "focus-point";
+            ve.Add(focusPoint);
+        }
+
+        const float FOCUS_SIZE = 22f; // ~31% of 70px dot size
+        const float FOCUS_HALF = FOCUS_SIZE / 2f;
+
+        focusPoint.style.position          = Position.Absolute;
+        focusPoint.style.width             = FOCUS_SIZE;
+        focusPoint.style.height            = FOCUS_SIZE;
+        focusPoint.style.left              = Length.Percent(50);
+        focusPoint.style.top               = Length.Percent(50);
+        focusPoint.style.marginLeft        = -FOCUS_HALF;
+        focusPoint.style.marginTop         = -FOCUS_HALF;
+        focusPoint.style.borderTopLeftRadius     = FOCUS_HALF;
+        focusPoint.style.borderTopRightRadius    = FOCUS_HALF;
+        focusPoint.style.borderBottomLeftRadius  = FOCUS_HALF;
+        focusPoint.style.borderBottomRightRadius = FOCUS_HALF;
+        focusPoint.style.backgroundColor   = Color.white;
     }
 
     // ── Start calibration (called by GazeFollowerRunner after camera check) ──
@@ -469,9 +481,14 @@ public class GazeCalibrationController : MonoBehaviour
         {
             string errPart = msg.Substring("CALI_MODEL_READY".Length).Trim();
             if (float.TryParse(errPart, NumberStyles.Float, CultureInfo.InvariantCulture, out float err))
+            {
+                meanCalibrationError = err;
                 SetStatus($"✓ Calibration complete!\nAvg error: {err:F4}");
+            }
             else
+            {
                 SetStatus("✓ Calibration complete!");
+            }
 
             if (pointLabel != null)
                 pointLabel.text = "All points collected";
@@ -491,7 +508,43 @@ public class GazeCalibrationController : MonoBehaviour
                 }
             }
 
-            StartCoroutine(FinishAndReturn(2f));
+            // Don't auto-return — wait for CALI_RESULTS_DONE to show accuracy screen.
+            calibrationResults.Clear();
+        }
+
+        // ── CALI_POINT_RESULT {actual_x},{actual_y} {pred_x},{pred_y} {error} ──
+        else if (msg.StartsWith("CALI_POINT_RESULT ", StringComparison.Ordinal))
+        {
+            string payload = msg.Substring("CALI_POINT_RESULT ".Length);
+            string[] parts = payload.Split(' ');
+            if (parts.Length >= 3)
+            {
+                string[] actualXY = parts[0].Split(',');
+                string[] predXY   = parts[1].Split(',');
+                if (actualXY.Length == 2 && predXY.Length == 2
+                    && float.TryParse(actualXY[0], NumberStyles.Float, CultureInfo.InvariantCulture, out float ax)
+                    && float.TryParse(actualXY[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float ay)
+                    && float.TryParse(predXY[0],   NumberStyles.Float, CultureInfo.InvariantCulture, out float px)
+                    && float.TryParse(predXY[1],   NumberStyles.Float, CultureInfo.InvariantCulture, out float py)
+                    && float.TryParse(parts[2],    NumberStyles.Float, CultureInfo.InvariantCulture, out float ptErr))
+                {
+                    calibrationResults.Add(new CalibrationPointResult
+                    {
+                        actual    = new Vector2(ax, ay),
+                        predicted = new Vector2(px, py),
+                        error     = ptErr
+                    });
+                }
+            }
+        }
+
+        // ── CALI_RESULTS_DONE — show accuracy overlay ──────────────────
+        else if (msg == "CALI_RESULTS_DONE")
+        {
+            if (fittingOverlay != null)
+                fittingOverlay.style.display = DisplayStyle.None;
+
+            BuildResultsOverlay();
         }
 
         // ── CALI_MODEL_ERROR {reason} ──────────────────────────────────
@@ -655,16 +708,26 @@ public class GazeCalibrationController : MonoBehaviour
             d.style.top     = NY(y);
             d.style.opacity = 0.9f;
 
-            // White index number centered inside
+            // White index number centered inside the focus point for contrast
             var lbl = new Label((i + 1).ToString());
             lbl.style.position        = Position.Absolute;
             lbl.style.left            = 0; lbl.style.right = 0;
             lbl.style.top             = 0; lbl.style.bottom = 0;
             lbl.style.unityTextAlign  = TextAnchor.MiddleCenter;
-            lbl.style.color           = Color.white;
+            lbl.style.color           = new Color(0.12f, 0.12f, 0.12f); // Dark gray/black for readability on white focus point
             lbl.style.fontSize        = 13;
             lbl.style.unityFontStyleAndWeight = FontStyle.Bold;
-            d.Add(lbl);
+
+            var fp = d.Q<VisualElement>("focus-point");
+            if (fp != null)
+            {
+                fp.Add(lbl);
+            }
+            else
+            {
+                lbl.style.color = Color.white; // Fallback if focus point is missing
+                d.Add(lbl);
+            }
 
             calibrationRoot.Add(d);
             debugDots.Add(d);
@@ -677,6 +740,303 @@ public class GazeCalibrationController : MonoBehaviour
     {
         foreach (var d in debugDots) d.RemoveFromHierarchy();
         debugDots.Clear();
+    }
+
+    // ── Results overlay ───────────────────────────────────────────────────
+
+    private void BuildResultsOverlay()
+    {
+        if (calibrationRoot == null) return;
+
+        // Remove any previous results overlay
+        resultsOverlay?.RemoveFromHierarchy();
+
+        resultsOverlay = new VisualElement();
+        resultsOverlay.style.position        = Position.Absolute;
+        resultsOverlay.style.left            = 0;
+        resultsOverlay.style.top             = 0;
+        resultsOverlay.style.right           = 0;
+        resultsOverlay.style.bottom          = 0;
+        resultsOverlay.style.backgroundColor = new Color(0.08f, 0.10f, 0.08f, 0.92f);
+
+        // ── Draw per-point results (lines, target dots, estimated dots) ──
+        foreach (var result in calibrationResults)
+        {
+            float ax = NX(result.actual.x);
+            float ay = NY(result.actual.y);
+            float px = NX(result.predicted.x);
+            float py = NY(result.predicted.y);
+
+            // Error line: thin rotated element connecting actual → predicted
+            float dx = px - ax;
+            float dy = py - ay;
+            float length = Mathf.Sqrt(dx * dx + dy * dy);
+            float angle  = Mathf.Atan2(dy, dx) * Mathf.Rad2Deg;
+
+            if (length > 1f)  // only draw line if there's visible error
+            {
+                var line = new VisualElement();
+                line.style.position        = Position.Absolute;
+                line.style.left            = ax;
+                line.style.top             = ay - 1f;
+                line.style.width           = length;
+                line.style.height          = 2f;
+                line.style.backgroundColor = RESULT_LINE_COLOR;
+                line.style.transformOrigin = new TransformOrigin(0, Length.Percent(50));
+                line.style.rotate          = new Rotate(Angle.Degrees(angle));
+                line.pickingMode           = PickingMode.Ignore;
+                resultsOverlay.Add(line);
+            }
+
+            // Target dot (green)
+            var targetDot = new VisualElement();
+            targetDot.style.position                 = Position.Absolute;
+            targetDot.style.width                    = RESULT_TARGET_SIZE;
+            targetDot.style.height                   = RESULT_TARGET_SIZE;
+            targetDot.style.left                     = ax;
+            targetDot.style.top                      = ay;
+            targetDot.style.marginLeft                = -RESULT_TARGET_SIZE / 2f;
+            targetDot.style.marginTop                 = -RESULT_TARGET_SIZE / 2f;
+            targetDot.style.borderTopLeftRadius       = RESULT_TARGET_SIZE / 2f;
+            targetDot.style.borderTopRightRadius      = RESULT_TARGET_SIZE / 2f;
+            targetDot.style.borderBottomLeftRadius    = RESULT_TARGET_SIZE / 2f;
+            targetDot.style.borderBottomRightRadius   = RESULT_TARGET_SIZE / 2f;
+            targetDot.style.backgroundColor           = RESULT_TARGET_COLOR;
+            targetDot.style.borderLeftWidth            = 2f;
+            targetDot.style.borderRightWidth           = 2f;
+            targetDot.style.borderTopWidth             = 2f;
+            targetDot.style.borderBottomWidth          = 2f;
+            targetDot.style.borderLeftColor            = Color.white;
+            targetDot.style.borderRightColor           = Color.white;
+            targetDot.style.borderTopColor             = Color.white;
+            targetDot.style.borderBottomColor          = Color.white;
+            targetDot.pickingMode                      = PickingMode.Ignore;
+            resultsOverlay.Add(targetDot);
+
+            // Estimated dot (orange)
+            var estDot = new VisualElement();
+            estDot.style.position                 = Position.Absolute;
+            estDot.style.width                    = RESULT_ESTIMATED_SIZE;
+            estDot.style.height                   = RESULT_ESTIMATED_SIZE;
+            estDot.style.left                     = px;
+            estDot.style.top                      = py;
+            estDot.style.marginLeft                = -RESULT_ESTIMATED_SIZE / 2f;
+            estDot.style.marginTop                 = -RESULT_ESTIMATED_SIZE / 2f;
+            estDot.style.borderTopLeftRadius       = RESULT_ESTIMATED_SIZE / 2f;
+            estDot.style.borderTopRightRadius      = RESULT_ESTIMATED_SIZE / 2f;
+            estDot.style.borderBottomLeftRadius    = RESULT_ESTIMATED_SIZE / 2f;
+            estDot.style.borderBottomRightRadius   = RESULT_ESTIMATED_SIZE / 2f;
+            estDot.style.backgroundColor           = RESULT_ESTIMATED_COLOR;
+            estDot.style.borderLeftWidth            = 2f;
+            estDot.style.borderRightWidth           = 2f;
+            estDot.style.borderTopWidth             = 2f;
+            estDot.style.borderBottomWidth          = 2f;
+            estDot.style.borderLeftColor            = new Color(1f, 1f, 1f, 0.7f);
+            estDot.style.borderRightColor           = new Color(1f, 1f, 1f, 0.7f);
+            estDot.style.borderTopColor             = new Color(1f, 1f, 1f, 0.7f);
+            estDot.style.borderBottomColor          = new Color(1f, 1f, 1f, 0.7f);
+            estDot.pickingMode                      = PickingMode.Ignore;
+            resultsOverlay.Add(estDot);
+        }
+
+        // ── Summary card (centred) ────────────────────────────────────────
+        var cardContainer = new VisualElement();
+        cardContainer.style.position       = Position.Absolute;
+        cardContainer.style.left           = 0;
+        cardContainer.style.right          = 0;
+        cardContainer.style.top            = 0;
+        cardContainer.style.bottom         = 0;
+        cardContainer.style.alignItems     = Align.Center;
+        cardContainer.style.justifyContent = Justify.Center;
+        cardContainer.pickingMode          = PickingMode.Ignore;
+
+        var card = new VisualElement();
+        card.style.backgroundColor           = new Color(0.12f, 0.14f, 0.12f, 0.95f);
+        card.style.borderTopLeftRadius       = 20f;
+        card.style.borderTopRightRadius      = 20f;
+        card.style.borderBottomLeftRadius    = 20f;
+        card.style.borderBottomRightRadius   = 20f;
+        card.style.borderLeftWidth            = 2f;
+        card.style.borderRightWidth           = 2f;
+        card.style.borderTopWidth             = 2f;
+        card.style.borderBottomWidth          = 2f;
+        card.style.borderLeftColor            = new Color(0.3f, 0.7f, 0.4f, 0.6f);
+        card.style.borderRightColor           = new Color(0.3f, 0.7f, 0.4f, 0.6f);
+        card.style.borderTopColor             = new Color(0.3f, 0.7f, 0.4f, 0.6f);
+        card.style.borderBottomColor          = new Color(0.3f, 0.7f, 0.4f, 0.6f);
+        card.style.paddingLeft                = 48f;
+        card.style.paddingRight               = 48f;
+        card.style.paddingTop                 = 36f;
+        card.style.paddingBottom              = 36f;
+        card.style.alignItems                 = Align.Center;
+        card.style.minWidth                   = 400f;
+
+        // Title
+        var title = new Label("Calibration Complete");
+        title.style.color          = Color.white;
+        title.style.fontSize       = 28;
+        title.style.unityFontStyleAndWeight = FontStyle.Bold;
+        title.style.unityTextAlign = TextAnchor.MiddleCenter;
+        title.style.marginBottom   = 16f;
+        card.Add(title);
+
+        // Error value
+        var errorLabel = new Label($"Mean Error: {meanCalibrationError:F4}");
+        errorLabel.style.color          = new Color(0.75f, 0.75f, 0.75f);
+        errorLabel.style.fontSize       = 18;
+        errorLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+        errorLabel.style.marginBottom   = 8f;
+        card.Add(errorLabel);
+
+        // Accuracy rating
+        string ratingText;
+        Color  ratingColor;
+        GetAccuracyRating(meanCalibrationError, out ratingText, out ratingColor);
+
+        var ratingLabel = new Label(ratingText);
+        ratingLabel.style.color          = ratingColor;
+        ratingLabel.style.fontSize       = 22;
+        ratingLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+        ratingLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+        ratingLabel.style.marginBottom   = 8f;
+        card.Add(ratingLabel);
+
+        // Points count
+        var pointsLabel = new Label($"{calibrationResults.Count} calibration points evaluated");
+        pointsLabel.style.color          = new Color(0.55f, 0.55f, 0.55f);
+        pointsLabel.style.fontSize       = 14;
+        pointsLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+        pointsLabel.style.marginBottom   = 24f;
+        card.Add(pointsLabel);
+
+        // Legend
+        var legend = new VisualElement();
+        legend.style.flexDirection = FlexDirection.Row;
+        legend.style.justifyContent = Justify.Center;
+        legend.style.marginBottom = 24f;
+
+        legend.Add(CreateLegendItem(RESULT_TARGET_COLOR, "Target"));
+        var spacer = new VisualElement();
+        spacer.style.width = 30f;
+        legend.Add(spacer);
+        legend.Add(CreateLegendItem(RESULT_ESTIMATED_COLOR, "Estimated"));
+        card.Add(legend);
+
+        // Buttons row
+        var buttonsRow = new VisualElement();
+        buttonsRow.style.flexDirection = FlexDirection.Row;
+        buttonsRow.style.justifyContent = Justify.Center;
+
+        var recalibrateBtn = CreateResultButton("Recalibrate",
+            new Color(0.90f, 0.55f, 0.15f), new Color(0.70f, 0.40f, 0.10f));
+        recalibrateBtn.clicked += OnRecalibrateClicked;
+        buttonsRow.Add(recalibrateBtn);
+
+        var btnSpacer = new VisualElement();
+        btnSpacer.style.width = 20f;
+        buttonsRow.Add(btnSpacer);
+
+        var continueBtn = CreateResultButton("Continue",
+            new Color(0.15f, 0.65f, 0.35f), new Color(0.10f, 0.50f, 0.25f));
+        continueBtn.clicked += OnContinueClicked;
+        buttonsRow.Add(continueBtn);
+
+        card.Add(buttonsRow);
+        cardContainer.Add(card);
+        resultsOverlay.Add(cardContainer);
+        calibrationRoot.Add(resultsOverlay);
+    }
+
+    private static void GetAccuracyRating(float error, out string text, out Color color)
+    {
+        if (error < 0.015f)
+        {
+            text  = "★ Excellent";
+            color = new Color(0.10f, 0.85f, 0.35f);
+        }
+        else if (error < 0.030f)
+        {
+            text  = "● Good";
+            color = new Color(0.20f, 0.60f, 1.00f);
+        }
+        else if (error < 0.050f)
+        {
+            text  = "◆ Fair";
+            color = new Color(1.00f, 0.72f, 0.10f);
+        }
+        else
+        {
+            text  = "▲ Poor";
+            color = new Color(0.95f, 0.25f, 0.20f);
+        }
+    }
+
+    private VisualElement CreateLegendItem(Color dotColor, string labelText)
+    {
+        var item = new VisualElement();
+        item.style.flexDirection = FlexDirection.Row;
+        item.style.alignItems   = Align.Center;
+
+        var swatch = new VisualElement();
+        swatch.style.width                    = 14f;
+        swatch.style.height                   = 14f;
+        swatch.style.borderTopLeftRadius      = 7f;
+        swatch.style.borderTopRightRadius     = 7f;
+        swatch.style.borderBottomLeftRadius   = 7f;
+        swatch.style.borderBottomRightRadius  = 7f;
+        swatch.style.backgroundColor          = dotColor;
+        swatch.style.marginRight              = 6f;
+        item.Add(swatch);
+
+        var lbl = new Label(labelText);
+        lbl.style.color    = new Color(0.75f, 0.75f, 0.75f);
+        lbl.style.fontSize = 14;
+        item.Add(lbl);
+
+        return item;
+    }
+
+    private Button CreateResultButton(string text, Color bgColor, Color hoverColor)
+    {
+        var btn = new Button();
+        btn.text = text;
+        btn.style.backgroundColor = bgColor;
+        btn.style.color           = Color.white;
+        btn.style.fontSize        = 18;
+        btn.style.unityFontStyleAndWeight = FontStyle.Bold;
+        btn.style.paddingLeft     = 32f;
+        btn.style.paddingRight    = 32f;
+        btn.style.paddingTop      = 14f;
+        btn.style.paddingBottom   = 14f;
+        btn.style.borderTopLeftRadius     = 12f;
+        btn.style.borderTopRightRadius    = 12f;
+        btn.style.borderBottomLeftRadius  = 12f;
+        btn.style.borderBottomRightRadius = 12f;
+        btn.style.borderLeftWidth   = 0;
+        btn.style.borderRightWidth  = 0;
+        btn.style.borderTopWidth    = 0;
+        btn.style.borderBottomWidth = 0;
+
+        btn.RegisterCallback<MouseEnterEvent>(_ => btn.style.backgroundColor = hoverColor);
+        btn.RegisterCallback<MouseLeaveEvent>(_ => btn.style.backgroundColor = bgColor);
+
+        return btn;
+    }
+
+    private void OnContinueClicked()
+    {
+        resultsOverlay?.RemoveFromHierarchy();
+        resultsOverlay = null;
+        StartCoroutine(FinishAndReturn(0f));
+    }
+
+    private void OnRecalibrateClicked()
+    {
+        resultsOverlay?.RemoveFromHierarchy();
+        resultsOverlay = null;
+        Cleanup();
+        calibrationResults.Clear();
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     // ── Finish ────────────────────────────────────────────────────────────
@@ -696,6 +1056,8 @@ public class GazeCalibrationController : MonoBehaviour
 
     private void Cleanup()
     {
+        resultsOverlay?.RemoveFromHierarchy();
+        resultsOverlay = null;
         ClearDebugGrid();
         udpCancellation?.Cancel();
         udpCancellation?.Dispose();
