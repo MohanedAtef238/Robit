@@ -91,13 +91,63 @@ public class UiAutomationRunner : BaseProcessRunner<UiAutomationRunner>
                 + $" - Arguments : {argsConfig}");
         }
 
+        // Try to find a pre-compiled executable if configured to run via "dotnet run"
+        if (exePathConfig == "dotnet" && argsConfig == "run")
+        {
+            string[] candidatePaths = new string[]
+            {
+                Path.Combine(workingDirectory, "bin", "Release", "net48", "win-x64", "publish", "Robit-UI-Automation.exe"),
+                Path.Combine(workingDirectory, "bin", "Debug", "net48", "Robit-UI-Automation.exe"),
+                Path.Combine(workingDirectory, "bin", "Release", "net48", "win-x64", "Robit-UI-Automation.exe")
+            };
+
+            string precompiledExe = null;
+            DateTime latestTime = DateTime.MinValue;
+
+            foreach (var candidate in candidatePaths)
+            {
+                if (File.Exists(candidate))
+                {
+                    var fi = new FileInfo(candidate);
+                    if (fi.LastWriteTime > latestTime)
+                    {
+                        latestTime = fi.LastWriteTime;
+                        precompiledExe = candidate;
+                    }
+                }
+            }
+
+            if (precompiledExe != null)
+            {
+                exePathConfig = precompiledExe;
+                argsConfig = "";
+                if (logResolvedPaths)
+                {
+                    RobitLogger.Log($"{LogPrefix} Found pre-compiled executable at '{precompiledExe}'. Bypassing 'dotnet run' for faster startup and lower resource usage.");
+                }
+            }
+        }
+
+        string resolvedExePath = exePathConfig;
+        if (exePathConfig != "dotnet")
+        {
+            if (RunnerPathResolver.TryResolvePath(
+                    exePathConfig,
+                    expectFile: true,
+                    out string resolvedExe,
+                    out string exeDetails))
+            {
+                resolvedExePath = resolvedExe;
+            }
+        }
+
         // BuildProcessStartInfo derives WorkingDirectory from exePath, but
         // UiAutomationRunner's working directory is configured independently
         // (it may run dotnet from a project folder, not next to an exe).
         // We therefore build the PSI manually for this runner.
         var psi = new ProcessStartInfo
         {
-            FileName               = exePathConfig,
+            FileName               = resolvedExePath,
             Arguments              = argsConfig,
             WorkingDirectory       = workingDirectory,
             UseShellExecute        = false,

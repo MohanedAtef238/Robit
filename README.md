@@ -1,843 +1,417 @@
 # Robit
 
-### This is a simple readme to record progress and current findings, as to make sure we do not forget what each file was made for as progress happens on sparesly spaced working periods
+> A low-cost, multimodal, hands-free Windows OS wrapper that fuses **eye-gaze tracking** with **EMG-based jaw-clench triggers** for reliable assistive computer control.
 
 ---
 
 ## Table of Contents
 
-- [Architecture](#current-architecture-----for-note-keeping)
-- [Windows API Integration](#windows-api-integration)
-- [LNK File Format Constants](#lnk-file-format-constants)
+- [System Architecture Overview](#system-architecture-overview)
+- [Bootstrap & Scene Lifecycle](#bootstrap--scene-lifecycle)
+- [Camera Pipeline](#camera-pipeline)
+- [Gaze Tracking (Black Box)](#gaze-tracking-black-box)
+- [EMG Input (Black Box)](#emg-input-black-box)
+- [Virtual Input State & Cursor Driver](#virtual-input-state--cursor-driver)
+- [UI Automation Subsystem](#ui-automation-subsystem)
+- [Process Lifecycle Management](#process-lifecycle-management)
+- [IPC Architecture — Rejected Alternatives](#ipc-architecture--rejected-alternatives)
+- [Windows API & Transparency Layer](#windows-api--transparency-layer)
+- [Macro Button System (MVVM)](#macro-button-system-mvvm)
 - [Component Reference](#component-reference)
 
 ---
 
-## Current Architecture --- for note keeping
+## System Architecture Overview
 
-Mock_OS uses a **two-scene architecture**:
+Robit is split across two tiers: a **Unity C# frontend** that owns the UI, OS windowing, and input composition, and a set of **headless Python/C# executables** that own the machine learning inference and webcam capture. All communication between tiers is performed via shared memory (video frames) and UDP datagrams (coordinates and click events).
 
+```mermaid
+graph TD
+    subgraph HARDWARE["Hardware"]
+        CAM["Webcam"]
+        HEADBAND["ESP32-C3 Wearable\nHeadband (EMG)"]
+    end
+
+    subgraph PYTHON["Python Backends (Headless Executables)"]
+        SHARE_CAM["share_camera.exe\nOpenCV / DirectShow"]
+        GAZE_BRIDGE["unity_gaze_bridge.exe\nMediaPipe Face Mesh"]
+        EMG_BRIDGE["unity_emg_bridge.exe\nTensorFlow / EMG ML Model"]
+    end
+
+    subgraph UNITY["Unity C# Frontend"]
+        SCC["SharedCameraCapture.cs\nMMF Reader + Preview"]
+        GFR["GazeFollowerRunner.cs\nUDP Receiver"]
+        EPR["EmgPredictionRunner.cs\nUDP Receiver"]
+        VIS["VirtualInputState\n(Singleton)"]
+        VPD["VirtualPointerDriver.cs\nOS Cursor Emulator"]
+        UAR["UiAutomationRunner.cs\nWebSocket + Stdin Bridge"]
+    end
+
+    subgraph OS["Windows OS"]
+        CURSOR["System Cursor"]
+        CLICK["Mouse Click Events"]
+        UIAUTO["Windows UIAutomation API"]
+    end
+
+    CAM -->|"DirectShow"| SHARE_CAM
+    HEADBAND -->|"Serial / COM4"| EMG_BRIDGE
+
+    SHARE_CAM -->|"MMF: RobitCameraFrame\n(double-buffered RGBA32)"| SCC
+    SHARE_CAM -->|"MMF: RobitCameraFrame\n(same buffer, zero-copy read)"| GAZE_BRIDGE
+
+    GAZE_BRIDGE -->|"UDP: (x, y) screen coords"| GFR
+    EMG_BRIDGE -->|"UDP: 0 or 1 binary signal"| EPR
+
+    GFR -->|"SetGazePosition()"| VIS
+    EPR -->|"SetEmgPrediction()"| VIS
+
+    VIS -->|"GazePosition"| VPD
+    VIS -->|"IsEmgActive"| VPD
+
+    VPD -->|"SetCursorPos()"| CURSOR
+    VPD -->|"SendInput() LeftDown/Up"| CLICK
+    VPD -->|"WebSocket: getClosest"| UAR
+
+    UAR -->|"Stdin JSON cmds"| UIAUTO
+    UIAUTO -->|"CMD_RESPONSE JSON"| UAR
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         MainScene                                │
-│  ┌─────────────┐    ┌──────────────┐    ┌─────────────────┐     │
-│  │DesktopParser│───►│AppLauncherUI │───►│   App Cards     │     │
-│  │ (scan .lnk) │    │ (build grid) │    │ (click to launch)│    │
-│  └─────────────┘    └──────────────┘    └────────┬────────┘     │
-└──────────────────────────────────────────────────┼──────────────┘
-                                                   │ User clicks app
-                                                   ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                       OverlayScene                               │
-│  ┌──────────────┐   ┌─────────────┐   ┌────────────────┐        │
-│  │OverlayManager│   │ Transparency│   │ UIClickHandler │        │
-│  │(window size) │   │(click-thru) │   │(hover toggles) │        │
-│  └──────────────┘   └─────────────┘   └────────────────┘        │
-│                                                                  │
-│  ┌──────────────┐                                               │
-│  │  HomeButton  │ ← Returns to MainScene                        │
-│  └──────────────┘                                               │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Data Flow:**
-
-1. `DesktopParser` scans `.lnk` files → filters to whitelist → fetches icons
-2. `AppLauncherUI` generates clickable cards for each shortcut
-3. User clicks a card → `AppLauncher.LaunchApplication()` starts the process
-4. Scene transitions to `OverlayScene` with transparent, always-on-top window
-5. `HomeButton` returns to `MainScene` and closes the launched app
 
 ---
 
-## Robot Animation System
+## Bootstrap & Scene Lifecycle
 
-The project includes components for animating the robot's physical appearance and interactions:
+Every major runner is a persistent singleton. They bootstrap themselves before any scene loads using `[RuntimeInitializeOnLoadMethod]` and call `DontDestroyOnLoad()` to survive scene transitions.
 
+```mermaid
+sequenceDiagram
+    participant Engine as Unity Engine
+    participant BPR as BaseProcessRunner
+    participant GFR as GazeFollowerRunner
+    participant EPR as EmgPredictionRunner
+    participant VPD as VirtualPointerDriver
+    participant SCC as SharedCameraCapture
+
+    Engine->>GFR: RuntimeInitializeOnLoadMethod (BeforeSceneLoad)
+    GFR->>BPR: Awake() → SetParent(null) → DontDestroyOnLoad
+    GFR->>SCC: EnsureSpawned()
+    SCC->>SCC: DontDestroyOnLoad
+
+    Engine->>EPR: RuntimeInitializeOnLoadMethod (BeforeSceneLoad)
+    EPR->>BPR: Awake() → SetParent(null) → DontDestroyOnLoad
+
+    Engine->>VPD: RuntimeInitializeOnLoadMethod (BeforeSceneLoad)
+    VPD->>VPD: Awake() → DontDestroyOnLoad
+
+    Note over GFR,VPD: All singletons now survive every subsequent scene load
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                   Robot Animation Components                     │
-│  ┌─────────────┐    ┌──────────────┐    ┌─────────────────┐     │
-│  │bobAnimation │───►│EyeBlinkAnim │───►│   eyesAnimation  │     │
-│  │ (bouncy     │    │ (blinking)   │    │ (eye movements)  │     │
-│  │  lifecycle) │    │              │    │                 │     │
-│  └─────────────┘    └──────────────┘    └─────────────────┘     │
-│                                                                 │
-│  ┌─────────────┐    ┌──────────────┐                            │
-│  │ HoverGrow   │    │ ToggleTODO   │                            │
-│  │ (UI hover   │    │ (task toggle)│                            │
-│  │  effects)   │    │              │                            │
-│  └─────────────┘    └──────────────┘                            │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Animation Flow:**
-
-1. `bobAnimation` handles bouncy entrance and scaling animations on start
-2. `EyeBlinkAnimation` manages periodic blinking of robot eyes
-3. `eyesAnimation` controls eye movements and tracking
-4. `HoverGrow` provides visual feedback on UI hover
-5. `ToggleTODO` manages task completion toggles
 
 ---
 
-## Windows API Integration
+## Camera Pipeline
 
-The overlay system relies on Windows-specific APIs via P/Invoke. Here's a breakdown of every constant and function used:
+The webcam is owned **exclusively** by `share_camera.exe` to avoid handle conflicts between Unity and Python. Unity's `SharedCameraCapture.cs` and the gaze bridge both read from the same **Memory Mapped File**, making this a zero-copy, zero-conflict distribution pattern.
 
-### Window Style Constants
+```mermaid
+sequenceDiagram
+    participant SCC as SharedCameraCapture (Unity)
+    participant EXE as share_camera.exe (Python/OpenCV)
+    participant MMF as "MMF: RobitCameraFrame"
+    participant GAZE as unity_gaze_bridge.exe
 
-```csharp
-const int GWL_EXSTYLE = -20;
+    SCC->>EXE: Process.Start() -- device 0 --width 640 --height 480 --fps 30
+    EXE->>MMF: CreateOrOpen("RobitCameraFrame")
+    EXE->>MMF: Write MAGIC, VERSION, width, height, frameId each frame
+    EXE->>MMF: Write pixel data to active double-buffer slot (0 or 1)
+
+    loop Every Unity frame
+        SCC->>MMF: ReadInt32(0) — check MAGIC
+        SCC->>MMF: ReadInt64(20) — check frameId (skip if unchanged)
+        SCC->>MMF: ReadArray(offset, pixels) — CPU-only, no GPU readback
+        SCC->>SCC: SetPixels32() → Apply() → expose PreviewTexture
+    end
+
+    GAZE->>MMF: OpenExisting("RobitCameraFrame")
+    loop Every inference tick
+        GAZE->>MMF: Read pixels from active buffer (same zero-copy read)
+        GAZE->>GAZE: Run MediaPipe Face Mesh inference
+    end
 ```
 
-**Purpose:** Index parameter for `GetWindowLong`/`SetWindowLong` functions.  
-**Value `-20`:** Retrieves or sets the *extended* window styles (as opposed to `GWL_STYLE = -16` for regular styles).
+**MMF Buffer Layout:**
+
+| Offset | Size | Field |
+|--------|------|-------|
+| 0 | 4 | `MAGIC` — `0x524F4254` (`"ROBT"`) |
+| 4 | 4 | `VERSION` — currently `1` |
+| 8 | 4 | `width` |
+| 12 | 4 | `height` |
+| 16 | 4 | `format` — `1 = RGBA32` |
+| 20 | 8 | `frameId` — monotonically increasing `int64` |
+| 28 | 8 | `timestamp` — Windows FILETIME ticks |
+| 36 | 4 | `activeBuffer` — `0` or `1` (double-buffered) |
+| 40+ | ... | pixel data — two slots of `MAX_WIDTH × MAX_HEIGHT × 4` |
 
 ---
 
-```csharp
-const uint WS_EX_LAYERED = 0x00080000;
+## Gaze Tracking (Black Box)
+
+From Unity's perspective, the gaze bridge is an opaque executable. `GazeFollowerRunner.cs` only cares about its inputs and outputs.
+
+```mermaid
+flowchart LR
+    subgraph UNITY_GAZE["Unity — GazeFollowerRunner"]
+        direction TB
+        A["Process.Start(unity_gaze_bridge.exe\n--port {dynamic} --mode run-saved\n--profile {id})"]
+        B["UdpClient.ReceiveAsync()\n(background thread)"]
+        C["ConcurrentQueue&lt;Vector2&gt;\ngazePacketQueue"]
+        D["Update() — drain queue\nkeep only LATEST packet"]
+        E["VirtualInputState\n.SetGazePosition(x, y)"]
+    end
+
+    MMF["MMF: RobitCameraFrame"] -->|"read frames"| EXE
+    EXE["unity_gaze_bridge.exe\nMediaPipe Face Mesh ⬛"] -->|"UDP (x,y)"| B
+    A --> EXE
+    B --> C --> D --> E
 ```
 
-**Purpose:** Creates a "layered window" that supports transparency and alpha blending.  
-**Required for:** Using `SetLayeredWindowAttributes` or `UpdateLayeredWindow` to make windows transparent.  
-**Hex breakdown:** Bit 19 is set (2^19 = 524288 = 0x80000).
+**Why only the latest packet?** Gaze coordinates arrive faster than the 60 FPS Unity loop. Replaying stale packets would cause the cursor to lag behind the user's eye. The queue is drained completely each frame and only the newest value is applied.
 
 ---
 
-```csharp
-const uint WS_EX_TRANSPARENT = 0x00000020;
+## EMG Input (Black Box)
+
+`EmgPredictionRunner.cs` follows the same pattern. The EMG bridge reads raw serial data from the ESP32 wearable, runs an ML classifier, and sends a binary 0/1 UDP signal.
+
+```mermaid
+flowchart LR
+    subgraph UNITY_EMG["Unity — EmgPredictionRunner"]
+        direction TB
+        A2["Process.Start(unity_emg_bridge.exe\n--port {dynamic} --com-port COM4)"]
+        B2["UdpClient.ReceiveAsync()"]
+        C2["ConcurrentQueue&lt;bool&gt;\nemgPacketQueue"]
+        D2["Update() — drain queue"]
+        E2["VirtualInputState\n.SetEmgPrediction(active, confidence)"]
+    end
+
+    ESP["ESP32-C3 Wearable (EMG Sensors)"]
+    EXE2["unity_emg_bridge.exe\nTF ML Classifier ⬛"]
+
+    ESP -->|"COM4 Serial\n115200 baud"| EXE2
+    EXE2 -->|"EMG_STATUS:OK"| B2
+    EXE2 -->|"UDP: '1' or '0'"| B2
+    A2 --> EXE2
+    B2 --> C2 --> D2 --> E2
 ```
 
-**Purpose:** Makes the window "click-through" — mouse events pass through to windows below.  
-**How it works:** The window is excluded from hit-testing, so clicks go to whatever is beneath it.  
-**Hex breakdown:** Bit 5 is set (2^5 = 32 = 0x20).
+On process exit, `OnProcessExited` enqueues a `false` signal so the cursor never gets stuck in a held-down click state after the bridge dies.
 
 ---
 
-```csharp
-private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+## Virtual Input State & Cursor Driver
+
+`VirtualInputState` is the fusion point. It receives gaze positions and EMG predictions independently and exposes them as a unified interface to `VirtualPointerDriver`.
+
+```mermaid
+flowchart TD
+    subgraph FUSION["VirtualInputState (Singleton)"]
+        GS["GazePosition : Vector2"]
+        EA["IsEmgActive : bool"]
+        HC["HasGazePosition : bool"]
+    end
+
+    subgraph DRIVER["VirtualPointerDriver (Singleton, DontDestroyOnLoad)"]
+        direction TB
+        SM["Smoothing\nVector2.Lerp(smoothed, target,\nTime.deltaTime × smoothingSpeed)"]
+        MC["UpdateWindowsCursor()\nWin32Interop.SetCursorPos(x, y)"]
+        MB["UpdateMouseButton()\nWin32Interop.SendInput()"]
+        DRAG["Drag Detection\nif held > dragToMessageTime:\nSendGetClosest() via WebSocket"]
+    end
+
+    GFR["GazeFollowerRunner"] -->|"SetGazePosition"| GS
+    EPR["EmgPredictionRunner"] -->|"SetEmgPrediction"| EA
+    GS --> SM --> MC
+    EA --> MB
+    MB -->|"click duration ≥ minClickHoldTime\n& < maxClickDuration"| CLICK["OS LeftDown + LeftUp"]
+    MB --> DRAG
+    DRAG -->|"WebSocket JSON"| UAR["UiAutomationRunner"]
 ```
 
-**Purpose:** Special handle value for `SetWindowPos` that places the window above all non-topmost windows.  
-**Alternative values:**
-
-- `HWND_NOTOPMOST (−2)` – Removes topmost status
-- `HWND_TOP (0)` – Top of Z-order (but not topmost)
-- `HWND_BOTTOM (1)` – Bottom of Z-order
+**Click vs. Drag logic in `VirtualPointerDriver`:**
+- Signal starts → record `emgStartTime`
+- Signal ends after `minClickHoldTime` → fire `LeftDown` + `LeftUp` (intentional tap)
+- Signal ends before `minClickHoldTime` → discard (electrical noise)
+- Signal held past `dragToMessageTime` (default 2s) → fire `getClosest` WebSocket message to the UI Automation server and release the click
 
 ---
 
-```csharp
-const uint SWP_SHOWWINDOW = 0x0040;
+## UI Automation Subsystem
+
+When a user performs a sustained gaze-and-hold gesture, Robit surfaces a smart "closest UI element" selection overlay via the Windows UIAutomation API rather than relying on the user hitting a pixel-perfect target.
+
+```mermaid
+sequenceDiagram
+    participant VPD as VirtualPointerDriver
+    participant WS as WebSocket (ws://127.0.0.1:8181)
+    participant UAR as UiAutomationRunner (Unity)
+    participant PROC as Robit-UI-Automation.exe (.NET)
+    participant WIN as Windows UIAutomation API
+
+    VPD->>WS: {"type":"getClosest"}
+    WS->>UAR: OnMessage received
+    UAR->>PROC: stdin JSON command
+    PROC->>WIN: FindAll(TreeScope.Descendants, condition)
+    WIN-->>PROC: List of AutomationElement near cursor
+    PROC-->>UAR: CMD_RESPONSE: [{name, rect, type}, ...]
+    UAR->>UAR: mainThreadContext.Post → OnMessageReceived event
+    Note over UAR: Unity UI renders selection overlay\nUser gaze-targets & jaw-clenches to confirm
 ```
-
-**Purpose:** Flag for `SetWindowPos` that displays the window after repositioning.  
-**Other common flags:**
-
-- `SWP_NOSIZE (0x0001)` – Retains current size
-- `SWP_NOMOVE (0x0002)` – Retains current position
-- `SWP_NOZORDER (0x0004)` – Retains current Z-order
 
 ---
 
-```csharp
-const uint LWA_COLORKEY = 0x00000001;
-```
+## Process Lifecycle Management
 
-**Purpose:** Used with `SetLayeredWindowAttributes` to specify a color that becomes transparent.  
-**Related constant:** `LWA_ALPHA (0x02)` – Uses alpha value for whole-window transparency.
-
----
-
-### MARGINS Structure (DWM)
-
-```csharp
-private struct MARGINS
-{
-    public int cxLeftWidth;
-    public int cxRightWidth;
-    public int cyTopHeight;
-    public int cyBottomHeight;
-}
-```
-
-**Purpose:** Defines the margins for the glass frame extended into the client area.  
-**Special value:** Setting `cxLeftWidth = -1` extends glass to cover the entire window (full transparency).
-
----
-
-### Win32 API Functions
-
-```csharp
-[DllImport("user32.dll")]
-private static extern IntPtr GetActiveWindow();
-```
-
-**Purpose:** Retrieves the handle of the currently active (focused) window.  
-**Returns:** `HWND` of the Unity application window.
-
----
-
-```csharp
-[DllImport("user32.dll")]
-private static extern int SetWindowLong(IntPtr hWnd, int nIndex, uint dwNewLong);
-```
-
-**Purpose:** Changes window attributes (styles, extended styles, etc.).  
-**Parameters:**
-
-- `hWnd` – Window handle
-- `nIndex` – Which attribute to change (`GWL_EXSTYLE = -20`)
-- `dwNewLong` – New value (combination of `WS_EX_*` flags)
-
----
-
-```csharp
-[DllImport("user32.dll")]
-private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, 
-    int X, int Y, int cx, int cy, uint uFlags);
-```
-
-**Purpose:** Changes the size, position, and Z-order of a window.  
-**Parameters:**
-
-- `hWndInsertAfter` – Z-order (`HWND_TOPMOST = -1` for always-on-top)
-- `X, Y` – New position
-- `cx, cy` – New width and height
-- `uFlags` – Combination of `SWP_*` flags
-
----
-
-```csharp
-[DllImport("Dwmapi.dll")]
-private static extern uint DwmExtendFrameIntoClientArea(IntPtr hWnd, ref MARGINS margins);
-```
-
-**Purpose:** Extends the DWM (Desktop Window Manager) glass frame into the client area.  
-**Used for:** Creating true transparency (no background color).  
-**Note:** Only works when DWM composition is enabled (Windows Vista+).
-
----
-
-### How They Work Together
-
-```csharp
-void Start()
-{
-    hWnd = GetActiveWindow();
+```mermaid
+flowchart TD
+    START(( )) -->|Awake, DontDestroyOnLoad| IDLE[Idle]
     
-    // Step 1: Extend glass frame to cover entire window (enables transparency)
-    MARGINS margins = new MARGINS { cxLeftWidth = -1 };
-    DwmExtendFrameIntoClientArea(hWnd, ref margins);
+    IDLE -->|StartRunner called| STARTING[Starting]
+    STARTING -->|Process.Start OK\nChildProcessTracker.AddProcess| RUNNING[Running]
     
-    // Step 2: Enable layered window + click-through
-    SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_LAYERED | WS_EX_TRANSPARENT);
+    RUNNING -->|stdout/stderr forwarded\nto RobitLogger| RUNNING
+    RUNNING -->|process.Exited event| DEAD[Dead]
+    RUNNING -->|StopRunner called\nOnApplicationQuit / OnDestroy| TERMINATING[Terminating]
     
-    // Step 3: Keep window always on top
-    SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, 0);
-}
+    DEAD -->|OnProcessExited\nenqueue reset value| IDLE
+    TERMINATING -->|process.Kill\nUnhookAndDispose\nInstance = null| END(( ))
 ```
+
+**Key design decisions:**
+- `ChildProcessTracker.cs` creates a Windows **Job Object** and assigns every spawned process to it. If Unity crashes (e.g. killed via Task Manager), the OS automatically terminates all child processes in the job, eliminating zombie processes entirely.
+- `BaseProcessRunner<T>` calls `SetParent(null)` before `DontDestroyOnLoad` because Unity only preserves **root** GameObjects across scene loads. A child object would be silently destroyed, severing the MMF and UDP connections.
 
 ---
 
-## LNK File Format Constants
+## IPC Architecture — Rejected Alternatives
 
-The `.lnk` file format (Windows shortcuts) follows Microsoft's **MS-SHLLINK** specification. These constants decode the binary structure:
-
-### LinkFlags (Offset 0x14 in header)
-
-Bitmask indicating which optional structures are present in the file:
-
-| Constant | Value | Meaning |
-|----------|-------|---------|
-| `HasLinkTargetIdList` | `0x00000001` | File contains a `LinkTargetIDList` structure |
-| `HasLinkInfo` | `0x00000002` | File contains a `LinkInfo` structure |
-| `HasName` | `0x00000004` | File contains a `NAME_STRING` (description) |
-| `HasRelativePath` | `0x00000008` | File contains a `RELATIVE_PATH` string |
-| `HasWorkingDir` | `0x00000010` | File contains a `WORKING_DIR` string |
-| `HasArguments` | `0x00000020` | File contains command-line `COMMAND_LINE_ARGUMENTS` |
-| `HasIconLocation` | `0x00000040` | File contains an `ICON_LOCATION` string |
-| `IsUnicode` | `0x00000080` | Strings are encoded as Unicode (vs ANSI) |
-
-**Usage in code:**
-
-```csharp
-var linkFlags = BitConverter.ToInt32(buffer, 0);
-
-if ((linkFlags & LinkFlags.HasLinkTargetIdList) == LinkFlags.HasLinkTargetIdList)
-    ParseTargetIDList(stream);  // Skip or parse the ID list
-
-if ((linkFlags & LinkFlags.HasLinkInfo) == LinkFlags.HasLinkInfo)
-    ParseLinkInfo(stream);  // Extract the target path
-```
+| Alternative | Why it was rejected |
+|---|---|
+| **Unity Barracuda / Sentis (C# ML)** | Lacks support for custom TensorFlow ops used by our MediaPipe and EMG models. Converting to ONNX produced unsupported-layer errors and measurable precision loss. |
+| **Python for Unity (embedded interpreter)** | Python's GIL and heavy inference calls block the Unity thread pool. Even on a background thread, GIL contention causes frame-time spikes that destroy our 16.666 ms budget. |
+| **TCP Sockets instead of UDP** | TCP guarantees ordered delivery — exactly the wrong property for a live gaze stream. A stale (x, y) packet queued behind newer ones causes visible cursor lag. UDP lets us discard stale data intentionally. |
+| **HTTP / REST API** | Round-trip latency of HTTP is measured in ms to tens of ms per request. At 60 Hz the gaze bridge fires ~60 position updates per second, making HTTP completely unsuitable. |
+| **Unity WebCamTexture (built-in)** | Creates a GPU→CPU readback stall every frame. Also holds an exclusive DirectShow handle that blocks the Python gaze bridge from opening the same webcam. The external `share_camera.exe` + MMF design eliminates both problems. |
+| **Shared memory direct from Unity** | Unity's C# runtime cannot efficiently write raw pixel arrays to MMF without unsafe buffer copies. Having `share_camera.exe` own the camera entirely avoids the Unity rendering pipeline dependency and ensures a full 1280×720 feed at zero frame drops. |
 
 ---
 
-### FileAttributes (Offset 0x18 in header)
+## Windows API & Transparency Layer
 
-Attributes of the target file (mirrors Windows file attributes):
+Robit renders as a transparent, always-on-top, click-through overlay window using direct `user32.dll` and `Dwmapi.dll` P/Invokes.
 
-| Constant | Value | Meaning |
-|----------|-------|---------|
-| `ReadOnly` | `0x0001` | Target is read-only |
-| `Hidden` | `0x0002` | Target is hidden |
-| `System` | `0x0004` | Target is a system file |
-| `Directory` | `0x0010` | Target is a directory |
-| `Archive` | `0x0020` | Target has archive attribute |
-| `Normal` | `0x0080` | No other attributes set |
-| `Temporary` | `0x0100` | Temporary file |
-| `Compressed` | `0x0800` | Compressed file |
-| `Encrypted` | `0x4000` | Encrypted file |
+```mermaid
+flowchart TD
+    subgraph WINAPI["Win32 API Calls on Startup"]
+        A["GetActiveWindow() → HWND"]
+        B["DwmExtendFrameIntoClientArea(HWND, MARGINS{-1})\nExtend DWM glass to full window → true transparency"]
+        C["SetWindowLong(HWND, GWL_EXSTYLE,\nWS_EX_LAYERED | WS_EX_TRANSPARENT)\nEnable layered + click-through"]
+        D["SetWindowPos(HWND, HWND_TOPMOST, ...)\nForce always-on-top"]
+    end
 
-**Usage in code:**
+    subgraph TRANSPARENCY["Transparency.cs — Per-Frame Loop"]
+        E["GetCursorPos() → global POINT\n(works even in click-through mode)"]
+        F["ScreenToClient(HWND, point)\nConvert to Unity window coords"]
+        G["EventSystem.RaycastAll()\nAny Unity UI hit?"]
+        H_YES["SetWindowLong(..., WS_EX_LAYERED)\nRemove WS_EX_TRANSPARENT\n→ clicks reach Unity"]
+        H_NO["SetWindowLong(..., WS_EX_LAYERED | WS_EX_TRANSPARENT)\nRestore click-through\n→ clicks pass to app below"]
+    end
 
-```csharp
-var fileAttrFlags = BitConverter.ToInt32(buffer, 0);
-IsDirectory = (fileAttrFlags & FileAttributes.Directory) == FileAttributes.Directory;
+    A --> B --> C --> D
+    E --> F --> G
+    G -->|"Yes (over UI)"| H_YES
+    G -->|"No"| H_NO
 ```
+
+**The click-through paradox:** When `WS_EX_TRANSPARENT` is active, Windows does not deliver any mouse events to Unity — including `OnPointerEnter`. The only way to detect hover is to poll the cursor position ourselves via `GetCursorPos()`, which always works regardless of window style, then raycasting from Unity's side.
 
 ---
 
-### LinkInfoFlags
+## Macro Button System (MVVM)
 
-Indicates where the target is located:
+The overlay macro panel uses a strict **Model-View-ViewModel** architecture via Unity UI Toolkit.
 
-| Constant | Value | Meaning |
-|----------|-------|---------|
-| `VolumeIDAndLocalBasePath` | `1` | Target is on a local volume |
-| `CommonNetworkRelativeLinkAndPathSuffix` | `2` | Target is on a network share |
+```mermaid
+classDiagram
+    class MacroViewModel {
+        +Groups : MacroGroup[] (static)
+        +IsOpen : bool
+        +OnMenuToggled : Action~bool~
+        +OnGroupChanged : Action~MacroGroup~
+        +Open()
+        +Close()
+        +PrevGroup()
+        +NextGroup()
+        +GetCurrentGroup() MacroGroup
+    }
 
----
+    class MacroButtonController {
+        -viewModel : MacroViewModel
+        +OnEnable()
+        +OnDisable()
+        -OnMenuToggled(bool isOpen)
+        -OnGroupChanged(MacroGroup group)
+        -RevealGroup(MacroGroup group)
+    }
 
-### VirtualKeys (Hotkey parsing)
+    class IMacroAction {
+        <<interface>>
+        +ActionId : string
+        +DisplayName : string
+        +Execute()
+    }
 
-Windows virtual key codes for parsing shortcut hotkeys. The hotkey field is 2 bytes:
+    class MacroActionFactory {
+        +Create(MacroActionType) IMacroAction
+    }
 
-- **Low byte:** The key code (A-Z, F1-F24, etc.)
-- **High byte:** Modifier flags
+    class IInputProvider {
+        <<interface>>
+        +Attach(VisualElement, Action)
+        +Detach(VisualElement)
+    }
 
-**Modifier flags:**
+    class PointerInputProvider {
+        +Attach(VisualElement, Action)
+        +Detach(VisualElement)
+    }
 
-```csharp
-HOTKEYF_SHIFT   = 1   // Shift key
-HOTKEYF_CONTROL = 2   // Ctrl key
-HOTKEYF_ALT     = 4   // Alt key
+    MacroButtonController --> MacroViewModel : binds to events
+    MacroButtonController --> MacroActionFactory : creates actions
+    MacroButtonController --> IInputProvider : attaches to buttons
+    MacroActionFactory --> IMacroAction : instantiates
+    IInputProvider <|.. PointerInputProvider
 ```
+
+- **Adding a new action**: implement `IMacroAction`, add to `MacroActionType` enum, add a case in `MacroActionFactory.Create()`.
+- **Adding a new input modality** (e.g. gaze dwell): implement `IInputProvider` and swap it in `MacroButtonController.OnEnable()`.
 
 ---
 
 ## Component Reference
 
-### Core Components
-
-#### `DesktopParser.cs`
-
-**Purpose:** Scans Windows desktop folders for `.lnk` shortcuts and filters to allowed apps.
-
-**Key fields:**
-
-```csharp
-public List<ShortcutInfo> shortcuts = new List<ShortcutInfo>();
-public bool parsingComplete = false;
-
-private static readonly Dictionary<string, string> IconUrls;   // App name → icon URL
-private static readonly HashSet<string> AllowedApps;           // Whitelist
-```
-
-**Workflow:**
-
-```csharp
-IEnumerator ParseShortcuts()
-{
-    // 1. Get desktop paths
-    var desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-    var publicDesktopPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory);
-
-    // 2. Find all .lnk files
-    shortcutFiles.AddRange(Directory.GetFiles(desktopPath, "*.lnk"));
-    shortcutFiles.AddRange(Directory.GetFiles(publicDesktopPath, "*.lnk"));
-
-    // 3. Parse each shortcut
-    foreach (var file in shortcutFiles)
-    {
-        var shortcut = new WinShortcut(file);           // Parse .lnk binary
-        
-        if (!IsAllowedApp(shortcutName, exeName))       // Check whitelist
-            continue;
-            
-        string iconUrl = GetIconUrl(shortcutName, exeName);  // Get icon
-        yield return StartCoroutine(FetchIconAndAddShortcut(...));
-    }
-    
-    parsingComplete = true;
-}
-```
-
----
-
-#### `AppLauncher.cs`
-
-**Purpose:** Singleton that launches external applications and manages the current process.
-
-**Key code:**
-
-```csharp
-public static AppLauncher Instance;
-private Process currentProcess;
-
-private void Awake()
-{
-    if (Instance == null)
-    {
-        Instance = this;
-        DontDestroyOnLoad(gameObject);  // Persist across scene changes
-    }
-    else
-    {
-        Destroy(gameObject);
-    }
-}
-
-public void LaunchApplication(string path, string workingDirectory)
-{
-    // Close any existing app first
-    if (currentProcess != null && !currentProcess.HasExited)
-    {
-        currentProcess.CloseMainWindow();
-        currentProcess.Dispose();
-    }
-
-    // Start new process
-    ProcessStartInfo startInfo = new ProcessStartInfo(path);
-    if (!string.IsNullOrEmpty(workingDirectory) && Directory.Exists(workingDirectory))
-        startInfo.WorkingDirectory = workingDirectory;
-
-    currentProcess = Process.Start(startInfo);
-    
-    // Switch to overlay mode
-    SceneManager.LoadScene("OverlayScene");
-}
-
-public void CloseCurrentApp()
-{
-    if (currentProcess != null && !currentProcess.HasExited)
-    {
-        currentProcess.CloseMainWindow();
-        currentProcess.Dispose();
-        currentProcess = null;
-    }
-}
-```
-
----
-
-#### `OverlayManager.cs`
-
-**Purpose:** Positions and sizes the overlay window on scene load.
-
-```csharp
-void Start()
-{
-    #if !UNITY_EDITOR
-    hWnd = GetActiveWindow();
-    
-    // Size window to 70% of screen
-    int screenWidth = Screen.currentResolution.width;
-    int screenHeight = Screen.currentResolution.height;
-    int windowWidth = (int)(screenWidth * 0.7f);
-    int windowHeight = (int)(screenHeight * 0.7f);
-
-    // Position at top-left, always on top
-    SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, windowWidth, windowHeight, SWP_SHOWWINDOW);
-    #endif
-}
-```
-
----
-
-### UI Components
-
-#### `AppLauncherUI.cs`
-
-**Purpose:** Generates the app card grid from parsed shortcuts.
-
-**Key workflow:**
-
-```csharp
-IEnumerator Start()
-{
-    statusText.text = "Initializing...";
-    
-    // Load prefab
-    appCardPrefab = Resources.Load<GameObject>("AppCardPrefab");
-    
-    // Wait for parsing to complete (with timeout)
-    statusText.text = "Scanning desktops for shortcuts...";
-    while (!desktopParser.parsingComplete && elapsed < timeout)
-    {
-        yield return null;
-        elapsed += Time.deltaTime;
-    }
-    
-    GenerateAppCards(desktopParser.shortcuts);
-}
-
-void GenerateAppCards(List<ShortcutInfo> shortcuts)
-{
-    foreach (var shortcut in shortcuts)
-    {
-        GameObject cardInstance = Instantiate(appCardPrefab, cardContainer);
-        
-        RawImage iconImage = cardInstance.transform.Find("Icon").GetComponent<RawImage>();
-        Text nameText = cardInstance.transform.Find("AppName").GetComponent<Text>();
-        Button button = cardInstance.GetComponent<Button>();
-
-        nameText.text = shortcut.Name;
-        iconImage.texture = shortcut.Icon;
-        
-        button.onClick.AddListener(() => 
-            AppLauncher.Instance.LaunchApplication(shortcut.TargetPath, shortcut.WorkingDirectory));
-    }
-}
-```
-
----
-
-#### `UIClickHandler.cs`
-
-**Purpose:** Toggles click-through when hovering over UI elements.
-
-> **Note:** This script uses Unity's event system which has a limitation - see `Transparency.cs` for the full solution using Windows API polling.
-
-```csharp
-public class UIClickHandler : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
-{
-    private Transparency transparency;
-
-    void Start()
-    {
-        transparency = Camera.main.GetComponent<Transparency>();
-    }
-
-    public void OnPointerEnter(PointerEventData eventData)
-    {
-        transparency.SetClickThrough(false);
-    }
-
-    public void OnPointerExit(PointerEventData eventData)
-    {
-        transparency.SetClickThrough(true);
-    }
-}
-```
-
----
-
-#### `HomeButton.cs`
-
-**Purpose:** Returns to MainScene and closes the launched application.
-
-```csharp
-void GoHome()
-{
-    if (AppLauncher.Instance != null)
-    {
-        AppLauncher.Instance.CloseCurrentApp();  // Terminate launched process
-    }
-    SceneManager.LoadScene("MainScene");         // Return to launcher
-}
-```
-
----
-
-### Macro Button System
-
-The `Assets/Scripts/MacroButtons/` directory contains an **input-agnostic macro button system** for the overlay UI. Each button executes a configurable OS-level action (zoom, switch window, etc.) and accepts any form of "click" through a pluggable input layer.
-
-#### Directory Structure
-
-```
-Scripts/MacroButtons/
-├── Actions/
-│   ├── IMacroAction.cs          # Interface all actions implement
-│   ├── ZoomInAction.cs          # Sends Ctrl+Plus to OS
-│   ├── ZoomOutAction.cs         # Sends Ctrl+Minus to OS
-│   ├── SwitchWindowAction.cs    # Sends Alt+Tab to OS
-│   └── CalibrationAction.cs     # Placeholder for eye-tracker calibration
-├── Input/
-│   ├── IInputProvider.cs        # Interface for input detection methods
-│   └── PointerInputProvider.cs  # Default: mouse/touch/pen via PointerUpEvent
-├── MacroButton.cs               # Custom UI Toolkit element ([UxmlElement])
-├── MacroButtonBinding.cs        # Serializable button-name-to-action mapping
-├── MacroButtonController.cs     # MonoBehaviour that wires everything together
-├── MacroActionType.cs           # Enum of available action types
-└── MacroActionFactory.cs        # Creates action instances from enum values
-```
-
-#### Architecture
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│                     MacroButtonController                      │
-│  (MonoBehaviour on UIDocument GameObject)                      │
-│                                                                │
-│  [SerializeField] List<MacroButtonBinding> bindings            │
-│    ┌────────────────┬──────────────────┐                      │
-│    │  buttonName     │  actionType      │                     │
-│    │  "btn-zoom-in"  │  ZoomIn          │                     │
-│    │  "btn-zoom-out" │  ZoomOut         │                     │
-│    │  "btn-switch"   │  SwitchWindow    │                     │
-│    └────────────────┴──────────────────┘                      │
-│                        │                                       │
-│    Queries UXML for <MacroButton name="...">                  │
-│    Creates IMacroAction via MacroActionFactory                 │
-│    Attaches IInputProvider to each button                     │
-└──────────────────────────────────────────────────────────────┘
-```
-
-#### Setup
-
-1. In `overlay.uxml`, use `<MacroButton>` instead of `<ui:Button>` for any button you want to be a macro:
-
-   ```xml
-   <MacroButton name="btn-zoom-in" class="circular-buttons button-look" ... />
-   ```
-
-2. On the `UIDocument` GameObject in the scene, add the `MacroButtonController` component.
-
-3. In the Inspector, expand the **Bindings** list and add entries:
-   - **Button Name** → the `name` attribute from UXML (e.g. `btn-zoom-in`)
-   - **Action Type** → pick from the dropdown (`ZoomIn`, `ZoomOut`, `SwitchWindow`, `Calibration`)
-
-4. Enter Play Mode — check Console for `[MacroButtonController] Bound 'btn-zoom-in' → Zoom In`.
-
-> **Note:** Zoom and switch-window actions send OS-level keystrokes via `keybd_event` P/Invoke. They only work in **standalone builds** (gated behind `#if !UNITY_EDITOR`), consistent with `WindowManager.cs`.
-
-#### Adding a New Action
-
-1. Create a class implementing `IMacroAction`:
-
-   ```csharp
-   public class MyNewAction : IMacroAction
-   {
-       public string ActionId => "my_action";
-       public string DisplayName => "My Action";
-       public void Execute() { /* your logic */ }
-   }
-   ```
-
-2. Add an entry to the `MacroActionType` enum in `MacroActionType.cs`.
-
-3. Add a case to `MacroActionFactory.Create()`:
-
-   ```csharp
-   MacroActionType.MyAction => new MyNewAction(),
-   ```
-
-4. In the Inspector, you can now select `MyAction` from the dropdown.
-
-#### Adding a New Input Provider
-
-To support a new input method (e.g. gaze dwell, voice command):
-
-1. Create a class implementing `IInputProvider`:
-
-   ```csharp
-   public class GazeDwellInputProvider : IInputProvider
-   {
-       public void Attach(VisualElement target, Action onActivated) { /* ... */ }
-       public void Detach(VisualElement target) { /* ... */ }
-   }
-   ```
-
-2. In `MacroButtonController.OnEnable()`, swap the provider:
-
-   ```csharp
-   inputProvider = new GazeDwellInputProvider();
-   ```
-
----
-
-### Utility Components
-
-#### `WinShortcut.cs`
-
-**Purpose:** Parses Windows `.lnk` files to extract target path, hotkey, and attributes.
-
-**LNK file structure parsing:**
-
-```csharp
-public WinShortcut(string path)
-{
-    using (var istream = File.OpenRead(path))
-    {
-        this.Parse(istream);
-    }
-}
-
-private void Parse(Stream istream)
-{
-    var linkFlags = this.ParseHeader(istream);
-    
-    if ((linkFlags & LinkFlags.HasLinkTargetIdList) == LinkFlags.HasLinkTargetIdList)
-        this.ParseTargetIDList(istream);
-        
-    if ((linkFlags & LinkFlags.HasLinkInfo) == LinkFlags.HasLinkInfo)
-        this.ParseLinkInfo(istream);
-}
-
-private int ParseHeader(Stream stream)
-{
-    stream.Seek(20, SeekOrigin.Begin);  // Jump to LinkFlags at offset 0x14
-    
-    var buffer = new byte[4];
-    stream.Read(buffer, 0, 4);
-    var linkFlags = BitConverter.ToInt32(buffer, 0);
-
-    stream.Read(buffer, 0, 4);
-    var fileAttrFlags = BitConverter.ToInt32(buffer, 0);
-    IsDirectory = (fileAttrFlags & FileAttributes.Directory) == FileAttributes.Directory;
-
-    stream.Seek(36, SeekOrigin.Current);
-    stream.Read(buffer, 0, 2);
-    
-    return linkFlags;
-}
-
-private void ParseLinkInfo(Stream stream)
-{
-    var start = stream.Position;
-    stream.Seek(8, SeekOrigin.Current);
-    
-    var buffer = new byte[4];
-    stream.Read(buffer, 0, 4);
-    var lnkInfoFlags = BitConverter.ToInt32(buffer, 0);
-    
-    if ((lnkInfoFlags & LinkInfoFlags.VolumeIDAndLocalBasePath) != 0)
-    {
-        stream.Seek(4, SeekOrigin.Current);
-        stream.Read(buffer, 0, 4);
-        var localBasePathOffset = BitConverter.ToInt32(buffer, 0);
-        
-        stream.Seek(start + localBasePathOffset, SeekOrigin.Begin);
-        
-        using (var ms = new MemoryStream())
-        {
-            int b;
-            while ((b = stream.ReadByte()) > 0)
-                ms.WriteByte((byte)b);
-            TargetPath = Encoding.Default.GetString(ms.ToArray());
-        }
-    }
-}
-```
-
----
-
-#### `Transparency.cs`
-
-**Purpose:** Manages window transparency and click-through state using Windows API polling.
-
-**The Catch-22 Problem:**
-When `WS_EX_TRANSPARENT` is set, Windows doesn't send mouse events to Unity — they pass through to whatever is behind. So Unity's `OnPointerEnter`/`OnPointerExit` events never fire, making it impossible to toggle click-through using standard Unity UI events.
-
-**The Solution:**
-Use `GetCursorPos()` to poll mouse position directly from Windows every frame (this works even in click-through mode), then raycast against UI elements from Unity's side.
-
-```csharp
-public class Transparency : MonoBehaviour
-{
-    private IntPtr hWnd;
-    private bool isClickThrough = true;
-    
-    // Debounce: 6 frames at 60Hz = 100ms
-    private const float TOGGLE_COOLDOWN = 0.1f;
-    private float lastToggleTime = 0f;
-    
-    [StructLayout(LayoutKind.Sequential)]
-    private struct POINT
-    {
-        public int X;
-        public int Y;
-    }
-
-    [DllImport("user32.dll")]
-    private static extern bool GetCursorPos(out POINT lpPoint);
-    [DllImport("user32.dll")]
-    private static extern bool ScreenToClient(IntPtr hWnd, ref POINT lpPoint);
-
-    void Start()
-    {
-        #if !UNITY_EDITOR
-        hWnd = GetActiveWindow();
-        MARGINS margins = new MARGINS { cxLeftWidth = -1 };
-        DwmExtendFrameIntoClientArea(hWnd, ref margins);
-        SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_LAYERED | WS_EX_TRANSPARENT);
-        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, 0);
-        #endif
-    }
-
-    void Update()
-    {
-        #if !UNITY_EDITOR
-        POINT cursorPos;
-        if (!GetCursorPos(out cursorPos))
-            return;
-        
-        POINT clientPos = cursorPos;
-        ScreenToClient(hWnd, ref clientPos);
-        
-        Vector2 unityScreenPos = new Vector2(clientPos.X, Screen.height - clientPos.Y);
-        
-        bool overUI = IsPointerOverUI(unityScreenPos);
-        
-        if (Time.time - lastToggleTime < TOGGLE_COOLDOWN)
-            return;
-        
-        if (overUI && isClickThrough)
-        {
-            SetClickThrough(false);
-            lastToggleTime = Time.time;
-        }
-        else if (!overUI && !isClickThrough)
-        {
-            SetClickThrough(true);
-            lastToggleTime = Time.time;
-        }
-        #endif
-    }
-    
-    private bool IsPointerOverUI(Vector2 screenPosition)
-    {
-        PointerEventData eventData = new PointerEventData(EventSystem.current);
-        eventData.position = screenPosition;
-        
-        List<RaycastResult> results = new List<RaycastResult>();
-        EventSystem.current.RaycastAll(eventData, results);
-        
-        return results.Count > 0;
-    }
-
-    public void SetClickThrough(bool clickThrough)
-    {
-        #if !UNITY_EDITOR
-        if (clickThrough)
-            SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_LAYERED | WS_EX_TRANSPARENT);
-        else
-            SetWindowLong(hWnd, GWL_EXSTYLE, WS_EX_LAYERED);
-            
-        isClickThrough = clickThrough;
-        #endif
-    }
-}
-```
-
-**How it works:**
-
-1. `GetCursorPos()` gets global mouse position from Windows (works in click-through mode!)
-2. `ScreenToClient()` converts to window-relative coordinates
-3. `EventSystem.RaycastAll()` checks if cursor is over any UI element
-4. Toggle click-through: over UI → disable (buttons work), not over UI → enable (clicks pass through)
-5. Debounce prevents rapid toggling at UI edges (6 frames / 100ms cooldown)
+| File | Location | Role |
+|---|---|---|
+| `BaseProcessRunner.cs` | `OverlaySystem/` | Generic singleton base — process start, I/O redirect, teardown |
+| `BaseUdpProcessRunner.cs` | `OverlaySystem/` | Extends base with UDP port binding and async receive loop |
+| `ChildProcessTracker.cs` | `OverlaySystem/` | Windows Job Object — guarantees child process cleanup on crash |
+| `SharedCameraCapture.cs` | `OverlaySystem/` | Launches `share_camera.exe`, reads MMF, exposes `Texture2D` |
+| `GazeFollowerRunner.cs` | `OverlaySystem/` | Manages `unity_gaze_bridge.exe`, UDP → `VirtualInputState` |
+| `EmgPredictionRunner.cs` | `Input/` | Manages `unity_emg_bridge.exe`, UDP → `VirtualInputState` |
+| `VirtualPointerDriver.cs` | `Input/` | Reads `VirtualInputState`, drives OS cursor + click via P/Invoke |
+| `UiAutomationRunner.cs` | `OverlaySystem/` | Bridges WebSocket from `VirtualPointerDriver` to `.NET` UIAutomation server |
+| `GazeCalibrationController.cs` | `OverlaySystem/` | Orchestrates gaze calibration phases via UDP, persists profiles |
+| `MacroViewModel.cs` | `MacroSystem/` | MVVM ViewModel — macro group state and menu open/close |
+| `MacroButtonController.cs` | `MacroSystem/` | MVVM View — binds UI Toolkit elements to ViewModel events |
+| `MacroActionFactory.cs` | `MacroSystem/` | Factory — creates `IMacroAction` instances from enum |
+| `Win32Interop.cs` | `Utils/` | All P/Invoke declarations (`SetCursorPos`, `SendInput`, etc.) |
+| `WindowManager.cs` | `Utils/` | Window HWND caching + extended style helpers |
+| `RobitLogger.cs` | `Utils/` | Thread-safe Unity log wrapper used across all systems |

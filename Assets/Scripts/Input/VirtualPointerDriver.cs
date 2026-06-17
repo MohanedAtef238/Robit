@@ -228,6 +228,12 @@ public class VirtualPointerDriver : MonoBehaviour
 
     private async void SendGetClosest()
     {
+        if (UiTriggerClient.Instance != null && UiTriggerClient.Instance.IsSelectionActive)
+        {
+            Debug.Log("[VirtualPointerDriver] SendGetClosest locked: Selection overlay is active.");
+            return;
+        }
+
         if (websocket != null && websocket.State == WebSocketState.Open)
         {
             await websocket.SendText("{\"type\":\"getClosest\"}");

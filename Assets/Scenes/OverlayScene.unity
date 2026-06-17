@@ -2666,7 +2666,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Robit::GazeFollowerRunner
   relativeExePath: Multimodal_UDP/unity_gaze_bridge/unity_gaze_bridge.exe
   promptForCalibrationChoice: 0
-  simulateGazeWithArrowKeys: 1
+  simulateGazeWithArrowKeys: 0
 --- !u!114 &1454036238
 MonoBehaviour:
   m_ObjectHideFlags: 0

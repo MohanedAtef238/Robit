@@ -25,6 +25,10 @@ public class ServerMessage
 [RequireComponent(typeof(UIDocument))]
 public class UiTriggerClient : MonoBehaviour
 {
+    public static UiTriggerClient Instance { get; private set; }
+
+    public bool IsSelectionActive => uiBound && selectorRoot != null && selectorRoot.style.display == DisplayStyle.Flex;
+
     private const string OverlaySceneName = "OverlayScene";
 
     [Header("Selection Overlay")]
@@ -49,6 +53,8 @@ public class UiTriggerClient : MonoBehaviour
 
     private void Awake()
     {
+        Instance = this;
+
         uiDocument = GetComponent<UIDocument>();
         if (uiDocument == null)
         {
@@ -107,8 +113,11 @@ public class UiTriggerClient : MonoBehaviour
             optionTrackers[i].RegisterCallback<PointerDownEvent>(OnOptionPressed);
         }
 
+        selectorRoot.RegisterCallback<PointerDownEvent>(OnBackdropPressed);
+
         uiBound = true;
-        HideSelectionOverlay();
+        selectorRoot.style.opacity = 0f;
+        selectorRoot.style.display = DisplayStyle.None;
     }
 
     private void Update()
@@ -184,6 +193,12 @@ public class UiTriggerClient : MonoBehaviour
         if (UiAutomationRunner.Instance == null)
             return;
 
+        if (IsSelectionActive)
+        {
+            Debug.Log("[UiTriggerClient] SendGetClosest locked: Selection overlay is active.");
+            return;
+        }
+
         HideSelectionOverlay();
         UiAutomationRunner.Instance.SendCmd("{\"type\":\"getClosest\"}");
         Debug.Log("[UiTriggerClient] Requested closest elements");
@@ -194,7 +209,27 @@ public class UiTriggerClient : MonoBehaviour
         if (evt.currentTarget is not VisualElement target || target.userData is not int index)
             return;
 
+        evt.StopPropagation();
         TryInvokeIndex(index);
+    }
+
+    private void OnBackdropPressed(PointerDownEvent evt)
+    {
+        // Traverse up the tree from target to check if we clicked inside any active option container/tracker
+        var target = evt.target as VisualElement;
+        while (target != null && target != selectorRoot)
+        {
+            for (int i = 0; i < availableOptionCount; i++)
+            {
+                if (target == optionContainers[i] || target == optionTrackers[i])
+                {
+                    return; // Ignore backdrop click if inside option cards
+                }
+            }
+            target = target.parent;
+        }
+
+        HideSelectionOverlay();
     }
 
     private void TryInvokeIndex(int index)
@@ -223,6 +258,32 @@ public class UiTriggerClient : MonoBehaviour
         Debug.Log("Invoked index: " + index);
     }
 
+    private Coroutine fadeCoroutine;
+
+    private void StartFade(float targetOpacity, float duration, Action onComplete = null)
+    {
+        if (fadeCoroutine != null)
+            StopCoroutine(fadeCoroutine);
+
+        fadeCoroutine = StartCoroutine(FadeRoutine(targetOpacity, duration, onComplete));
+    }
+
+    private IEnumerator FadeRoutine(float targetOpacity, float duration, Action onComplete)
+    {
+        float startOpacity = selectorRoot.resolvedStyle.opacity;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            selectorRoot.style.opacity = Mathf.Lerp(startOpacity, targetOpacity, t);
+            yield return null;
+        }
+
+        selectorRoot.style.opacity = targetOpacity;
+        onComplete?.Invoke();
+    }
+
     private void ShowSelectionOverlay(int optionCount, string subtitle)
     {
         if (!uiBound)
@@ -231,7 +292,16 @@ public class UiTriggerClient : MonoBehaviour
         availableOptionCount = Mathf.Clamp(optionCount, 0, maxVisibleOptions);
         selectorSubtitle.text = subtitle;
         UpdateOptionVisuals();
-        selectorRoot.style.display = availableOptionCount > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+
+        if (availableOptionCount > 0)
+        {
+            selectorRoot.style.display = DisplayStyle.Flex;
+            StartFade(1f, 0.25f);
+        }
+        else
+        {
+            HideSelectionOverlay();
+        }
     }
 
     private void HideSelectionOverlay()
@@ -241,8 +311,11 @@ public class UiTriggerClient : MonoBehaviour
         if (!uiBound || selectorRoot == null)
             return;
 
-        selectorRoot.style.display = DisplayStyle.None;
-        UpdateOptionVisuals();
+        StartFade(0f, 0.2f, () =>
+        {
+            selectorRoot.style.display = DisplayStyle.None;
+            UpdateOptionVisuals();
+        });
     }
 
     private void UpdateOptionVisuals()
@@ -329,6 +402,9 @@ public class UiTriggerClient : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (Instance == this)
+            Instance = null;
+
         UnbindAutomationEvents();
         SceneManager.activeSceneChanged -= OnActiveSceneChanged;
         SceneManager.sceneLoaded -= OnSceneLoaded;

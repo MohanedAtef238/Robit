@@ -91,10 +91,10 @@
 /*                                                                           */
 .calibration-dot {
     position: absolute;
-    width: 45px;
-    height: 45px;
-    margin-left: -22px;
-    margin-top: -22px;
+    width: 70px;
+    height: 70px;
+    margin-left: -35px;
+    margin-top: -35px;
     border-top-left-radius: 50%;
     border-top-right-radius: 50%;
     border-bottom-left-radius: 50%;
@@ -128,10 +128,10 @@
 /*  Spawned by C# debug overlay — identical size/centering as live dot     */
 .debug-dot {
     position: absolute;
-    width: 45px;
-    height: 45px;
-    margin-left: -22px;
-    margin-top: -22px;
+    width: 70px;
+    height: 70px;
+    margin-left: -35px;
+    margin-top: -35px;
     border-top-left-radius: 50%;
     border-top-right-radius: 50%;
     border-bottom-left-radius: 50%;
@@ -161,14 +161,30 @@
     -unity-font-style: bold;
 }
 
+/* Center focus point styling */
+.focus-point {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    left: 50%;
+    top: 50%;
+    margin-left: -11px;
+    margin-top: -11px;
+    border-top-left-radius: 50%;
+    border-top-right-radius: 50%;
+    border-bottom-left-radius: 50%;
+    border-bottom-right-radius: 50%;
+    background-color: rgb(255, 255, 255);
+}
+
 /* ─── Progress bar (sits below the live dot, auto-centred) ──────────────── */
 .progress-track {
     position: absolute;
     bottom: -14px;
     left: 50%;
-    width: 60px;
+    width: 70px;
     height: 5px;
-    margin-left: -30px;
+    margin-left: -35px;
     border-top-left-radius: 3px;
     border-top-right-radius: 3px;
     border-bottom-left-radius: 3px;
