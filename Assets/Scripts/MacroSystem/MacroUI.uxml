@@ -1,6 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <Style src="project://database/Assets/Scripts/MacroSystem/MacroUI.uss?fileID=7433441132597879392&amp;guid=7dc99aedf7699ee4e958823f46699bce&amp;type=3#MacroUI"/>
-    <ui:VisualElement name="macro-container" class="macro-container macro-state--hidden" style="translate: 50% -113%; bottom: 45px; right: 307px;">
+    <ui:VisualElement name="macro-container" class="macro-container macro-state--hidden" style="translate: 72% -113%; bottom: 45px; right: 307px;">
         <ui:Label name="group-name-label" text="" class="group-name-label label-state--hidden"/>
         <ui:VisualElement name="button-grid" class="button-grid" style="scale: 1.8 1.8 3; translate: 0% 50%;">
             <ui:Button name="BtnWheelPrev" class="macro-button slot-prev macro-state--hidden" style="scale: 0.8 0.8; background-color: rgba(255, 255, 255, 0.45);">

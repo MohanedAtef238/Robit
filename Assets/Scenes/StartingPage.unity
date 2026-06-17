@@ -343,7 +343,7 @@ MonoBehaviour:
   _clickSound: {fileID: 8300000, guid: de04ff96fe46bee4aae950b5af2511b7, type: 3}
   _volume: 1
   _backgroundClip: {fileID: 8300000, guid: 4048f29f2e9f8b741a5b10833cae8877, type: 3}
-  _backgroundVolume: 0.5
+  _backgroundVolume: 0.1
 --- !u!1 &189744320
 GameObject:
   m_ObjectHideFlags: 0
@@ -2091,7 +2091,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6004699645964463037, guid: fc6196bdccb101d41adb1af55565a3ca, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6349840381471912199, guid: fc6196bdccb101d41adb1af55565a3ca, type: 3}
       propertyPath: m_LocalPosition.x
