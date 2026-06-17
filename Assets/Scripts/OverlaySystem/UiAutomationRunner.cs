@@ -13,7 +13,7 @@ public class UiAutomationRunner : BaseProcessRunner<UiAutomationRunner>
 
     // ── Inspector fields ──────────────────────────────────────────────────────
     [Header("UI Automation Setup")]
-    [SerializeField] private string relativeWorkingDirectory = @"D:/Projects/Robit Ui Automation System/Robit-UI-Automation";
+    [SerializeField] private string relativeWorkingDirectory = @"Repos/UiAutomation/Robit-UI-Automation";
     [SerializeField] private string executablePath           = "dotnet";
     [SerializeField] private string arguments                = "run";
     [SerializeField] private bool   autoStartOnAwake         = true;
@@ -61,7 +61,7 @@ public class UiAutomationRunner : BaseProcessRunner<UiAutomationRunner>
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
         if (automationProcess != null && !automationProcess.HasExited)
         {
-            RobitLogger.Log($"{LogPrefix} UI Automation server is already running.");
+            UnityEngine.Debug.Log($"{LogPrefix} UI Automation server is already running.");
             return;
         }
 
@@ -76,7 +76,7 @@ public class UiAutomationRunner : BaseProcessRunner<UiAutomationRunner>
                 out string workingDirectory,
                 out string workingDetails))
         {
-            RobitLogger.LogWarning(
+            UnityEngine.Debug.LogWarning(
                 $"{LogPrefix} Working directory could not be resolved (UI Automation unavailable).\n"
                 + workingDetails);
             return;
@@ -84,90 +84,179 @@ public class UiAutomationRunner : BaseProcessRunner<UiAutomationRunner>
 
         if (logResolvedPaths)
         {
-            RobitLogger.Log(
+            UnityEngine.Debug.Log(
                 $"{LogPrefix} Using paths:\n"
                 + $" - WorkingDir: {workingDirectory}\n"
                 + $" - Executable: {exePathConfig}\n"
                 + $" - Arguments : {argsConfig}");
         }
 
-        // Try to find a pre-compiled executable if configured to run via "dotnet run"
+        bool launched = false;
+        string securePath = @"C:\Program Files\RobitUiAutomation\Robit-UI-Automation.exe";
+
+        // Try UIAccess launcher if using "dotnet run" configuration
         if (exePathConfig == "dotnet" && argsConfig == "run")
         {
-            string[] candidatePaths = new string[]
+            bool hasSecureExe = File.Exists(securePath);
+            if (!hasSecureExe)
             {
-                Path.Combine(workingDirectory, "bin", "Release", "net48", "win-x64", "publish", "Robit-UI-Automation.exe"),
-                Path.Combine(workingDirectory, "bin", "Debug", "net48", "Robit-UI-Automation.exe"),
-                Path.Combine(workingDirectory, "bin", "Release", "net48", "win-x64", "Robit-UI-Automation.exe")
-            };
-
-            string precompiledExe = null;
-            DateTime latestTime = DateTime.MinValue;
-
-            foreach (var candidate in candidatePaths)
-            {
-                if (File.Exists(candidate))
+                // Attempt to run the deployment script automatically!
+                try
                 {
-                    var fi = new FileInfo(candidate);
-                    if (fi.LastWriteTime > latestTime)
+                    UnityEngine.Debug.LogWarning($"{LogPrefix} Secure UIAccess executable not found at '{securePath}'. Triggering self-signing and deployment script with Administrator elevation...");
+
+                    string scriptPath = Path.Combine(workingDirectory, "deploy_uiaccess.ps1");
+                    if (File.Exists(scriptPath))
                     {
-                        latestTime = fi.LastWriteTime;
-                        precompiledExe = candidate;
+                        var deployPsi = new ProcessStartInfo
+                        {
+                            FileName = "powershell.exe",
+                            Arguments = $"-ExecutionPolicy Bypass -File \"{scriptPath}\"",
+                            Verb = "runas",
+                            UseShellExecute = true,
+                            CreateNoWindow = false
+                        };
+
+                        using (var deployProcess = Process.Start(deployPsi))
+                        {
+                            if (deployProcess != null)
+                            {
+                                deployProcess.WaitForExit(); // Wait for it to build and deploy!
+                            }
+                        }
+
+                        if (File.Exists(securePath))
+                        {
+                            UnityEngine.Debug.Log($"{LogPrefix} Deployment completed successfully. Created secure signed UIAccess executable.");
+                            hasSecureExe = true;
+                        }
+                        else
+                        {
+                            UnityEngine.Debug.LogError($"{LogPrefix} Deployment completed, but secure executable was not found.");
+                        }
+                    }
+                    else
+                    {
+                        UnityEngine.Debug.LogError($"{LogPrefix} Deployment script not found at '{scriptPath}'.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    UnityEngine.Debug.LogError($"{LogPrefix} Failed to run deployment script: {ex.Message}");
+                }
+            }
+
+            if (hasSecureExe)
+            {
+                if (logResolvedPaths)
+                {
+                    UnityEngine.Debug.Log($"{LogPrefix} Attempting to launch secure signed UIAccess executable at '{securePath}'...");
+                }
+
+                try
+                {
+                    var securePsi = new ProcessStartInfo
+                    {
+                        FileName               = securePath,
+                        Arguments              = "",
+                        WorkingDirectory       = workingDirectory,
+                        UseShellExecute        = false,
+                        RedirectStandardInput  = true,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError  = true,
+                        CreateNoWindow         = true,
+                    };
+                    automationProcess = StartManagedProcess(securePsi);
+                    UnityEngine.Debug.Log($"{LogPrefix} Started secure UI Automation server.");
+                    launched = true;
+                }
+                catch (Exception ex)
+                {
+                    UnityEngine.Debug.LogWarning(
+                        $"{LogPrefix} Failed to start secure UI Automation server: {ex.Message}.\n"
+                        + "This error ('requires elevation') occurs when the application has UIAccess=true in its manifest but the parent process (Unity Editor) is not running as Administrator.\n"
+                        + "Falling back to standard development build...");
+                }
+            }
+        }
+
+        // If not launched via secure UIAccess (or launching it failed), run development fallback
+        if (!launched)
+        {
+            // If the original config was dotnet run, check for a pre-compiled local development build
+            if (exePathConfig == "dotnet" && argsConfig == "run")
+            {
+                string[] candidatePaths = new string[]
+                {
+                    Path.Combine(workingDirectory, "bin", "Release", "net48", "win-x64", "publish", "Robit-UI-Automation.exe"),
+                    Path.Combine(workingDirectory, "bin", "Debug", "net48", "Robit-UI-Automation.exe"),
+                    Path.Combine(workingDirectory, "bin", "Release", "net48", "win-x64", "Robit-UI-Automation.exe")
+                };
+
+                string precompiledExe = null;
+                DateTime latestTime = DateTime.MinValue;
+
+                foreach (var candidate in candidatePaths)
+                {
+                    if (File.Exists(candidate))
+                    {
+                        var fi = new FileInfo(candidate);
+                        if (fi.LastWriteTime > latestTime)
+                        {
+                            latestTime = fi.LastWriteTime;
+                            precompiledExe = candidate;
+                        }
+                    }
+                }
+
+                if (precompiledExe != null)
+                {
+                    exePathConfig = precompiledExe;
+                    argsConfig = "";
+                    if (logResolvedPaths)
+                    {
+                        UnityEngine.Debug.Log($"{LogPrefix} Found pre-compiled local development executable at '{precompiledExe}'. Bypassing 'dotnet run' for faster startup.");
                     }
                 }
             }
 
-            if (precompiledExe != null)
+            string resolvedExePath = exePathConfig;
+            if (exePathConfig != "dotnet")
             {
-                exePathConfig = precompiledExe;
-                argsConfig = "";
-                if (logResolvedPaths)
+                if (RunnerPathResolver.TryResolvePath(
+                        exePathConfig,
+                        expectFile: true,
+                        out string resolvedExe,
+                        out string exeDetails))
                 {
-                    RobitLogger.Log($"{LogPrefix} Found pre-compiled executable at '{precompiledExe}'. Bypassing 'dotnet run' for faster startup and lower resource usage.");
+                    resolvedExePath = resolvedExe;
                 }
             }
-        }
 
-        string resolvedExePath = exePathConfig;
-        if (exePathConfig != "dotnet")
-        {
-            if (RunnerPathResolver.TryResolvePath(
-                    exePathConfig,
-                    expectFile: true,
-                    out string resolvedExe,
-                    out string exeDetails))
+            var psi = new ProcessStartInfo
             {
-                resolvedExePath = resolvedExe;
+                FileName               = resolvedExePath,
+                Arguments              = argsConfig,
+                WorkingDirectory       = workingDirectory,
+                UseShellExecute        = false,
+                RedirectStandardInput  = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError  = true,
+                CreateNoWindow         = true,
+            };
+
+            try
+            {
+                automationProcess = StartManagedProcess(psi);
+                UnityEngine.Debug.Log($"{LogPrefix} Started development UI Automation server.");
+            }
+            catch (Exception ex)
+            {
+                UnityEngine.Debug.LogError($"{LogPrefix} Failed to start UI Automation server fallback: {ex.Message}");
             }
         }
-
-        // BuildProcessStartInfo derives WorkingDirectory from exePath, but
-        // UiAutomationRunner's working directory is configured independently
-        // (it may run dotnet from a project folder, not next to an exe).
-        // We therefore build the PSI manually for this runner.
-        var psi = new ProcessStartInfo
-        {
-            FileName               = resolvedExePath,
-            Arguments              = argsConfig,
-            WorkingDirectory       = workingDirectory,
-            UseShellExecute        = false,
-            RedirectStandardInput  = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError  = true,
-            CreateNoWindow         = true,
-        };
-
-        try
-        {
-            automationProcess = StartManagedProcess(psi);
-            RobitLogger.Log($"{LogPrefix} Started UI Automation server.");
-        }
-        catch (Exception ex)
-        {
-            RobitLogger.LogError($"{LogPrefix} Failed to start UI Automation server: {ex.Message}");
-        }
 #else
-        RobitLogger.LogWarning($"{LogPrefix} This runner currently supports Windows builds only.");
+        UnityEngine.Debug.LogWarning($"{LogPrefix} This runner currently supports Windows builds only.");
 #endif
     }
 
@@ -183,12 +272,13 @@ public class UiAutomationRunner : BaseProcessRunner<UiAutomationRunner>
 
         try
         {
+            UnityEngine.Debug.Log($"{LogPrefix}[SEND] {json}");
             automationProcess.StandardInput.WriteLine(json);
             automationProcess.StandardInput.Flush();
         }
         catch (Exception ex)
         {
-            RobitLogger.LogWarning($"{LogPrefix} Failed to send cmd: {ex.Message}");
+            UnityEngine.Debug.LogWarning($"{LogPrefix} Failed to send cmd: {ex.Message}");
         }
     }
 
@@ -204,6 +294,7 @@ public class UiAutomationRunner : BaseProcessRunner<UiAutomationRunner>
         if (line.StartsWith("CMD_RESPONSE:", StringComparison.OrdinalIgnoreCase))
         {
             string payload = line.Substring("CMD_RESPONSE:".Length);
+            UnityEngine.Debug.Log($"{LogPrefix}[RECV] {payload}");
 
             if (mainThreadContext != null)
                 mainThreadContext.Post(_ => OnMessageReceived?.Invoke(payload), null);
@@ -213,7 +304,8 @@ public class UiAutomationRunner : BaseProcessRunner<UiAutomationRunner>
             return;
         }
 
-        base.OnOutputDataReceived(sender, e);
+        // Bypass base class which uses RobitLogger so that standard output is visible in standalone builds
+        UnityEngine.Debug.Log($"{LogPrefix}[PY] {line}");
     }
 
     protected override void OnErrorDataReceived(object sender, DataReceivedEventArgs e)
@@ -221,7 +313,8 @@ public class UiAutomationRunner : BaseProcessRunner<UiAutomationRunner>
         if (string.IsNullOrWhiteSpace(e.Data))
             return;
 
-        RobitLogger.LogWarning($"{LogPrefix}[Server-ERR] {e.Data.Trim()}");
+        // Bypass base class which uses RobitLogger so that error output is visible in standalone builds
+        UnityEngine.Debug.LogWarning($"{LogPrefix}[Server-ERR] {e.Data.Trim()}");
     }
 
     // ── Env file overrides ────────────────────────────────────────────────────
@@ -237,7 +330,7 @@ public class UiAutomationRunner : BaseProcessRunner<UiAutomationRunner>
         if (!RunnerPathResolver.TryResolveEnvFilePath(envFileName, out string envPath, out string details))
         {
             if (logResolvedPaths)
-                RobitLogger.Log($"{LogPrefix} Env file not found. Using inspector values.\n" + details);
+                UnityEngine.Debug.Log($"{LogPrefix} Env file not found. Using inspector values.\n" + details);
             return;
         }
 
@@ -252,6 +345,6 @@ public class UiAutomationRunner : BaseProcessRunner<UiAutomationRunner>
         if (values.TryGetValue("UI_AUTO_ARGS", out string args) && !string.IsNullOrWhiteSpace(args))
             argsConfig = args.Trim();
 
-        RobitLogger.Log($"{LogPrefix} Loaded env overrides from: {envPath}");
+        UnityEngine.Debug.Log($"{LogPrefix} Loaded env overrides from: {envPath}");
     }
 }
