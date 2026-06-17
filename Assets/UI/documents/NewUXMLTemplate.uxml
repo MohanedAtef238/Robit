@@ -4,15 +4,16 @@
     <Style src="project://database/Assets/UI/starter.uss?fileID=7433441132597879392&amp;guid=a08abad5717a70d47a173c4f4d4a8832&amp;type=3#starter"/>
     <Style src="project://database/Assets/UI/buttonSwap.uss?fileID=7433441132597879392&amp;guid=6196617ce9a402b4dad4811a91c8e22c&amp;type=3#buttonSwap"/>
     <Style src="project://database/Assets/UI/documents/home-dashboard.uss?fileID=7433441132597879392&amp;guid=638afb89b35376049a8412c1df5543e0&amp;type=3#home-dashboard"/>
-    <ui:VisualElement picking-mode="Ignore" class="bubble-element dashboard-element-1">
-        <ui:VisualElement class="dashboard-element-2"/>
-        <ui:VisualElement name="VisualElement" class="dashboard-element-3"/>
-        <ui:VisualElement name="VisualElement" class="dashboard-element-4"/>
-        <ui:VisualElement name="VisualElement" class="dashboard-element-5"/>
-        <ui:VisualElement name="VisualElement" class="dashboard-element-6"/>
+    <Style src="project://database/Assets/UI/new_starter.uss?fileID=7433441132597879392&amp;guid=2ffbe168f40aac2448a8856843e80980&amp;type=3#new_starter"/>
+    <Style src="project://database/Assets/opening_animation.uss?fileID=7433441132597879392&amp;guid=fc9ef41fea931e34db745857067f7f09&amp;type=3#opening_animation"/>
+    <Style src="project://database/Assets/resolution-btn.uss?fileID=7433441132597879392&amp;guid=1af4d815db40c8f4787ca9b604e34243&amp;type=3#resolution-btn"/>
+    <ui:VisualElement picking-mode="Ignore" class="dashboard-element-1 hidden-panel" style="opacity: 1; top: -7px; left: -12px;">
+        <ui:VisualElement name="VisualElement" class="dashboard-element-5" style="background-image: url(&quot;project://database/Assets/UI/icons2/flower5.png?fileID=2800000&amp;guid=1560c2c15a040424cb3a3319bd0c3677&amp;type=3#flower5&quot;);"/>
+        <ui:VisualElement name="VisualElement" class="dashboard-element-4" style="background-image: url(&quot;project://database/Assets/UI/icons2/flower3.png?fileID=2800000&amp;guid=44048395a9f595c42959c0225b58c035&amp;type=3#flower3&quot;); height: 94px; top: 863px; width: 120px; left: 124px;"/>
+        <ui:VisualElement class="dashboard-element-2" style="background-image: url(&quot;project://database/Assets/UI/icons2/flower2.png?fileID=2800000&amp;guid=2a3cec6259b0be546bd9c2a1a36fff6a&amp;type=3#flower2&quot;); top: 489px; left: 1378px;"/>
     </ui:VisualElement>
-    <ui:VisualElement name="clock-tab" class="bubble-element clock-tab-style-7"/>
-    <ui:VisualElement name="clock-panel" class="hover-scaler bubble-element clock-panel-style-8" style="display: flex; background-image: url(&quot;project://database/Assets/UI/assets/clock/clock%20frame.svg?fileID=7388822144124034973&amp;guid=0e42e1c03991606489b3e95c1be62d5b&amp;type=3#clock frame&quot;);">
+    <ui:VisualElement name="clock-tab" class="clock-tab-style-7 opening_animation" style="opacity: 1;"/>
+    <ui:VisualElement name="clock-panel" class="hover-scaler clock-panel-style-8 opening_animation" style="display: flex; background-image: url(&quot;project://database/Assets/UI/assets/clock/clock%20frame.svg?fileID=7388822144124034973&amp;guid=0e42e1c03991606489b3e95c1be62d5b&amp;type=3#clock frame&quot;); opacity: 1; visibility: visible;">
         <ui:Button text="Button" name="locationPin" class="locationPin-style-9" style="background-image: url(&quot;project://database/Assets/UI/assets/clock/pointer.svg?fileID=7388822144124034973&amp;guid=9ea9fe602e6be0d4b980847a92732403&amp;type=3#pointer&quot;);">
             <ui:Label text="Label" name="locationLabel" class="locationLabel-style-10"/>
         </ui:Button>
@@ -20,8 +21,8 @@
             <ui:Label text="Label" name="digitalClockLabel" class="digitalClockLabel-style-12"/>
             <ui:Label text="amPM" name="digitalClockM" class="digitalClockM-style-13"/>
             <ui:Button text="Button" name="minuteHand" class="minuteHand-style-14" style="background-image: url(&quot;project://database/Assets/UI/assets/clock/seconds.svg?fileID=7388822144124034973&amp;guid=d8aa672018aaa5748aededd641d6d41d&amp;type=3#seconds&quot;);"/>
-            <ui:Button text="Button" name="hourHand" class="hourHand-style-15"/>
-            <ui:Button text="Button" class="dashboard-element-16" style="background-image: url(&quot;project://database/Assets/UI/assets/wiggler/circle.svg?fileID=7388822144124034973&amp;guid=8a9555bc7595be746ae4c584c1987e3a&amp;type=3#circle&quot;);"/>
+            <ui:Button text="Button" name="minuteHand" class="minuteHand-style-14" style="background-image: url(&quot;project://database/Assets/UI/assets/clock/seconds.svg?fileID=7388822144124034973&amp;guid=d8aa672018aaa5748aededd641d6d41d&amp;type=3#seconds&quot;); height: 53px; top: 41px; background-color: rgba(255, 255, 255, 0); -unity-background-image-tint-color: rgb(44, 255, 91);"/>
+            <ui:Button text="Button" class="dashboard-element-16" style="background-image: url(&quot;project://database/Assets/Plugins/Cartoon%20Shader/Demo/Other/circle_02.psd?fileID=2800000&amp;guid=05b08c2c6c51fda41abf553f3d7f1b01&amp;type=3#circle_02&quot;); background-color: rgba(188, 188, 188, 0); -unity-background-image-tint-color: rgb(255, 255, 255);"/>
         </ui:Button>
         <ui:Button text="" name="weather" class="weather-style-17" style="background-image: url(&quot;project://database/Assets/UI/assets/clock/weather.svg?fileID=7388822144124034973&amp;guid=1ba991b9373b8f3458ab66cd7f1c1fea&amp;type=3#weather&quot;);">
             <ui:Label text="2" name="celsiusLabel" class="celsiusLabel-style-18"/>
@@ -29,65 +30,78 @@
             <ui:Label text="Label" name="statusLabel" class="statusLabel-style-20"/>
         </ui:Button>
     </ui:VisualElement>
-    <ui:VisualElement name="signal" class="signal-style-21" style="overflow: visible; display: flex; visibility: visible; background-image: url(&quot;project://database/Assets/UI/icons2/flower7.png?fileID=2800000&amp;guid=d24f8011bb24c624eb7e60c3685560bb&amp;type=3#flower7&quot;);">
-        <ui:Image class="dashboard-element-22"/>
-        <ui:Image class="dashboard-element-23"/>
+    <ui:VisualElement name="signal" class="signal-style-21 opening_animation hover-scaler" style="overflow: visible; display: flex; visibility: visible; background-image: none; background-color: rgba(78, 81, 153, 0.35); border-top-left-radius: 34px; border-top-right-radius: 34px; border-bottom-right-radius: 34px; border-bottom-left-radius: 34px; top: 204px; left: 1618px; height: 82px; width: 454px;"/>
+    <ui:VisualElement name="signal" class="signal-style-21 opening_animation hover-scaler" style="overflow: visible; display: flex; visibility: visible; background-image: none; background-color: rgba(200, 221, 255, 0.71); border-top-left-radius: 34px; border-top-right-radius: 34px; border-bottom-right-radius: 34px; border-bottom-left-radius: 34px; top: 182px; left: 1613px; height: 82px; width: 454px;">
+        <ui:Image class="dashboard-element-22" style="background-image: url(&quot;project://database/Assets/UI/assets/TaskWidget/signal.svg?fileID=7388822144124034973&amp;guid=e667210c044ebb44ead7ea72e7285045&amp;type=3#signal&quot;); top: 16px; left: 185px; width: 69px; height: 48px;"/>
+        <ui:Label text="Eng" style="font-size: 45px; -unity-font-definition: url(&quot;project://database/Assets/UI/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=2230732570650464555&amp;guid=9a78a73fc1aee3e46b312389b1b26a0d&amp;type=3#NotInter-Regular&quot;); color: rgba(122, 135, 163, 0.67); -unity-text-outline-color: rgba(255, 255, 255, 0); -unity-font-style: bold; -unity-text-outline-width: 2px; height: 54px; width: 93px; position: absolute; top: 5px; left: 319px;">
+            <ui:Label text="Eng" style="font-size: 45px; -unity-font-definition: url(&quot;project://database/Assets/UI/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=2230732570650464555&amp;guid=9a78a73fc1aee3e46b312389b1b26a0d&amp;type=3#NotInter-Regular&quot;); color: rgb(246, 156, 175); -unity-text-outline-color: rgba(255, 255, 255, 0); -unity-font-style: bold; -unity-text-outline-width: 2px; height: 68px; width: 116px; position: absolute; top: -7px; left: 0;"/>
+        </ui:Label>
+        <ui:Image class="dashboard-element-23" style="background-image: url(&quot;project://database/Assets/UI/assets/TaskWidget/wifi.svg?fileID=7388822144124034973&amp;guid=27228a0babc598445bc8d3ff5ca7c26f&amp;type=3#wifi&quot;); top: 18px; left: 35px; height: 45px; width: 64px;"/>
     </ui:VisualElement>
-    <ui:VisualElement name="wiggle1" enabled="true" class="wiggle1-style-24" style="display: flex; visibility: visible;">
+    <ui:VisualElement name="wiggle1" enabled="true" class="wiggle1-style-24 opening_animation" style="display: none; visibility: hidden;">
         <ui:Button text="&#10;" class="dashboard-element-25"/>
     </ui:VisualElement>
-    <ui:VisualElement name="dialogue" focusable="true" class="bubble-element dialogue-style-27" style="visibility: visible; display: flex;">
+    <ui:VisualElement name="dialogue" focusable="true" class="dialogue-style-27 opening_animation hover-scaler" style="visibility: hidden; display: none;">
         <ui:Button text="" name="closeButton" class="closeButton-style-28"/>
     </ui:VisualElement>
-    <ui:VisualElement name="sliders" class="bubble-element sliders-style-29"/>
-    <ui:VisualElement name="sliders" class="hover-scaler bubble-element sliders-style-30" style="display: none; visibility: hidden;">
+    <ui:VisualElement name="sliders" class="sliders-style-29 opening_animation"/>
+    <ui:VisualElement name="sliders" class="hover-scaler sliders-style-30 opening_animation" style="display: flex; visibility: visible;">
         <ui:VisualElement name="brightness" class="brightness-style-31">
             <ui:Label name="brightnessValueLabel" text="100%&#10;" class="brightnessValueLabel-style-32"/>
-            <ui:VisualElement name="sunIcon" class="sunIcon-style-33"/>
-            <ui:Button name="brightnessDecBtn" text="" class="hover-scaler brightnessDecBtn-style-34"/>
-            <ui:Slider label="Slider" value="42" high-value="100" name="brightnessSlider" class="brightnessSlider-style-35" style="display: flex; visibility: visible;"/>
-            <ui:Button name="brightnessIncBtn" text="" class="hover-scaler brightnessIncBtn-style-36">
-                <ui:VisualElement picking-mode="Ignore" class="dashboard-element-37"/>
+            <ui:VisualElement name="sunIcon" style="background-image: url(&quot;project://database/Assets/Prefabs/COMICOMI/VFX_FirelyFlare/Art/Textures/sparkle3.png?fileID=2800000&amp;guid=6eafc1a51ff61174abfe403602dad939&amp;type=3#sparkle3&quot;); height: 116px; width: 112px; top: 9px; left: 49px; -unity-background-scale-mode: scale-to-fit;"/>
+            <ui:Button name="brightnessDecBtn" text="" class="hover-scaler brightnessDecBtn-style-34" style="background-image: url(&quot;project://database/Assets/UI/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=5923138177525885446&amp;guid=9a78a73fc1aee3e46b312389b1b26a0d&amp;type=3#arrow-left&quot;); background-color: rgba(255, 255, 255, 0); -unity-background-image-tint-color: rgb(255, 255, 255);"/>
+            <ui:Button name="brightnessIncBtn" text="" class="hover-scaler brightnessIncBtn-style-36" style="background-image: url(&quot;project://database/Assets/UI/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=5923138177525885446&amp;guid=9a78a73fc1aee3e46b312389b1b26a0d&amp;type=3#arrow-left&quot;); background-color: rgba(255, 255, 255, 0); rotate: 180deg;">
+                <ui:VisualElement picking-mode="Ignore" class="dashboard-element-37" style="background-image: url(&quot;project://database/Assets/UI/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=-4521532143779581420&amp;guid=9a78a73fc1aee3e46b312389b1b26a0d&amp;type=3#arrow-right&quot;); rotate: 180deg; background-color: rgba(255, 255, 255, 0);"/>
             </ui:Button>
         </ui:VisualElement>
         <ui:VisualElement name="Sound" class="Sound-style-38">
-            <ui:VisualElement name="soundIcon" class="soundIcon-style-39"/>
-            <ui:Button name="soundDecBtn" text="" class="hover-scaler soundDecBtn-style-40"/>
+            <ui:VisualElement name="soundIcon" style="background-image: url(&quot;project://database/Assets/UI/icons2/sound4.png?fileID=2800000&amp;guid=494c6f6d714804043a51c5c5227c99ab&amp;type=3#sound4&quot;); height: 73px; width: 84px; -unity-background-scale-mode: scale-to-fit;"/>
+            <ui:Button name="soundDecBtn" text="" class="hover-scaler soundDecBtn-style-40" style="background-image: url(&quot;project://database/Assets/UI/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=5923138177525885446&amp;guid=9a78a73fc1aee3e46b312389b1b26a0d&amp;type=3#arrow-left&quot;); background-color: rgba(153, 204, 153, 0);"/>
             <ui:Slider label="Slider" value="42" high-value="100" name="soundSlider" class="soundSlider-style-41"/>
-            <ui:Button name="soundIncBtn" text="" class="hover-scaler soundIncBtn-style-42">
-                <ui:VisualElement picking-mode="Ignore" class="dashboard-element-43"/>
+            <ui:Button name="soundIncBtn" text="" class="hover-scaler soundIncBtn-style-42" style="background-color: rgba(153, 204, 153, 0); background-image: url(&quot;project://database/Assets/UI/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=-4521532143779581420&amp;guid=9a78a73fc1aee3e46b312389b1b26a0d&amp;type=3#arrow-right&quot;);">
+                <ui:VisualElement picking-mode="Ignore" class="dashboard-element-43" style="background-image: url(&quot;project://database/Assets/UI/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=-4521532143779581420&amp;guid=9a78a73fc1aee3e46b312389b1b26a0d&amp;type=3#arrow-right&quot;); rotate: 0;"/>
             </ui:Button>
             <ui:Label name="soundValueLabel" text="100%" class="soundValueLabel-style-44"/>
         </ui:VisualElement>
     </ui:VisualElement>
-    <ui:VisualElement name="exit" picking-mode="Ignore" class="bubble-element exit-style-45"/>
-    <ui:VisualElement name="exit" class="hover-scaler bubble-element exit-style-46"/>
-    <ui:VisualElement name="refresh" class="bubble-element refresh-style-47"/>
-    <ui:VisualElement name="refresh" class="hover-scaler bubble-element refresh-style-48"/>
-    <ui:VisualElement name="dialogueBox" class="bubble-element dialogueBox-style-49"/>
-    <ui:VisualElement name="dialogueBox" class="bubble-element dialogueBox-style-50">
-        <ui:Button text="&#10;" name="inputButton" class="hover-scaler inputButton-style-51"/>
+    <ui:VisualElement name="exit" picking-mode="Ignore" class="exit-style-45 opening_animation"/>
+    <ui:VisualElement name="exit" class="hover-scaler exit-style-46 opening_animation" style="background-image: url(&quot;project://database/Assets/UI/icons2/turnoff.png?fileID=2800000&amp;guid=56a049687aa4f194395a9a5f2d876e91&amp;type=3#turnoff&quot;);"/>
+    <ui:VisualElement name="refresh" class="refresh-style-47 opening_animation"/>
+    <ui:VisualElement name="refresh" class="hover-scaler refresh-style-48 opening_animation" style="background-image: url(&quot;project://database/Assets/UI/icons2/refresh.png?fileID=2800000&amp;guid=3c2349e7c3b322247975471be78faf20&amp;type=3#refresh&quot;); -unity-background-scale-mode: scale-to-fit; background-size: 50% 54%;"/>
+    <ui:VisualElement name="dialogueBox" class="dialogueBox-style-49 opening_animation"/>
+    <ui:VisualElement name="dialogueBox" class="dialogueBox-style-50 opening_animation">
+        <ui:Button text="&#10;" name="inputButton" class="hover-scaler inputButton-style-51" style="background-image: url(&quot;project://database/Assets/UI/icons2/flower4.png?fileID=2800000&amp;guid=8cb6fb2d5e21cbf488e43176c7f05d45&amp;type=3#flower4&quot;);"/>
         <ui:Label text="output&#10;" name="outputDialogueLabel" focusable="false" picking-mode="Position" class="outputDialogueLabel-style-52"/>
         <ui:TextField label="" placeholder-text="Ask Robit" name="inputDialogueField" vertical-scroller-visibility="Auto" picking-mode="Position" multiline="true" auto-correction="true" select-all-on-focus="true" emoji-fallback-support="false" class="inputDialogueField-style-53"/>
     </ui:VisualElement>
-    <ui:Button text="T" name="keyboard" class="bubble-element keyboard-style-54"/>
-    <ui:Button text="" name="mick" class="bubble-element mick-style-55"/>
-    <ui:VisualElement name="reminder" class="bubble-element reminder-style-56"/>
-    <ui:VisualElement name="reminder" class="hover-scaler bubble-element reminder-style-57">
+    <ui:Button text="T" name="keyboard" class="keyboard-style-54 opening_animation"/>
+    <ui:Button text="" name="mick" class="mick-style-55 opening_animation" style="background-image: url(&quot;project://database/Assets/UI/icons2/mikeYes.png?fileID=2800000&amp;guid=5c688ce895361d74dbf8bce616af1ba5&amp;type=3#mikeYes&quot;);"/>
+    <ui:VisualElement name="reminder" class="reminder-style-56 opening_animation"/>
+    <ui:VisualElement name="reminder" class="hover-scaler reminder-style-57 opening_animation">
         <ui:VisualElement class="dashboard-element-58"/>
         <ui:VisualElement class="dashboard-element-59"/>
         <ui:Label text="Reminder" class="dashboard-element-60"/>
-        <ui:VisualElement class="dashboard-element-61"/>
-    </ui:VisualElement>
-    <ui:VisualElement name="settingsView" picking-mode="Ignore" enabled="true" class="bubble-element settingsView-style-62">
-        <ui:VisualElement name="zoom-picker" class="zoom-picker-style-63">
-            <ui:Label text="         Display Scale" class="dashboard-element-64"/>
-            <ui:VisualElement class="dashboard-element-65">
-                <ui:Button name="zoom100Btn" text="100%" class="zoom100Btn-style-66"/>
-                <ui:Button name="zoom125Btn" text="125%" class="zoom125Btn-style-67"/>
-                <ui:Button name="zoom150Btn" text="150%" class="zoom150Btn-style-68"/>
-                <ui:Button name="zoom200Btn" text="200%" class="zoom200Btn-style-69"/>
-            </ui:VisualElement>
+        <ui:VisualElement class="dashboard-element-61" style="background-image: url(&quot;project://database/Assets/UI/icons2/flower6.png?fileID=21300000&amp;guid=6edb4b5a6e782fb41b4071327f30df1d&amp;type=3#flower6&quot;);"/>
+        <ui:VisualElement style="flex-grow: 1; position: absolute; height: 73px; width: 581px; top: 77px; left: 30px; background-color: rgba(78, 81, 153, 0.35); border-top-left-radius: 15px; border-top-right-radius: 15px; border-bottom-right-radius: 15px; border-bottom-left-radius: 15px;">
+            <ui:Button text="" style="position: absolute; width: 37px; top: 20px; left: 13px; background-color: rgba(255, 255, 255, 0.78); height: 31px; border-top-width: 0; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; border-top-left-radius: 7px; border-top-right-radius: 7px; border-bottom-right-radius: 7px; border-bottom-left-radius: 7px;"/>
         </ui:VisualElement>
+        <ui:Button text="" style="height: 84px; width: 84px; border-top-width: 0; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; background-image: url(&quot;project://database/Assets/Scripts/MacroSystem/Icons/curved-arrow-right.png?fileID=21300000&amp;guid=68540a7089b819a468235cb8b707beb7&amp;type=3#curved-arrow-right&quot;); -unity-background-scale-mode: scale-to-fit; background-color: rgb(253, 152, 176); border-top-left-radius: 80px; border-top-right-radius: 80px; border-bottom-right-radius: 80px; border-bottom-left-radius: 80px; background-size: 70% 70%; position: absolute; top: 256px; left: 514px;"/>
+        <ui:VisualElement style="flex-grow: 1; position: absolute; height: 73px; width: 581px; top: 170px; left: 30px; background-color: rgba(78, 81, 153, 0.35); border-top-left-radius: 15px; border-top-right-radius: 15px; border-bottom-right-radius: 15px; border-bottom-left-radius: 15px;">
+            <ui:Button text="" style="position: absolute; width: 37px; top: 20px; left: 13px; background-color: rgba(255, 255, 255, 0.78); height: 31px; border-top-width: 0; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; border-top-left-radius: 7px; border-top-right-radius: 7px; border-bottom-right-radius: 7px; border-bottom-left-radius: 7px;"/>
+        </ui:VisualElement>
+        <ui:VisualElement style="flex-grow: 1; position: absolute; height: 184px; width: 12px; top: 80px; left: 623px; background-color: rgba(78, 81, 153, 0.22); border-top-left-radius: 4px; border-top-right-radius: 4px; border-bottom-right-radius: 4px; border-bottom-left-radius: 4px;"/>
+        <ui:VisualElement style="flex-grow: 1; position: absolute; height: 88px; width: 12px; top: 80px; left: 623px; background-color: rgba(246, 156, 175, 0.72); border-top-left-radius: 4px; border-top-right-radius: 4px; border-bottom-right-radius: 4px; border-bottom-left-radius: 4px;"/>
+    </ui:VisualElement>
+    <ui:VisualElement name="VisualElement" class="dashboard-element-3 opening_animation" style="background-image: url(&quot;project://database/Assets/UI/icons2/flower3.png?fileID=2800000&amp;guid=44048395a9f595c42959c0225b58c035&amp;type=3#flower3&quot;); top: 905px; left: 303px;"/>
+    <ui:VisualElement name="sizer" class="reminder-style-56 opening_animation" style="top: 316px; left: 826px;"/>
+    <ui:VisualElement name="sizer" class="hover-scaler reminder-style-57 opening_animation" style="top: 191px; left: 838px; height: 174px;">
+        <ui:VisualElement class="dashboard-element-58"/>
+        <ui:VisualElement class="dashboard-element-59"/>
+        <ui:Label text="Display Size" class="dashboard-element-60"/>
+        <ui:VisualElement class="dashboard-element-61" style="background-image: url(&quot;project://database/Assets/UI/icons2/flower5.png?fileID=21300000&amp;guid=1560c2c15a040424cb3a3319bd0c3677&amp;type=3#flower5&quot;); background-repeat: no-repeat no-repeat; scale: -1 1; translate: 21px -38px;"/>
+        <ui:Button text="150%" name="150" class="resolution-btn" style="height: 63px; width: 132px; position: absolute; color: rgb(255, 255, 255); font-size: 29px; background-color: rgba(246, 156, 175, 0.67); border-top-width: 0; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; border-top-left-radius: 29px; border-top-right-radius: 29px; border-bottom-right-radius: 29px; border-bottom-left-radius: 29px; top: 78px; left: 341px; -unity-font-style: bold;"/>
+        <ui:Button text="200%" name="200" class="resolution-btn" style="height: 63px; width: 132px; position: absolute; color: rgb(255, 255, 255); font-size: 29px; background-color: rgba(246, 156, 175, 0.67); border-top-width: 0; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; border-top-left-radius: 29px; border-top-right-radius: 29px; border-bottom-right-radius: 29px; border-bottom-left-radius: 29px; top: 80px; left: 501px; -unity-font-style: bold;"/>
+        <ui:Button text="100%" name="100" class="resolution-btn" style="height: 63px; width: 132px; position: absolute; color: rgb(255, 255, 255); font-size: 29px; background-color: rgba(246, 156, 175, 0.67); border-top-width: 0; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; border-top-left-radius: 29px; border-top-right-radius: 29px; border-bottom-right-radius: 29px; border-bottom-left-radius: 29px; top: 78px; left: 16px; -unity-font-style: bold;"/>
+        <ui:Button text="125%" name="125" class="resolution-btn" style="height: 63px; width: 132px; position: absolute; color: rgb(255, 255, 255); font-size: 29px; background-color: rgba(246, 156, 175, 0.67); border-top-width: 0; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; border-top-left-radius: 29px; border-top-right-radius: 29px; border-bottom-right-radius: 29px; border-bottom-left-radius: 29px; top: 81px; left: 175px; -unity-font-style: bold;"/>
     </ui:VisualElement>
 </ui:UXML>

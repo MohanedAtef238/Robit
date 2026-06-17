@@ -7,121 +7,88 @@ public class UIBubbleEntry : MonoBehaviour
 {
     [SerializeField] private UIDocument uiDocument;
     [SerializeField] private float staggerDelay = 0.05f;
+    [SerializeField] private float animationDurationSeconds = 0.35f;
 
-    private bool _hasAnimated = false;
-    private bool _isRegistered = false;
+    private List<VisualElement> _bubbleElements = new List<VisualElement>();
+    private Coroutine _activeAnimationCoroutine;
 
-    void OnEnable()
+    // No OnEnable, No Start, No Update. Purely controlled by HomePageController.
+
+    public void ResetAnimation()
     {
-        if (uiDocument == null) uiDocument = GetComponent<UIDocument>();
-        TryRegisterGeometryCallback();
-    }
+        StopAllCoroutines();
+        _activeAnimationCoroutine = null;
 
-    void Start()
-    {
-        TryRegisterGeometryCallback();
-    }
+        FetchBubbleElements();
 
-    void OnDisable()
-    {
-        TryUnregisterGeometryCallback();
-    }
-
-    private void TryRegisterGeometryCallback()
-    {
-        if (_isRegistered || uiDocument == null) return;
-
-        var root = uiDocument.rootVisualElement;
-        if (root != null)
+        foreach (var el in _bubbleElements)
         {
-            root.RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
-            _isRegistered = true;
-        }
-    }
+            if (el == null) continue;
 
-    private void TryUnregisterGeometryCallback()
-    {
-        if (!_isRegistered || uiDocument == null) return;
-
-        var root = uiDocument.rootVisualElement;
-        if (root != null)
-        {
-            root.UnregisterCallback<GeometryChangedEvent>(OnGeometryChanged);
-        }
-        _isRegistered = false;
-    }
-
-    private void OnGeometryChanged(GeometryChangedEvent evt)
-    {
-        TryUnregisterGeometryCallback();
-
-        if (!_hasAnimated)
-        {
-            StartCoroutine(AnimateElements());
+            // Wipe from display immediately
+            el.style.display = DisplayStyle.None;
+            el.style.opacity = 0f;
+            el.style.scale = new Scale(new Vector3(0.01f, 0.01f, 1f));
         }
     }
 
     public void ReplayAnimation()
     {
-        Debug.Log($"[UIBubbleEntry] ReplayAnimation called. GameObject activeSelf: {gameObject.activeSelf}, enabled: {enabled}");
         StopAllCoroutines();
-        
-        // Instead of guessing frame counts, register for a geometry change event 
-        // to fire exactly when UI Toolkit has resolved the display:Flex layout.
-        TryRegisterGeometryCallback();
+
+        ResetAnimation();
+        _activeAnimationCoroutine = StartCoroutine(AnimateMenuState(true));
     }
 
-    public void ResetAnimation()
+    private void FetchBubbleElements()
     {
-        Debug.Log("[UIBubbleEntry] ResetAnimation called.");
-        StopAllCoroutines();
-        _hasAnimated = false;
-        
+        _bubbleElements.Clear();
+        if (uiDocument == null) uiDocument = GetComponent<UIDocument>();
+
         if (uiDocument != null && uiDocument.rootVisualElement != null)
         {
-            var elements = uiDocument.rootVisualElement.Query(className: "bubble-element").ToList();
-            Debug.Log($"[UIBubbleEntry] Resetting {elements.Count} elements (removing bubble-active class).");
-            foreach (var el in elements)
-            {
-                el.RemoveFromClassList("bubble-active");
-            }
+            _bubbleElements = uiDocument.rootVisualElement.Query(className: "bubble-element").ToList();
         }
     }
 
-    private IEnumerator AnimateElements()
+    private IEnumerator AnimateMenuState(bool open)
     {
-        _hasAnimated = true;
+        FetchBubbleElements();
 
-        if (uiDocument == null || uiDocument.rootVisualElement == null)
+        foreach (var el in _bubbleElements)
         {
-            Debug.LogWarning("[UIBubbleEntry] AnimateElements aborted because uiDocument or rootVisualElement is null.");
-            yield break;
-        }
-
-        var root = uiDocument.rootVisualElement;
-        var elements = root.Query(className: "bubble-element").ToList();
-
-        Debug.Log($"[UIBubbleEntry] AnimateElements: Ensuring all {elements.Count} elements start at baseline...");
-        foreach (var el in elements)
-        {
-            el.RemoveFromClassList("bubble-active");
-            el.RemoveFromClassList("no-transition");
-            
-            // Debug the raw resolved style values
-            Debug.Log($"[UIBubbleEntry] Element {el.name} baseline - opacity: {el.resolvedStyle.opacity}, display: {el.resolvedStyle.display}");
-        }
-
-        // Wait a tiny fraction of a second to ensure the UI Toolkit style matching has settled
-        // after the geometry event fired.
-        yield return new WaitForSecondsRealtime(0.02f);
-
-        Debug.Log($"[UIBubbleEntry] AnimateElements: Stagger animating {elements.Count} elements...");
-        foreach (var el in elements)
-        {
-            Debug.Log($"[UIBubbleEntry] Animating element: {el.name} ({el.viewDataKey}) -> Adding bubble-active");
-            el.AddToClassList("bubble-active");
+            if (el == null) continue;
+            StartCoroutine(AnimateSingleElement(el, open));
             yield return new WaitForSecondsRealtime(staggerDelay);
         }
-        Debug.Log("[UIBubbleEntry] AnimateElements: Completed animation stagger loop.");
+    }
+
+    private IEnumerator AnimateSingleElement(VisualElement el, bool open)
+    {
+        float startOpacity = open ? 0f : 1f;
+        float endOpacity = open ? 1f : 0f;
+        float startScale = open ? 0.01f : 1f;
+        float endScale = open ? 1f : 0.01f;
+
+        el.style.display = DisplayStyle.Flex;
+        el.style.opacity = startOpacity;
+        el.style.scale = new Scale(new Vector3(startScale, startScale, 1f));
+
+        float elapsedTime = 0f;
+        while (elapsedTime < animationDurationSeconds)
+        {
+            elapsedTime += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsedTime / animationDurationSeconds);
+            float evaluatedT = 1f + 2.70158f * Mathf.Pow(t - 1f, 3f) + 1.70158f * Mathf.Pow(t - 1f, 2f); // EaseOutBack Math
+
+            el.style.opacity = Mathf.Lerp(startOpacity, endOpacity, t);
+            float scaleVal = Mathf.Lerp(startScale, endScale, evaluatedT);
+            el.style.scale = new Scale(new Vector3(scaleVal, scaleVal, 1f));
+
+            yield return null;
+        }
+
+        el.style.opacity = endOpacity;
+        el.style.scale = new Scale(new Vector3(endScale, endScale, 1f));
     }
 }

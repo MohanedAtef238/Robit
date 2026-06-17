@@ -1,0 +1,10 @@
+/* Add this to your Home Page USS file */
+.home-layout--visible {
+    visibility: visible;
+    opacity: 1;
+}
+
+.home-layout--hidden {
+    visibility: hidden;
+    opacity: 0;
+}
