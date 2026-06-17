@@ -1,19 +1,19 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <Style src="project://database/Assets/UI/GazeCalibration.uss?fileID=7433441132597879392&amp;guid=6d0d6f2455bcbea45a850ebd9ffc6510&amp;type=3#GazeCalibration"/>
-    <ui:VisualElement name="calibration-root" class="calibration-root">
-        <ui:VisualElement name="calibration-dot" class="calibration-dot" style="background-image: url(&quot;project://database/Assets/UI/icons2/flower6.png?fileID=2800000&amp;guid=6edb4b5a6e782fb41b4071327f30df1d&amp;type=3#flower6&quot;);">
+    <ui:VisualElement name="calibration-root" class="calibration-root" style="background-image: url(&quot;project://database/Assets/My%20Color%20Theme%20(1).jpg?fileID=2800000&amp;guid=a77a74e41c678524eb2b8f4f37260807&amp;type=3#My Color Theme (1)&quot;); background-color: rgba(215, 240, 220, 0);">
+        <ui:VisualElement name="calibration-dot" class="calibration-dot" style="background-image: url(&quot;project://database/Assets/UI/icons2/flower6.png?fileID=2800000&amp;guid=6edb4b5a6e782fb41b4071327f30df1d&amp;type=3#flower6&quot;); background-color: rgba(220, 30, 30, 0); -unity-background-scale-mode: scale-to-fit;">
             <ui:VisualElement name="progress-track" class="progress-track">
                 <ui:VisualElement name="progress-fill" class="progress-fill"/>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="prompt-panel" class="prompt-panel" style="-unity-font-definition: url(&quot;project://database/Assets/Fonts/Gouttes.ttf?fileID=12800000&amp;guid=26657f46fc3c6a84b8ce76e9e82ebf64&amp;type=3#Gouttes&quot;);">
-            <ui:VisualElement name="prompt-card" class="prompt-card">
-                <ui:Label name="point-label" text="" class="point-label"/>
-                <ui:Label name="status-label" text="Initializing…" class="status-label"/>
+        <ui:VisualElement name="prompt-panel" class="prompt-panel" style="-unity-font-definition: url(&quot;project://database/Assets/Fonts/Gouttes.ttf?fileID=12800000&amp;guid=26657f46fc3c6a84b8ce76e9e82ebf64&amp;type=3#Gouttes&quot;); background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgb(255, 255, 255);">
+            <ui:VisualElement name="prompt-card" class="prompt-card" style="background-color: rgba(255, 255, 255, 0.33); border-top-width: 0; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; height: 105px; width: 360px; position: absolute; top: 108px; left: 15px; scale: 1 1; translate: 1042px 101px;">
+                <ui:Label name="point-label" text="" class="point-label" style="color: rgba(57, 109, 94, 240); -unity-font-definition: url(&quot;project://database/Assets/UI/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=2230732570650464555&amp;guid=9a78a73fc1aee3e46b312389b1b26a0d&amp;type=3#NotInter-Regular&quot;);"/>
+                <ui:Label name="status-label" text="Initializing…" class="status-label" style="color: rgba(255, 255, 255, 230); -unity-font-definition: url(&quot;project://database/Assets/Fonts/Momentz.otf?fileID=12800000&amp;guid=7ab166e8de88a5c4d8862fbfbdcd5ab2&amp;type=3#Momentz&quot;); font-size: 36px; height: 113px; width: 666px; -unity-text-align: middle-center; translate: 0 -11px;"/>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="fitting-overlay" class="fitting-overlay">
-            <ui:Label name="fitting-label" text="Fitting gaze model…" class="fitting-label"/>
+        <ui:VisualElement name="fitting-overlay" class="fitting-overlay" style="background-color: rgba(255, 255, 255, 230); background-image: url(&quot;project://database/Assets/My%20Color%20Theme%20(1).jpg?fileID=2800000&amp;guid=a77a74e41c678524eb2b8f4f37260807&amp;type=3#My Color Theme (1)&quot;); visibility: hidden; display: none;">
+            <ui:Label name="fitting-label" text="Fitting gaze model…" class="fitting-label" style="color: rgba(255, 255, 255, 240); -unity-font-definition: url(&quot;project://database/Assets/Fonts/Momentz.otf?fileID=12800000&amp;guid=7ab166e8de88a5c4d8862fbfbdcd5ab2&amp;type=3#Momentz&quot;);"/>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
