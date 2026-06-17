@@ -13,7 +13,7 @@ public class UiAutomationRunner : BaseProcessRunner<UiAutomationRunner>
 
     // ── Inspector fields ──────────────────────────────────────────────────────
     [Header("UI Automation Setup")]
-    [SerializeField] private string relativeWorkingDirectory = @"D:/Projects/Robit Ui Automation System/Robit-UI-Automation";
+    [SerializeField] private string relativeWorkingDirectory = @"Repos/UiAutomation/Robit-UI-Automation";
     [SerializeField] private string executablePath           = "dotnet";
     [SerializeField] private string arguments                = "run";
     [SerializeField] private bool   autoStartOnAwake         = true;
