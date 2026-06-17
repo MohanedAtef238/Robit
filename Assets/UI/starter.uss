@@ -1,26 +1,19 @@
-/* The Base Class: Applied to elements in UI Builder */
 .bubble-element {
-    /* Explicitly define the starting point */
     opacity: 0;
-    scale: 0 0;
-    
-    /* Transition Settings */
+    scale: 0.01 0.01;
     transition-property: scale, opacity;
     transition-duration: 0.5s;
     transition-timing-function: ease-out-back;
-    
-    /* Ensure it scales from the center */
     transform-origin: center;
 }
 
-/* The Active Class: Added by C# */
 .bubble-active {
     opacity: 1;
     scale: 1 1;
 }
 
-/* Helper to instantly snap elements without transitions */
 .no-transition {
-    transition-duration: 0s, 0s;
-    transition-delay: 0s, 0s;
+    transition-property: none;
 }
+
+

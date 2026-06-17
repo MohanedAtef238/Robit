@@ -449,47 +449,75 @@ public class StartingPageController : MonoBehaviour
 /// <summary>
 /// Handles wide, oriented flight paths for the existing 3D Scene Firefly locked completely to Z-axis rotation.
 /// </summary>
+/// <summary>
+/// Handles smooth circular flight for the 3D Scene Firefly, locked to Z-axis rotation.
+/// Drop-in replacement for the random-waypoint version — all public fields are identical
+/// so StartingPageController requires zero changes.
+/// </summary>
 public class SmoothFireflyMover : MonoBehaviour
 {
     [HideInInspector] public float moveSpeed;
     [HideInInspector] public float rotationSpeed;
-    [HideInInspector] public Vector2 movementBounds;
-    [HideInInspector] public float waypointReachedDistance;
+    [HideInInspector] public Vector2 movementBounds;       // x is reused as circle radius
+    [HideInInspector] public float waypointReachedDistance; // unused but kept for compatibility
 
-    private Vector3 targetPosition;
-    private float constantZDepth;
+    [Tooltip("Radius of the circle. If 0, defaults to half of movementBounds.x.")]
+    public float circleRadius = 0f;
+
+    [Tooltip("Center of the circle in world space. Defaults to (0, 0, firefly's Z) if left at zero.")]
+    public Vector2 circleCenter = Vector2.zero;
+
+    private float _angle = 0f;          // current angle in radians
+    private float _constantZDepth;
+    private float _angularSpeed;        // radians per second, derived from moveSpeed & radius
 
     void Start()
     {
-        constantZDepth = transform.position.z;
-        PickRandomTarget();
+        _constantZDepth = transform.position.z;
+
+        // Default radius to half movementBounds.x if not set explicitly
+        if (circleRadius <= 0f)
+            circleRadius = movementBounds.x * 0.5f;
+
+        // Start the firefly at a natural point on the circle
+        _angle = UnityEngine.Random.Range(0f, UnityEngine.Mathf.PI * 2f);
+
+        // angular speed (rad/s) = linear speed / radius
+        UpdateAngularSpeed();
     }
 
     void Update()
     {
-        transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
+        UpdateAngularSpeed(); // stays responsive if moveSpeed changes at runtime
 
-        Vector3 direction = targetPosition - transform.position;
+        // Advance angle
+        _angle += _angularSpeed * UnityEngine.Time.deltaTime;
+
+        // Calculate next position on circle
+        float x = circleCenter.x + UnityEngine.Mathf.Cos(_angle) * circleRadius;
+        float y = circleCenter.y + UnityEngine.Mathf.Sin(_angle) * circleRadius;
+        UnityEngine.Vector3 targetPos = new UnityEngine.Vector3(x, y, _constantZDepth);
+
+        // Move toward the circle point (keeps the existing move-speed feel)
+        transform.position = UnityEngine.Vector3.MoveTowards(
+            transform.position, targetPos, moveSpeed * UnityEngine.Time.deltaTime);
+
+        // Rotate to face the direction of travel (tangent to the circle)
+        UnityEngine.Vector3 direction = targetPos - transform.position;
         direction.z = 0f;
 
         if (direction.sqrMagnitude > 0.001f)
         {
-            float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-            Quaternion targetRotation = Quaternion.Euler(0f, 0f, angle - 90f);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
-        }
-
-        if (Vector3.Distance(transform.position, targetPosition) < waypointReachedDistance)
-        {
-            PickRandomTarget();
+            float rotAngle = UnityEngine.Mathf.Atan2(direction.y, direction.x) * UnityEngine.Mathf.Rad2Deg;
+            UnityEngine.Quaternion targetRotation = UnityEngine.Quaternion.Euler(0f, 0f, rotAngle - 90f);
+            transform.rotation = UnityEngine.Quaternion.Slerp(
+                transform.rotation, targetRotation, rotationSpeed * UnityEngine.Time.deltaTime);
         }
     }
 
-    private void PickRandomTarget()
+    private void UpdateAngularSpeed()
     {
-        float randomX = Random.Range(-movementBounds.x, movementBounds.x);
-        float randomY = Random.Range(-movementBounds.y, movementBounds.y);
-
-        targetPosition = new Vector3(randomX, randomY, constantZDepth);
+        if (circleRadius > 0.001f)
+            _angularSpeed = moveSpeed / circleRadius;
     }
 }
