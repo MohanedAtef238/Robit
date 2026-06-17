@@ -3359,6 +3359,7 @@ GameObject:
   - component: {fileID: 1748671736}
   - component: {fileID: 1748671737}
   - component: {fileID: 1748671738}
+  - component: {fileID: 1748671739}
   m_Layer: 0
   m_Name: HomePageUI
   m_TagString: Untagged
@@ -3555,6 +3556,26 @@ MonoBehaviour:
   _document: {fileID: 1748671728}
   _buttonClass: resolution-btn
   _baseResolution: {x: 1920, y: 1080}
+--- !u!114 &1748671739
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1748671724}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9fc7a220cebed142acceda6d073f5c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Robit::HomeBackgroundBlurController
+  targetCamera: {fileID: 1073279006}
+  autoFindCamera: 1
+  transitionDuration: 0.22
+  activeWeight: 1
+  gaussianStart: 0.2
+  gaussianEnd: 2.5
+  gaussianRadius: 1
+  highQualitySampling: 0
 --- !u!134 &1842282712
 PhysicsMaterial:
   m_ObjectHideFlags: 0
