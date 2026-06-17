@@ -43,17 +43,20 @@ public class SlidersWidgetController : MonoBehaviour
         // Initialize Sound
         float sysVolume = Win32AudioInterop.GetVolume();
         float volPercent = sysVolume * 100f;
-        soundSlider.value = volPercent;
+        if (soundSlider != null) soundSlider.value = volPercent;
         UpdateValueLabel(soundValueLabel, volPercent);
         UpdateSoundIcon(volPercent); // Set initial speaker icon
 
         // Initialize Brightness
         int sysBrightness = Win32BrightnessInterop.GetBrightness();
-        if (sysBrightness < 0)
+        if (sysBrightness < 0 || brightnessSlider == null)
         {
             _brightnessSupported = false;
-            brightnessSlider.value = 50;
-            brightnessSlider.SetEnabled(false);
+            if (brightnessSlider != null)
+            {
+                brightnessSlider.value = 50;
+                brightnessSlider.SetEnabled(false);
+            }
             if (brightnessValueLabel != null) brightnessValueLabel.text = "N/A";
         }
         else
@@ -66,20 +69,26 @@ public class SlidersWidgetController : MonoBehaviour
         SetupButtons(root);
 
         // Value Changed Callbacks
-        soundSlider.RegisterValueChangedCallback(evt =>
+        if (soundSlider != null)
         {
-            Win32AudioInterop.SetVolume(evt.newValue / 100f);
-            UpdateValueLabel(soundValueLabel, evt.newValue);
-            UpdateSoundIcon(evt.newValue); // Update speaker icon on slide
-        });
+            soundSlider.RegisterValueChangedCallback(evt =>
+            {
+                Win32AudioInterop.SetVolume(evt.newValue / 100f);
+                UpdateValueLabel(soundValueLabel, evt.newValue);
+                UpdateSoundIcon(evt.newValue); // Update speaker icon on slide
+            });
+        }
 
-        brightnessSlider.RegisterValueChangedCallback(evt =>
+        if (brightnessSlider != null)
         {
-            if (!_brightnessSupported) return;
-            Win32BrightnessInterop.SetBrightness(Mathf.RoundToInt(evt.newValue));
-            UpdateValueLabel(brightnessValueLabel, evt.newValue);
-            UpdateSunIcon(evt.newValue);
-        });
+            brightnessSlider.RegisterValueChangedCallback(evt =>
+            {
+                if (!_brightnessSupported) return;
+                Win32BrightnessInterop.SetBrightness(Mathf.RoundToInt(evt.newValue));
+                UpdateValueLabel(brightnessValueLabel, evt.newValue);
+                UpdateSunIcon(evt.newValue);
+            });
+        }
 
         _initialized = true;
     }
@@ -118,14 +127,14 @@ public class SlidersWidgetController : MonoBehaviour
         brightnessDecBtn = root.Q<Button>("brightnessDecBtn");
         brightnessIncBtn = root.Q<Button>("brightnessIncBtn");
 
-        soundDecBtn?.RegisterCallback<ClickEvent>(_ => soundSlider.value -= 5f);
-        soundIncBtn?.RegisterCallback<ClickEvent>(_ => soundSlider.value += 5f);
+        soundDecBtn?.RegisterCallback<ClickEvent>(_ => { if (soundSlider != null) soundSlider.value -= 5f; });
+        soundIncBtn?.RegisterCallback<ClickEvent>(_ => { if (soundSlider != null) soundSlider.value += 5f; });
 
         brightnessDecBtn?.RegisterCallback<ClickEvent>(_ => {
-            if (_brightnessSupported) brightnessSlider.value -= 5f;
+            if (_brightnessSupported && brightnessSlider != null) brightnessSlider.value -= 5f;
         });
         brightnessIncBtn?.RegisterCallback<ClickEvent>(_ => {
-            if (_brightnessSupported) brightnessSlider.value += 5f;
+            if (_brightnessSupported && brightnessSlider != null) brightnessSlider.value += 5f;
         });
     }
 
@@ -140,11 +149,11 @@ public class SlidersWidgetController : MonoBehaviour
 
         float vol = Win32AudioInterop.GetVolume();
         float volPercent = vol * 100f;
-        soundSlider.SetValueWithoutNotify(volPercent);
+        if (soundSlider != null) soundSlider.SetValueWithoutNotify(volPercent);
         UpdateValueLabel(soundValueLabel, volPercent);
         UpdateSoundIcon(volPercent); // Sync icon on refresh
 
-        if (_brightnessSupported)
+        if (_brightnessSupported && brightnessSlider != null)
         {
             int br = Win32BrightnessInterop.GetBrightness();
             if (br >= 0)

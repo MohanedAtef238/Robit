@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -58,6 +58,11 @@ public class MenuToggleController : MonoBehaviour
     private bool _isOpen = false;
     private Coroutine _activeAnimation;
 
+    // If a HomePageController lives on the same GameObject, all open/close calls
+    // are delegated through it (and therefore through ViewCoordinator) so that
+    // the mascot click path and the macro click path are identical.
+    private HomePageController _homePageDelegate;
+
     // A unified stagger slot — either a UI element or a 3D object
     private abstract class StaggerSlot { }
     private class UISlot : StaggerSlot { public VisualElement element; }
@@ -68,6 +73,7 @@ public class MenuToggleController : MonoBehaviour
     private void Awake()
     {
         _document = GetComponent<UIDocument>();
+        _homePageDelegate = GetComponent<HomePageController>();
 
         // Cache original scales of all 3D objects
         if (_sceneObjects != null)
@@ -96,6 +102,14 @@ public class MenuToggleController : MonoBehaviour
 
         RefreshUIElements();
 
+        // If HomePageController is handling this document, do NOT touch display or scales here.
+        // HomePageController.Start() manages the panel's initial hidden state.
+        if (_homePageDelegate != null)
+        {
+            _isOpen = false;
+            yield break;
+        }
+
         // Hide UI
         _root.style.display = DisplayStyle.None;
         foreach (var el in _uiElements)
@@ -123,6 +137,16 @@ public class MenuToggleController : MonoBehaviour
 
     public void Open()
     {
+        // If a HomePageController is co-located, delegate to it so the mascot
+        // path and the macro path both go through ViewCoordinator.
+        if (_homePageDelegate != null)
+        {
+            if (!_homePageDelegate.IsOpen)
+                ViewCoordinator.Instance?.ToggleHome();
+            _isOpen = _homePageDelegate.IsOpen;
+            return;
+        }
+
         if (_root == null || _isOpen) return;
         _isOpen = true;
 
@@ -134,6 +158,15 @@ public class MenuToggleController : MonoBehaviour
 
     public void Close()
     {
+        // If a HomePageController is co-located, delegate to it.
+        if (_homePageDelegate != null)
+        {
+            if (_homePageDelegate.IsOpen)
+                ViewCoordinator.Instance?.ToggleHome();
+            _isOpen = _homePageDelegate.IsOpen;
+            return;
+        }
+
         if (_root == null || !_isOpen) return;
         _isOpen = false;
 

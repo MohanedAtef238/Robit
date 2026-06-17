@@ -164,11 +164,22 @@ public class AppLauncherUIToolkit : MonoBehaviour
 
         if (_ownedWindowState)
         {
-            WindowManager.SetAcrylicBlur(false);
-            _transparency?.ResumePolling();
+            // Only restore window state if nothing else (e.g. Home Page) has since
+            // taken over. If the Home Page opened while our close animation was running,
+            // let it manage acrylic/transparency — don't stomp it.
+            var homePage = FindFirstObjectByType<HomePageController>();
+            bool homePageNowOpen = homePage != null && homePage.IsOpen;
+
+            if (!homePageNowOpen)
+            {
+                WindowManager.SetAcrylicBlur(false);
+                _transparency?.ResumePolling();
+            }
+
             _ownedWindowState = false;
         }
     }
+
 
     // ── Binding ───────────────────────────────────────────────────────────────
 

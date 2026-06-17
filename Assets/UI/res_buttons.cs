@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 /// <summary>
@@ -102,7 +103,17 @@ public class ResolutionButtonController : MonoBehaviour
         int width = Mathf.RoundToInt(_baseResolution.x * percent / 100f);
         int height = Mathf.RoundToInt(_baseResolution.y * percent / 100f);
 
+        #if !UNITY_EDITOR
+        IntPtr hWnd = WindowManager.GetWindowHandle();
+        if (hWnd != IntPtr.Zero)
+        {
+            // SWP_NOZORDER | SWP_NOMOVE keeps the window exactly where it is in depth/position, only resizing
+            Win32Interop.SetWindowPos(hWnd, IntPtr.Zero, 0, 0, width, height, 
+                Win32Interop.SWP_NOZORDER | Win32Interop.SWP_NOMOVE | Win32Interop.SWP_SHOWWINDOW);
+        }
+        #else
         Screen.SetResolution(width, height, FullScreenMode.Windowed);
+        #endif
 
         Debug.Log($"[ResolutionButtonController] Resolution set to {width}x{height} ({percent}%)");
     }

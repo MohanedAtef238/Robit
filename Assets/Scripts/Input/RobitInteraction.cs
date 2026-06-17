@@ -6,7 +6,6 @@ using UnityEngine.EventSystems;
 public class RobitInteraction : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
     [SerializeField] private MacroButtonController macroController;
-    [SerializeField] private HomePageController homePageController;
 
     [Header("Menu Anchor (world-space offset from mascot pivot)")]
     [Tooltip("In world units. For a 1-unit-tall mascot, Y ≈ 0.8 puts the arc above the head.")]
@@ -22,8 +21,6 @@ public class RobitInteraction : MonoBehaviour, IPointerClickHandler, IPointerEnt
     {
         if (macroController == null)
             macroController = Object.FindFirstObjectByType<MacroButtonController>();
-        if (homePageController == null)
-            homePageController = Object.FindFirstObjectByType<HomePageController>();
 
         // IPointerClickHandler requires a PhysicsRaycaster on the camera to detect 3D collider
         // clicks through the EventSystem. Add one programmatically if absent.
@@ -43,10 +40,12 @@ public class RobitInteraction : MonoBehaviour, IPointerClickHandler, IPointerEnt
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        // When the HomePage is open, clicking robit toggles the dialogue bubble
-        if (homePageController != null && homePageController.IsOpen)
+        // When the HomePage is open, clicking Robit toggles the dialogue bubble.
+        // Route through ViewCoordinator to avoid a direct coupling to HomePageController.
+        var homePage = Object.FindFirstObjectByType<HomePageController>();
+        if (homePage != null && homePage.IsOpen)
         {
-            homePageController.ToggleDialogue();
+            homePage.ToggleDialogue();
             return;
         }
 
@@ -75,4 +74,3 @@ public class RobitInteraction : MonoBehaviour, IPointerClickHandler, IPointerEnt
         GlobalCursorManager.Instance?.SetDefaultCursor();
     }
 }
-

@@ -28,6 +28,10 @@ public class Transparency : MonoBehaviour
     #if !UNITY_EDITOR
     private float lastToggleTime = 0f;
     #endif
+
+    // Counted pause: if multiple systems pause us (e.g. AppLauncher then HomePage),
+    // we only resume transparency when all of them have released their hold.
+    private int _pauseDepth = 0;
     
     private Camera mainCamera;
 
@@ -140,12 +144,22 @@ public class Transparency : MonoBehaviour
 
     public void PausePolling()
     {
+        _pauseDepth++;
         this.enabled = false;
         SetClickThrough(false);
     }
 
     public void ResumePolling()
     {
+        // Decrement the pause counter. Only fully resume when all callers have released.
+        if (_pauseDepth > 0) _pauseDepth--;
+        if (_pauseDepth > 0) return;
+
+        // Don't restore transparent mode if acrylic/glass is still active —
+        // that means another UI (e.g. Home Page) is still using the window and
+        // MakeTransparent would strip its DWM backdrop.
+        if (WindowManager.IsAcrylicActive) return;
+
         this.enabled = true;
         if (mainCamera != null)
         {
@@ -304,6 +318,8 @@ public class Transparency : MonoBehaviour
         foreach (var doc in _cachedUIDocuments)
         {
             if (doc == null || doc.rootVisualElement == null) continue;
+            // Skip panels whose root is hidden — they should not capture pointer hits
+            if (doc.rootVisualElement.resolvedStyle.display == DisplayStyle.None) continue;
             var panel = doc.rootVisualElement.panel;
             if (panel == null) continue;
 
