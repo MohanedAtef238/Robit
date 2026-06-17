@@ -978,6 +978,18 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 40a48450f6d0c9644b86c17a1ec6d3be, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1482759510}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 40a48450f6d0c9644b86c17a1ec6d3be, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1482759512}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 40a48450f6d0c9644b86c17a1ec6d3be, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1482759511}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 40a48450f6d0c9644b86c17a1ec6d3be, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1482759513}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 40a48450f6d0c9644b86c17a1ec6d3be, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1482759514}
   m_SourcePrefab: {fileID: 100100000, guid: 40a48450f6d0c9644b86c17a1ec6d3be, type: 3}
 --- !u!1 &489148194
 GameObject:
@@ -2863,6 +2875,71 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &1482759511
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1482759506}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3e111237940690f40a2a6411856d8787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Robit::MacroButtonController
+  outDurationMs: 180
+  staggerMs: 60
+--- !u!114 &1482759512
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1482759506}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: 01473327501a4184abb5618cc25cdb47, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: 03f8d93355e733b4abf24775cf3e67e8, type: 3}
+  m_SortingOrder: 0
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
+--- !u!114 &1482759513
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1482759506}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02255be335d1bc0459369f10638912a6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Robit::WorldObjectUiTrigger
+  uiDocument: {fileID: 1898056944}
+  targetPanelName: macro-container
+--- !u!114 &1482759514
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1482759506}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24af654ac889abf4bb94fe1fb4d90411, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Robit::FlowerMacroController
+  macroController: {fileID: 1898056946}
+  uiOffset: {x: 0, y: 0}
 --- !u!1 &1498864464
 GameObject:
   m_ObjectHideFlags: 0
