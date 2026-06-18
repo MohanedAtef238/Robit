@@ -3531,11 +3531,11 @@ MonoBehaviour:
   _sceneObjects:
   - target: {fileID: 888666752}
     openScale: {x: 1, y: 1, z: 1}
-    staggerIndex: 1
+    staggerIndex: 8
     _originalScale: {x: 0, y: 0, z: 0}
   - target: {fileID: 270245549}
     openScale: {x: 1, y: 1, z: 1}
-    staggerIndex: 1
+    staggerIndex: 4
     _originalScale: {x: 0, y: 0, z: 0}
   _elementDuration: 0.01
   _staggerDelay: 0.01
@@ -4418,7 +4418,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: abbaf3d158b0795448e61a14fc894bcd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Robit::CharacterAnimatorController
-  _uiDocument: {fileID: 0}
+  _uiDocument: {fileID: 1748671728}
   _dialogueFieldName: inputDialogueField
   _introDelay: 0.1
   _meltToWaveDelay: 0.8
