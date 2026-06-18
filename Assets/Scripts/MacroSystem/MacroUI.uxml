@@ -3,22 +3,22 @@
     <ui:VisualElement name="macro-container" class="macro-container macro-state--hidden" style="translate: 72% -80%; bottom: 45px; right: 307px;">
         <ui:Label name="group-name-label" text="" class="group-name-label label-state--hidden"/>
         <ui:VisualElement name="button-grid" class="button-grid" style="scale: 1.8 1.8 3; translate: 0% 0%;">
-            <ui:Button name="BtnWheelPrev" class="macro-button slot-prev macro-state--hidden">
+            <ui:Button name="BtnWheelPrev" class="macro-button slot-prev macro-state--hidden" style="translate: 0% -4%; background-color: rgba(255, 255, 255, 0.52);">
                 <ui:VisualElement class="btn-icon icon-cycle-left"/>
             </ui:Button>
-            <MacroButton name="BtnSlot0" class="macro-button slot-0 macro-state--hidden">
+            <MacroButton name="BtnSlot0" class="macro-button slot-0 macro-state--hidden" style="translate: 0% 2%;">
                 <ui:VisualElement name="BtnSlot0Icon" class="btn-icon"/>
                 <ui:Label name="Tooltip0" text="Action" class="button-tooltip label-state--hidden"/>
             </MacroButton>
-            <MacroButton name="BtnSlot1" class="macro-button slot-1 macro-state--hidden">
+            <MacroButton name="BtnSlot1" class="macro-button slot-1 macro-state--hidden" style="translate: 0% 4%;">
                 <ui:VisualElement name="BtnSlot1Icon" class="btn-icon"/>
                 <ui:Label name="Tooltip1" text="Action" class="button-tooltip label-state--hidden"/>
             </MacroButton>
-            <MacroButton name="BtnSlot2" class="macro-button slot-2 macro-state--hidden">
+            <MacroButton name="BtnSlot2" class="macro-button slot-2 macro-state--hidden" style="translate: 0% 12%;">
                 <ui:VisualElement name="BtnSlot2Icon" class="btn-icon"/>
                 <ui:Label name="Tooltip2" text="Action" class="button-tooltip label-state--hidden"/>
             </MacroButton>
-            <ui:Button name="BtnWheelNext" class="macro-button slot-next macro-state--hidden">
+            <ui:Button name="BtnWheelNext" class="macro-button slot-next macro-state--hidden" style="translate: 0% 20%;">
                 <ui:VisualElement class="btn-icon icon-cycle-right"/>
             </ui:Button>
         </ui:VisualElement>
