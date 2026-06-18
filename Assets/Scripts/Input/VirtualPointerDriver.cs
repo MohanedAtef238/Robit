@@ -8,7 +8,7 @@ public class VirtualPointerDriver : MonoBehaviour
     public static VirtualPointerDriver Instance { get; private set; }
 
     [Header("Cursor Output")]
-    [SerializeField] private bool moveWindowsCursor = false;
+    [SerializeField] private bool moveWindowsCursor = true;
     [SerializeField] private bool mirrorCursorInsideUnity = false;
     [SerializeField] private float minPixelDelta = 1f;
 

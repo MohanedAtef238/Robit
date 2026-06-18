@@ -1,61 +1,96 @@
-# build_bridges.ps1
-
-# This script builds the python bridges for the Robit project.
-# It iterates through the subdirectories of the Repos folder,
-# installs dependencies from requirements.txt, and then (as a placeholder)
-# would run the build script for each bridge.
-
 $ErrorActionPreference = "Stop"
 
-$reposDir = "d:\Projects\Robit\Repos"
+$OutDir = $PSScriptRoot
+$ProjectRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..\..")
+$ReposDir = Join-Path $ProjectRoot "Repos"
+$OriginalLocation = Get-Location
 
-# Get all subdirectories in the Repos directory
-$bridgeDirs = Get-ChildItem -Path $reposDir -Directory
+$Targets = @(
+    @{
+        Name = "share_camera"
+        ProjectDir = Join-Path $ReposDir "GazeFollower"
+        Spec = "share_camera.spec"
+    },
+    @{
+        Name = "unity_gaze_bridge"
+        ProjectDir = Join-Path $ReposDir "GazeFollower"
+        Spec = "unity_gaze_bridge.spec"
+    },
+    @{
+        Name = "unity_gestures_bridge"
+        ProjectDir = Join-Path $ReposDir "face_gestures"
+        Spec = "unity_gestures_bridge.spec"
+    },
+    @{
+        Name = "unity_emg_bridge"
+        ProjectDir = Join-Path $ReposDir "EMG"
+        Spec = "unity_emg_bridge.spec"
+    }
+)
 
-foreach ($bridgeDir in $bridgeDirs) {
-    $projectPath = $bridgeDir.FullName
-    Write-Host "Processing bridge in: $projectPath"
+function Get-BridgePython {
+    param(
+        [Parameter(Mandatory = $true)][string]$ProjectDir,
+        [Parameter(Mandatory = $true)][string]$BridgeName
+    )
 
-    # Set location to the bridge directory
-    Push-Location -Path $projectPath
-
-    # Check for python files before proceeding
-    $pythonFiles = Get-ChildItem -Path . -Filter *.py -Recurse
-    if ($pythonFiles.Count -eq 0) {
-        Write-Host "No python files found, skipping folder: $projectPath"
-        Pop-Location
-        continue
+    $venvPython = Join-Path $ProjectDir ".venv\Scripts\python.exe"
+    if (Test-Path $venvPython) {
+        return $venvPython
     }
 
-    # Check for requirements.txt
-    if (-not (Test-Path "requirements.txt" -PathType Leaf)) {
-        Write-Host "'requirements.txt' not found. Generating it using pipreqs."
-
-        # Check if pipreqs is installed
-        $pipreqsCheck = pip list | findstr "pipreqs"
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "pipreqs not found, installing..."
-            pip install pipreqs
-        }
-
-        # Generate requirements.txt
-        # Using --force to overwrite any existing (even though we checked)
-        # We point it to the current directory '.'
-        pipreqs . --force
-        Write-Host "'requirements.txt' generated."
+    $pythonCommand = Get-Command python -ErrorAction SilentlyContinue
+    if ($null -eq $pythonCommand) {
+        throw "No Python found for $BridgeName. Create '$ProjectDir\.venv' or add python.exe to PATH."
     }
 
-    # Install dependencies
-    Write-Host "Installing dependencies from requirements.txt..."
-    pip install -r requirements.txt
-
-    # Placeholder for running the actual python build/run script
-    Write-Host "Dependencies installed. Ready to run the bridge."
-    # Example: python main.py
-    # (Your actual script to run may vary)
-
-    # Return to the original directory
-    Pop-Location
+    return $pythonCommand.Source
 }
 
-Write-Host "All bridges processed."
+try {
+    foreach ($target in $Targets) {
+        $name = $target.Name
+        $projectDir = $target.ProjectDir
+        $specPath = Join-Path $projectDir $target.Spec
+
+        if (-not (Test-Path $projectDir)) {
+            throw "Project directory not found for ${name}: $projectDir"
+        }
+
+        if (-not (Test-Path $specPath)) {
+            throw "PyInstaller spec not found for ${name}: $specPath"
+        }
+
+        $python = Get-BridgePython -ProjectDir $projectDir -BridgeName $name
+
+        Write-Host "Handling dependencies for $name..."
+        $requirementsPath = Join-Path $projectDir "requirements.txt"
+        if (-not (Test-Path $requirementsPath)) {
+            Write-Host "requirements.txt not found for $name. Generating with pipreqs..."
+            & $python -m pip install --quiet pipreqs
+            & $python -m pipreqs --encoding utf-8 --force $projectDir --savepath $requirementsPath
+            Write-Host "requirements.txt generated."
+        }
+
+        Write-Host "Installing dependencies for $name from requirements.txt..."
+        & $python -m pip install -r $requirementsPath
+
+        Write-Host "Building $name..." -ForegroundColor Cyan
+        Set-Location $projectDir
+        & $python -m PyInstaller $specPath --distpath $OutDir --noconfirm
+
+        if ($LASTEXITCODE -ne 0) {
+            throw "PyInstaller failed for $name with exit code $LASTEXITCODE."
+        }
+
+        $exePath = Join-Path $OutDir "$name\$name.exe"
+        if (-not (Test-Path $exePath)) {
+            throw "Expected executable was not produced: $exePath"
+        }
+    }
+}
+finally {
+    Set-Location $OriginalLocation
+}
+
+Write-Host "Builds complete. Executables are in: $OutDir" -ForegroundColor Green
