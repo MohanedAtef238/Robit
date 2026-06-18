@@ -95,3 +95,11 @@ Assets/Screenshots.meta
 /.testagent
 /Assets/_Recovery
 Multimodal_UDP
+
+# Robit UI Automation: local config, logs, and .NET build outputs
+/Repos/UiAutomation/Robit-UI-Automation/.env
+/Repos/UiAutomation/Robit-UI-Automation/bin/
+/Repos/UiAutomation/Robit-UI-Auomation/obj/
+/Repos/UiAutomation/Robit-UI-Automation/deploy_log.txt
+/Repos/UiAutomation/Robit-UI-Automation/temp_uiaccess.cer
+Output
