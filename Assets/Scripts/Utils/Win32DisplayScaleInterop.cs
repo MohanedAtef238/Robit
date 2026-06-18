@@ -255,6 +255,10 @@ public static class Win32DisplayScaleInterop
             scaleRel = Math.Max(getPacket.minScaleRel, Math.Min(getPacket.maxScaleRel, scaleRel));
 
             // 5. Apply — takes effect immediately, no restart required.
+            //    Save our window dimensions first so we can snap back after Windows
+            //    broadcasts WM_DPICHANGED and resizes every window (including Unity).
+            WindowManager.SaveWindowSize();
+
             var setPacket = new DISPLAYCONFIG_SOURCE_DPI_SCALE_SET
             {
                 header = new DISPLAYCONFIG_DEVICE_INFO_HEADER
@@ -272,6 +276,11 @@ public static class Win32DisplayScaleInterop
                 RobitLogger.LogError($"[Win32DisplayScaleInterop] SET DPI scale failed (error {setRc}).");
                 return false;
             }
+
+            // Snap Unity's window back to its original size immediately.
+            // Windows broadcasts WM_DPICHANGED synchronously during SetDeviceInfo,
+            // so by the time we reach this line Unity may already have been resized.
+            WindowManager.RestoreWindowSize();
 
             RobitLogger.Log($"[Win32DisplayScaleInterop] Scale set to {percent}% (scaleRel={scaleRel}).");
             return true;

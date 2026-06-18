@@ -8,7 +8,14 @@ using System.Diagnostics.CodeAnalysis;
 public static class WindowManager
 {
     private static IntPtr unityHwnd = IntPtr.Zero;
+    private static IntPtr _lastKnownAppHwnd = IntPtr.Zero;
     private static bool _acrylicActive;
+    private static Win32Interop.RECT _savedRect;  // pinned size before DPI change
+    private static bool _hasSavedRect;
+
+    /// The handle of the app that was in the foreground just before Unity last took focus.
+    /// Used by KeyComboMacroAction to restore focus to the correct app.
+    public static IntPtr LastKnownAppHwnd => _lastKnownAppHwnd;
 
     /// True while the DWM Acrylic blur-behind effect is active.
     public static bool IsAcrylicActive => _acrylicActive;
@@ -29,6 +36,40 @@ public static class WindowManager
         if (unityHwnd == IntPtr.Zero)
             Initialize();
         return unityHwnd;
+    }
+
+    /// Captures the Unity window's current pixel size and position.
+    /// Call this BEFORE triggering a system DPI change.
+    public static void SaveWindowSize()
+    {
+        #if !UNITY_EDITOR
+        IntPtr hWnd = GetWindowHandle();
+        if (hWnd == IntPtr.Zero) return;
+        if (Win32Interop.GetWindowRect(hWnd, out var rect))
+        {
+            _savedRect = rect;
+            _hasSavedRect = true;
+            RobitLogger.Log($"[WindowManager] Saved window rect: {rect.Left},{rect.Top} {rect.Right - rect.Left}x{rect.Bottom - rect.Top}");
+        }
+        #endif
+    }
+
+    /// Restores the Unity window to its saved pixel size and position.
+    /// Call this AFTER a system DPI change so Windows doesn't rescale us.
+    public static void RestoreWindowSize()
+    {
+        #if !UNITY_EDITOR
+        if (!_hasSavedRect) return;
+        IntPtr hWnd = GetWindowHandle();
+        if (hWnd == IntPtr.Zero) return;
+        int w = _savedRect.Right  - _savedRect.Left;
+        int h = _savedRect.Bottom - _savedRect.Top;
+        // SWP_NOZORDER keeps topmost state intact; NOACTIVATE avoids stealing focus.
+        Win32Interop.SetWindowPos(hWnd, Win32Interop.HWND_TOPMOST,
+            _savedRect.Left, _savedRect.Top, w, h,
+            Win32Interop.SWP_SHOWWINDOW | Win32Interop.SWP_NOACTIVATE);
+        RobitLogger.Log($"[WindowManager] Restored window rect: {_savedRect.Left},{_savedRect.Top} {w}x{h}");
+        #endif
     }
 
     private static uint GetExtendedStyle(IntPtr hWnd)
@@ -233,28 +274,49 @@ public static class WindowManager
         #endif
     }
 
-    // Window enumeration for focusing background apps
+    /// Captures the current foreground window so FocusWindowBehind() can restore it reliably.
+    /// Call this BEFORE calling FocusWindow() or SetClickThrough(false).
+    public static void RecordForegroundApp()
+    {
+        #if !UNITY_EDITOR
+        IntPtr fg = Win32Interop.GetForegroundWindow();
+        // Only record if it's not our own window
+        if (fg != IntPtr.Zero && fg != unityHwnd)
+            _lastKnownAppHwnd = fg;
+        #endif
+    }
 
-    [DllImport("user32.dll")]
-    private static extern int GetWindowTextLength(IntPtr hWnd);
 
-    /// this will find the first visible window behind Unity in Z-order and focuses it.
+
+    /// Focuses the last-known app window (captured before Unity took foreground).
+    /// Falls back to Z-order walk if the saved handle is stale.
     /// Returns true if a window was found and focused.
     public static bool FocusWindowBehind()
     {
         #if !UNITY_EDITOR
+        // Fast path: use the handle we captured before Unity stole focus
+        if (_lastKnownAppHwnd != IntPtr.Zero && _lastKnownAppHwnd != unityHwnd)
+        {
+            if (Win32Interop.IsWindowVisible(_lastKnownAppHwnd) && 
+                Win32Interop.GetWindowTextLength(_lastKnownAppHwnd) > 0)
+            {
+                Win32Interop.SetForegroundWindow(_lastKnownAppHwnd);
+                RobitLogger.Log($"[WindowManager] Focused last-known app: {_lastKnownAppHwnd}");
+                return true;
+            }
+        }
+
+        // Fallback: walk Z-order
         IntPtr hWnd = GetWindowHandle();
         if (hWnd == IntPtr.Zero) return false;
 
-        // Walk Z-order starting from Unity's window
         IntPtr next = Win32Interop.GetWindow(hWnd, Win32Interop.GW_HWNDNEXT);
         while (next != IntPtr.Zero)
         {
-            // Skip invisible windows and windows with no title (system windows)
             if (Win32Interop.IsWindowVisible(next) && Win32Interop.GetWindowTextLength(next) > 0 && next != hWnd)
             {
                 Win32Interop.SetForegroundWindow(next);
-                RobitLogger.Log($"[WindowManager] Focused window behind: {next}");
+                RobitLogger.Log($"[WindowManager] Focused window behind (fallback): {next}");
                 return true;
             }
             next = Win32Interop.GetWindow(next, Win32Interop.GW_HWNDNEXT);

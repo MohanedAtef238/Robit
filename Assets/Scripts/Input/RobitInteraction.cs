@@ -20,6 +20,8 @@ public class RobitInteraction : MonoBehaviour, IPointerClickHandler, IPointerEnt
     void Start()
     {
         if (macroController == null)
+            macroController = GetComponent<MacroButtonController>();
+        if (macroController == null)
             macroController = Object.FindFirstObjectByType<MacroButtonController>();
 
         // IPointerClickHandler requires a PhysicsRaycaster on the camera to detect 3D collider

@@ -234,6 +234,9 @@ public class Transparency : MonoBehaviour
             #if UNITY_EDITOR || DEVELOPMENT_BUILD
             RobitLogger.Log($"[Transparency] Click-through OFF. Hit: {hitInfo}");
             #endif
+            // Capture the currently-focused app BEFORE Unity steals foreground.
+            // This is the handle KeyComboMacroAction needs to re-focus after sending keys.
+            WindowManager.RecordForegroundApp();
             SetClickThrough(false);
             // FocusWindow is safe to call here because SetClickThrough now uses SWP_NOACTIVATE,
             // so the style change itself no longer triggers a window-activation event.

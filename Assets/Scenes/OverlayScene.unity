@@ -588,10 +588,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 96918a05fbc0078438a9f51abbc0871e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RobitInteraction
-  macroController: {fileID: 1898056946}
-  homePageController: {fileID: 1748671727}
+  macroController: {fileID: 1482759511}
   menuAnchorOffset: {x: 0, y: 1.2, z: 0}
-  panelPixelOffset: {x: 0, y: 211}
+  panelPixelOffset: {x: 0, y: 0}
 --- !u!1 &155197161
 GameObject:
   m_ObjectHideFlags: 0
@@ -2924,7 +2923,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 02255be335d1bc0459369f10638912a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Robit::WorldObjectUiTrigger
-  uiDocument: {fileID: 1898056944}
+  uiDocument: {fileID: 1482759512}
   targetPanelName: macro-container
 --- !u!114 &1482759514
 MonoBehaviour:
@@ -2938,7 +2937,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 24af654ac889abf4bb94fe1fb4d90411, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Robit::FlowerMacroController
-  macroController: {fileID: 1898056946}
+  macroController: {fileID: 1482759511}
   uiOffset: {x: 0, y: 0}
 --- !u!1 &1498864464
 GameObject:
@@ -3598,8 +3597,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1898056945}
-  - component: {fileID: 1898056944}
-  - component: {fileID: 1898056946}
   m_Layer: 5
   m_Name: OverlayUI
   m_TagString: Untagged
@@ -3607,29 +3604,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1898056944
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1898056943}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
-  m_PanelSettings: {fileID: 11400000, guid: 01473327501a4184abb5618cc25cdb47, type: 2}
-  m_ParentUI: {fileID: 0}
-  sourceAsset: {fileID: 9197481963319205126, guid: 03f8d93355e733b4abf24775cf3e67e8, type: 3}
-  m_SortingOrder: 20
-  m_Position: 0
-  m_WorldSpaceSizeMode: 1
-  m_WorldSpaceWidth: 1920
-  m_WorldSpaceHeight: 1080
-  m_PivotReferenceSize: 0
-  m_Pivot: 0
-  m_WorldSpaceCollider: {fileID: 0}
 --- !u!4 &1898056945
 Transform:
   m_ObjectHideFlags: 0
@@ -3639,26 +3613,12 @@ Transform:
   m_GameObject: {fileID: 1898056943}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -1, y: 2, z: 0}
-  m_LocalScale: {x: 2.8305051, y: 2.8305051, z: 2.8305051}
-  m_ConstrainProportionsScale: 1
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1898056946
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1898056943}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3e111237940690f40a2a6411856d8787, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MacroButtonController
-  outDurationMs: 160
-  staggerMs: 50
 --- !u!1 &1921078587
 GameObject:
   m_ObjectHideFlags: 0
@@ -4440,7 +4400,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 45ec0ecbdb2b2a84fa45782990cd10ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  macrosDocument: {fileID: 1898056944}
+  macrosDocument: {fileID: 1482759512}
   settingsDocument: {fileID: 1748671728}
   clickableObject: {fileID: 832149484528476998}
   holdDurationThreshold: 1.5
@@ -5618,7 +5578,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f20fc52dee5195447be96503a40cc0f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Robit::ToggleMacroCube
-  macroController: {fileID: 1898056946}
+  macroController: {fileID: 1482759511}
   uiOffset: {x: 0, y: -60}
   clickBounceForce: 0.3
 --- !u!65 &8417361359208322238

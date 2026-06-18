@@ -18,6 +18,16 @@ public class UnityNativeBridge : MonoBehaviour
     private static UnityNativeBridge _instance;
     private NativeLifetimeCoordinator _coordinator;
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void Bootstrap()
+    {
+        if (_instance == null)
+        {
+            var go = new GameObject("UnityNativeBridge");
+            _instance = go.AddComponent<UnityNativeBridge>();
+        }
+    }
+
     private void Awake()
     {
         if (_instance != null && _instance != this)

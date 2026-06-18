@@ -441,7 +441,7 @@
     -unity-font-style: bold;
     -unity-text-align: middle-center;
     background-color: rgba(246, 156, 175, 0.55);
-    translate: 351px -5px;
+    translate: 336px -5px;
     scale: 1.7 1.7;
     position: absolute;
 }
@@ -455,7 +455,7 @@
     margin-right: 14px;
     translate: 79px 0;
     scale: 2 2;
-    -unity-background-image-tint-color: rgb(246, 156, 175);
+    -unity-background-image-tint-color: rgb(255, 255, 255);
     position: absolute;
 }
 
@@ -463,21 +463,29 @@
     width: 72px;
     height: 72px;
     flex-shrink: 0;
-    border-top-left-radius: 14px;
-    border-top-right-radius: 14px;
-    border-bottom-right-radius: 14px;
-    border-bottom-left-radius: 14px;
     border-left-color: rgba(0, 0, 0, 0);
     border-right-color: rgba(0, 0, 0, 0);
     border-top-color: rgba(0, 0, 0, 0);
     border-bottom-color: rgba(0, 0, 0, 0);
-    background-image: url(&quot;project://database/Assets/UI/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=3316425174430470091&amp;guid=9a78a73fc1aee3e46b312389b1b26a0d&amp;type=3#check-dash@2x&quot;);
+    border-width: 0;
     -unity-background-scale-mode: scale-to-fit;
-    margin-right: 36px;
-    background-color: rgb(153, 204, 153);
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.35);
     position: absolute;
     top: 41px;
     left: 202px;
+    transition-duration: 0.2s;
+    transition-property: -unity-background-image-tint-color, scale;
+}
+
+.brightnessDecBtn-style-34:hover {
+    -unity-background-image-tint-color: rgba(255, 255, 255, 1);
+    scale: 1.1;
+}
+
+.brightnessDecBtn-style-34:active {
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.6);
+    scale: 0.95;
 }
 
 .brightnessSlider-style-35 {
@@ -496,21 +504,29 @@
     width: 72px;
     height: 72px;
     flex-shrink: 0;
-    border-top-left-radius: 14px;
-    border-top-right-radius: 14px;
-    border-bottom-right-radius: 14px;
-    border-bottom-left-radius: 14px;
     border-left-color: rgba(0, 0, 0, 0);
     border-right-color: rgba(0, 0, 0, 0);
     border-top-color: rgba(0, 0, 0, 0);
     border-bottom-color: rgba(0, 0, 0, 0);
-    background-image: url(&quot;project://database/Assets/UI/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=3316425174430470091&amp;guid=9a78a73fc1aee3e46b312389b1b26a0d&amp;type=3#check-dash@2x&quot;);
+    border-width: 0;
     -unity-background-scale-mode: scale-to-fit;
-    margin-left: 36px;
-    background-color: rgb(153, 204, 153);
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.35);
     position: absolute;
     top: 40px;
     left: 528px;
+    transition-duration: 0.2s;
+    transition-property: -unity-background-image-tint-color, scale;
+}
+
+.brightnessIncBtn-style-36:hover {
+    -unity-background-image-tint-color: rgba(255, 255, 255, 1);
+    scale: 1.1;
+}
+
+.brightnessIncBtn-style-36:active {
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.6);
+    scale: 0.95;
 }
 
 .dashboard-element-37 {
@@ -529,7 +545,7 @@
     position: absolute;
     top: 370px;
     left: 50%;
-    translate: -339px -234px;
+    translate: -396px -234px;
     width: 860px;
     height: 167px;
     flex-direction: row;
@@ -544,7 +560,7 @@
     background-image: url(&quot;project://database/Assets/UI/sound1.png?fileID=21300000&amp;guid=2d4ffe19874eb87499c40f91bb980b71&amp;type=3#sound1&quot;);
     -unity-background-scale-mode: scale-to-fit;
     margin-right: 14px;
-    translate: 13px 0;
+    translate: 142px 0;
     position: absolute;
     -unity-background-image-tint-color: rgb(255, 255, 255);
 }
@@ -553,21 +569,29 @@
     width: 72px;
     height: 72px;
     flex-shrink: 0;
-    border-top-left-radius: 14px;
-    border-top-right-radius: 14px;
-    border-bottom-right-radius: 14px;
-    border-bottom-left-radius: 14px;
     border-left-color: rgba(0, 0, 0, 0);
     border-right-color: rgba(0, 0, 0, 0);
     border-top-color: rgba(0, 0, 0, 0);
     border-bottom-color: rgba(0, 0, 0, 0);
-    background-image: url(&quot;project://database/Assets/UI/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=3316425174430470091&amp;guid=9a78a73fc1aee3e46b312389b1b26a0d&amp;type=3#check-dash@2x&quot;);
+    border-width: 0;
     -unity-background-scale-mode: scale-to-fit;
-    margin-right: 36px;
-    background-color: rgb(153, 204, 153);
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.35);
     position: absolute;
-    top: 47px;
-    left: 140px;
+    top: 41px;
+    left: 202px;
+    transition-duration: 0.2s;
+    transition-property: -unity-background-image-tint-color, scale;
+}
+
+.soundDecBtn-style-40:hover {
+    -unity-background-image-tint-color: rgba(255, 255, 255, 1);
+    scale: 1.1;
+}
+
+.soundDecBtn-style-40:active {
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.6);
+    scale: 0.95;
 }
 
 .soundSlider-style-41 {
@@ -585,21 +609,28 @@
     width: 72px;
     height: 72px;
     flex-shrink: 0;
-    border-top-left-radius: 14px;
-    border-top-right-radius: 14px;
-    border-bottom-right-radius: 14px;
-    border-bottom-left-radius: 14px;
     border-left-color: rgba(0, 0, 0, 0);
     border-right-color: rgba(0, 0, 0, 0);
     border-top-color: rgba(0, 0, 0, 0);
-    border-bottom-color: rgba(0, 0, 0, 0);
-    background-image: url(&quot;project://database/Assets/UI/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=3316425174430470091&amp;guid=9a78a73fc1aee3e46b312389b1b26a0d&amp;type=3#check-dash@2x&quot;);
+    border-width: 0;
     -unity-background-scale-mode: scale-to-fit;
-    margin-left: 36px;
-    background-color: rgb(153, 204, 153);
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.35);
     position: absolute;
-    top: 43px;
-    left: 456px;
+    top: 40px;
+    left: 528px;
+    transition-duration: 0.2s;
+    transition-property: -unity-background-image-tint-color, scale;
+}
+
+.soundIncBtn-style-42:hover {
+    -unity-background-image-tint-color: rgba(255, 255, 255, 1);
+    scale: 1.1;
+}
+
+.soundIncBtn-style-42:active {
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.6);
+    scale: 0.95;
 }
 
 .dashboard-element-43 {
@@ -630,7 +661,7 @@
     -unity-font-style: bold;
     -unity-text-align: middle-center;
     background-color: rgba(246, 156, 175, 0.55);
-    translate: 283px -5px;
+    translate: 336px -5px;
     scale: 1.7 1.7;
     position: absolute;
 }

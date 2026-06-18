@@ -16,7 +16,7 @@ Slider Label {
 }
 #soundIcon,
 #sunIcon {
-    -unity-background-image-tint-color: rgb(180, 210, 255);
+    -unity-background-image-tint-color: rgb(255, 255, 255);
 }
 
 /* ── +/- Buttons: cool slate-blue instead of purple ── */
