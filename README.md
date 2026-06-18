@@ -6,6 +6,7 @@
 
 ## Table of Contents
 
+- [EMG-NOW Headband Firmware Setup](#emg-now-headband-firmware-setup)
 - [System Architecture Overview](#system-architecture-overview)
 - [Bootstrap & Scene Lifecycle](#bootstrap--scene-lifecycle)
 - [Camera Pipeline](#camera-pipeline)
@@ -18,6 +19,59 @@
 - [Windows API & Transparency Layer](#windows-api--transparency-layer)
 - [Macro Button System (MVVM)](#macro-button-system-mvvm)
 - [Component Reference](#component-reference)
+
+---
+
+## EMG-NOW Headband Firmware Setup
+
+This section details the ESP32-C3 firmware for the wireless EMG headband system located in `Repos/EMG-NOW-Headband`. It uses the ESP-NOW protocol to achieve ultra-low latency, high-frequency (500Hz) data transmission from the headband directly to a USB receiver dongle.
+
+### Repository Structure
+This setup requires two ESP32-C3 boards and consists of three main Arduino sketches:
+1. **`Mac_Address_Reader`**: A tiny utility to discover the MAC address of your Receiver board.
+2. **`Sender`**: The firmware for the ESP32 attached to the headband and EMG sensor.
+3. **`Receiver`**: The firmware for the ESP32 USB dongle that plugs into your PC.
+
+### Setup Guide
+
+#### Setup Hardware
+
+**Step 1: Find the Receiver's MAC Address**
+ESP-NOW requires the Sender to know exactly who it is talking to. We need to find the MAC address of your Receiver ESP32.
+1. Plug the **Receiver ESP32** (the one that will act as your USB dongle) into your PC.
+2. Open the `Mac_Address_Reader` sketch in the Arduino IDE.
+3. Upload it to the board.
+4. Open the **Serial Monitor** (set baud rate to `115200`).
+5. Copy the MAC address printed on the screen (e.g., `94:A9:90:7B:63:24`).
+
+**Step 2: Flash the Sender (Headband)**
+1. Open the `Sender` sketch in the Arduino IDE.
+2. At the top of the file, locate the `receiverAddress` variable.
+3. Replace the placeholder MAC address with the one you copied in Step 1.
+   *(Example: `uint8_t receiverAddress[] = {0x94, 0xA9, 0x90, 0x7B, 0x63, 0x24};`)*
+4. Connect the **Headband ESP32** to your PC.
+5. Upload the sketch.
+
+**Wiring for Sender:**
+- **GPIO 3**: EMG Signal (White wire)
+- **GPIO 4**: EMG Detect/Reference (Yellow wire)
+- **5V**: Power (Switch placed on this positive wire)
+- **GND**: Ground
+
+**Step 3: Flash the Receiver (USB Dongle)**
+1. Plug your **Receiver ESP32** back into your PC.
+2. Open the `Receiver` sketch in the Arduino IDE.
+3. Upload the sketch.
+4. *(Optional)* Open the Arduino **Serial Plotter** at `115200` baud. When you turn on the Headband, you will instantly see the raw signal and envelope graphed in real-time.
+
+#### Setup Software
+*(Software setup instructions to be added later)*
+
+### How it Works
+- The **Sender** reads analog data from the EMG sensor at exactly 500Hz using a hardware timer.
+- It batches 10 samples together and instantly fires them off over the ESP-NOW protocol (taking only ~1-2 milliseconds).
+- The **Receiver** catches the packet, parses it, and spits the data out over USB-Serial to the PC. It also features a built-in LED watchdog (the blue LED turns on when receiving data and turns off if the headband disconnects).
+- The PC (running our Python Machine Learning pipeline) reads this serial data to predict muscle clicks.
 
 ---
 
