@@ -217,9 +217,9 @@ public class GazeCalibrationController : MonoBehaviour
     }
 
     // ── Coordinate helpers ────────────────────────────────────────────────
-    // ConstantPixelSize: logical px == screen px, so this is exact.
-    private static float NX(float n) => n * Screen.width;
-    private static float NY(float n) => n * Screen.height;
+    // Use resolvedStyle to properly support UI scaling (ScaleWithScreenSize).
+    private float NX(float n) => n * (calibrationRoot != null && !float.IsNaN(calibrationRoot.resolvedStyle.width) && calibrationRoot.resolvedStyle.width > 0 ? calibrationRoot.resolvedStyle.width : Screen.width);
+    private float NY(float n) => n * (calibrationRoot != null && !float.IsNaN(calibrationRoot.resolvedStyle.height) && calibrationRoot.resolvedStyle.height > 0 ? calibrationRoot.resolvedStyle.height : Screen.height);
 
     // ── Apply all dot visual properties inline (no USS class needed) ──────
     private static void ApplyDotInlineStyle(VisualElement ve, Color bgColor)
@@ -595,7 +595,7 @@ public class GazeCalibrationController : MonoBehaviour
 
     // ── Phase transition ──────────────────────────────────────────────────
 
-        private void HandlePhaseTransition(string phase)
+    private void HandlePhaseTransition(string phase)
     {
         if (glowRight != null) glowRight.style.opacity = 0;
         if (glowLeft  != null) glowLeft.style.opacity  = 0;
@@ -608,6 +608,29 @@ public class GazeCalibrationController : MonoBehaviour
                 SetPromptCardColors(new Color(1f, 1f, 1f, 0.78f), new Color(0.31f, 0.63f, 0.39f, 0.78f));
                 SetStatus("Follow the dot as it appears.");
                 firstPointReceived = false;
+                break;
+            case "PHASE_DARK":
+                SetCameraBackground(BG_DARK);
+                SetLabelColors(new Color(0.85f, 0.94f, 0.86f));
+                SetPromptCardColors(new Color(0f, 0f, 0f, 0.78f), new Color(0.31f, 0.63f, 0.39f, 0.78f));
+                SetStatus("Follow the dot as it appears.");
+                firstPointReceived = false;
+                break;
+            case "PHASE_RIGHT_TILT":
+                SetCameraBackground(BG_LIGHT);
+                SetLabelColors(new Color(0.20f, 0.27f, 0.18f));
+                SetPromptCardColors(new Color(1f, 1f, 1f, 0.78f), new Color(0.31f, 0.63f, 0.39f, 0.78f));
+                SetStatus("Tilt your head to the RIGHT.");
+                firstPointReceived = false;
+                if (glowRight != null) StartCoroutine(GlowAndFade(glowRight, GLOW_RIGHT, 4, 1.0f));
+                break;
+            case "PHASE_LEFT_TILT":
+                SetCameraBackground(BG_LIGHT);
+                SetLabelColors(new Color(0.20f, 0.27f, 0.18f));
+                SetPromptCardColors(new Color(1f, 1f, 1f, 0.78f), new Color(0.31f, 0.63f, 0.39f, 0.78f));
+                SetStatus("Tilt your head to the LEFT.");
+                firstPointReceived = false;
+                if (glowLeft != null) StartCoroutine(GlowAndFade(glowLeft, GLOW_LEFT, 4, 1.0f));
                 break;
         }
     }

@@ -179,9 +179,9 @@ public class GazeFollowerRunner : BaseUdpProcessRunner<GazeFollowerRunner>
     /// </summary>
     private IEnumerator WaitForCameraReady()
     {
-        var scc = FindFirstObjectByType<SharedCameraCapture>();
+        var scc = SharedCameraCapture.Instance;
         if (scc == null)
-            yield break;   // no SharedCameraCapture in scene — skip wait
+            yield break;   // no SharedCameraCapture in scene - skip wait
 
         float waitStart = Time.unscaledTime;
         while (!scc.IsReady)

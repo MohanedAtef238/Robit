@@ -1,31 +1,36 @@
 :root {
     --button-size: 72px;
     --button-icon-size: 36px;
+    
     --container-bg: rgba(18, 28, 48, 0.65);
     --container-border: rgba(80, 120, 200, 0.28);
-    --button-bg: rgb(136, 211, 153);
-    --button-bg-hover: rgb(212, 165, 232);
-    --button-bg-active: rgb(180, 132, 200);
-    --button-border: rgb(0, 0, 0);
-    --button-border-hover: rgb(0, 0, 0);
+    --button-bg: #88D399; /* pastel green */
+    --button-bg-hover: #D4A5E8; /* pastel purple */
+    --button-bg-active: #B484C8;
+    --button-border: #000000;
+    --button-border-hover: #000000;
     --icon-color: rgb(15, 20, 40);
     --icon-hover-color: rgb(255, 255, 255);
 }
 
 .macro-container {
     position: absolute;
-    right: 12%;
+    right: 12%; /* Anchored to bottom right near mascot */
     bottom: 12%;
-    margin-bottom: 0;
+    margin-bottom: 0px; /* Reduced from 200px to fix floating too high since SetWorldAnchor provides position */
     width: 120px;
-    height: auto;
+    height: auto; 
     translate: 50% 50%;
+    
+    /* Make the central container/pivot completely invisible */
     background-color: rgba(0, 0, 0, 0);
     border-width: 0;
+    
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* FORCES VERTICAL LINE STACKING */
     justify-content: center;
     align-items: center;
+    
     transition-duration: 0.4s;
     transition-timing-function: ease-out-back;
 }
@@ -38,8 +43,8 @@
 }
 
 .macro-button {
-    position: relative;
-    margin-bottom: 5px;
+    position: relative; 
+    margin-bottom: 5px; /* Tighter spacing to restore the original clustered look */
     width: var(--button-size);
     height: var(--button-size);
     border-radius: 50%;
@@ -49,13 +54,15 @@
     align-items: center;
     justify-content: center;
     overflow: visible;
+    
+    /* Transition translate property alongside opacity and scale */
     transition-duration: 0.3s;
     transition-timing-function: ease-out-back;
     transition-property: opacity, scale, translate, background-color;
 }
 
-.slot-0,
-.slot-2 {
+/* Individual Slot Styling (Migrated from inline UXML) */
+.slot-0, .slot-2 {
     border-width: 6px;
     border-color: rgb(255, 255, 255);
     background-color: rgba(176, 249, 222, 0.37);
@@ -67,22 +74,25 @@
     background-color: rgba(204, 176, 249, 0.37);
 }
 
+/* Slot 1 gets scaled to 1.5 normally. */
 .macro-state--visible.slot-1 {
     scale: 1.5;
 }
 
-.slot-prev,
-.slot-next {
+.slot-prev, .slot-next {
     border-width: 0;
     background-color: rgba(255, 255, 255, 0.45);
-    scale: 0.8;
+    scale: 0.8;  /* Smaller than the macro action buttons */
 }
 
-.slot-prev .btn-icon,
-.slot-next .btn-icon {
+/* Dark icon on white background — consistent for both arrows */
+.slot-prev .btn-icon, .slot-next .btn-icon {
     -unity-background-image-tint-color: rgb(15, 20, 40);
 }
 
+/* Restore reactive hover/active — these now work because there are no inline styles blocking them */
+
+/* Active MVVM State Classes */
 .macro-state--visible {
     opacity: 1;
     scale: 1;
@@ -93,31 +103,31 @@
     scale: 0.2;
 }
 
+/* Hover States */
 .macro-button:hover {
     scale: 1.15;
 }
 
-.slot-0:hover,
-.slot-2:hover {
+/* Individual Background Hovers */
+.slot-0:hover, .slot-2:hover {
     background-color: rgba(176, 249, 222, 0.9);
 }
 
 .slot-1:hover {
     background-color: rgba(204, 176, 249, 0.9);
-    scale: 1.6;
+    scale: 1.6; /* Preserve pop for middle button */
 }
 
-.slot-prev:hover,
-.slot-next:hover {
+.slot-prev:hover, .slot-next:hover {
     background-color: rgb(220, 220, 220);
 }
 
+/* Active States */
 .macro-button:active {
     scale: 0.92;
 }
 
-.slot-0:active,
-.slot-2:active {
+.slot-0:active, .slot-2:active {
     background-color: rgba(176, 249, 222, 0.5);
 }
 
@@ -126,14 +136,14 @@
     scale: 1.4;
 }
 
-.slot-prev:active,
-.slot-next:active {
+.slot-prev:active, .slot-next:active {
     background-color: rgb(180, 180, 180);
 }
 
+/* Group Label */
 .group-name-label {
     position: absolute;
-    top: 100%;
+    top: 100%; /* Keeps it neatly below the entire vertical button list */
     margin-top: 15px;
     font-size: 20px;
     -unity-font-style: bold;
@@ -146,21 +156,15 @@
     transition-duration: 0.3s;
 }
 
-.label-state--visible {
-    opacity: 1;
-    scale: 1;
-}
+.label-state--visible { opacity: 1; scale: 1; }
+.label-state--hidden { opacity: 0; scale: 0.5; }
 
-.label-state--hidden {
-    opacity: 0;
-    scale: 0.5;
-}
-
+/* Tooltips */
 .button-tooltip {
     position: absolute;
     top: 50%;
     right: 120%;
-    translate: 0 -50%;
+    translate: 0 -50%; /* Centers them vertically against the button */
     -unity-text-align: middle-center;
     font-size: 18px;
     -unity-font-style: bold;
@@ -175,6 +179,7 @@
     transition-duration: 250ms;
 }
 
+/* Icons */
 .btn-icon {
     width: var(--button-icon-size);
     height: var(--button-icon-size);
@@ -186,106 +191,29 @@
     -unity-background-image-tint-color: var(--icon-hover-color);
 }
 
-.icon-zoom-in {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/zoom_in.png?fileID=2800000&guid=6e6ea39182f9d8a46a6d5af65b2f1d27&type=3#zoom_in");
-}
-
-.icon-zoom-out {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/zoom_out.png?fileID=2800000&guid=aa3bda48e56a2e941ad88a004820ed9e&type=3#zoom_out");
-}
-
-.icon-page-up {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/page_up.png?fileID=2800000&guid=355ee87013fa81044850926e11871dda&type=3#page_up");
-}
-
-.icon-page-down {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/curved-arrow-right.png?fileID=2800000&guid=68540a7089b819a468235cb8b707beb7&type=3#curved-arrow-right");
-}
-
-.icon-home {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icon-home.png?fileID=2800000&guid=4b28b571169ad6b41b1d22188ad26c66&type=3#icon-home");
-    background-color: rgba(255, 255, 255, 0);
-    -unity-background-image-tint-color: rgb(255, 255, 255);
-}
-
-.icon-settings {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icon-settings.png?fileID=21300000&guid=9c868875241d24343806555f3e036089&type=3#icon-settings");
-    background-color: rgba(255, 255, 255, 0);
-}
-
-.icon-back {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-back-100.png?fileID=2800000&guid=f96a634f1643a49409cc050b3c3e5b6e&type=3#icons8-back-100");
-}
-
-.icon-forward {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-back-100.png?fileID=2800000&guid=f96a634f1643a49409cc050b3c3e5b6e&type=3#icons8-back-100");
-}
-
-.icon-cycle-left {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/curved-arrow-right.png?fileID=2800000&guid=68540a7089b819a468235cb8b707beb7&type=3#curved-arrow-right");
-    scale: -1 1;
-}
-
-.icon-cycle-right {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/curved-arrow-right.png?fileID=2800000&guid=68540a7089b819a468235cb8b707beb7&type=3#curved-arrow-right");
-}
-
-.icon-refresh {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-refresh-100.png?fileID=2800000&guid=6a1158c2acb6a1048873f512d29a9706&type=3#icons8-refresh-100");
-}
-
-.icon-new-tab {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-new-tab-100.png?fileID=2800000&guid=7b5bf487b4c353246a1032c4b52dd8d3&type=3#icons8-new-tab-100");
-}
-
-.icon-close-tab {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-close-tab-100.png?fileID=2800000&guid=e658da7770cf5174d8f7e7a597f2cecb&type=3#icons8-close-tab-100");
-}
-
-.icon-switch-window {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-cycle-100.png?fileID=2800000&guid=99a322d8a134b4e43a7fff5201979592&type=3#icons8-cycle-100");
-}
-
-.icon-screenshot {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-screenshot-100.png?fileID=2800000&guid=f1153cd999d1f9f4ea6d04f1d61de5c3&type=3#icons8-screenshot-100");
-}
-
-.icon-snap-left {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-box-move-left-100.png?fileID=2800000&guid=d0633b608c2299a46babe47a18d64d20&type=3#icons8-box-move-left-100");
-}
-
-.icon-snap-right {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-box-move-left-100.png?fileID=2800000&guid=d0633b608c2299a46babe47a18d64d20&type=3#icons8-box-move-left-100");
-}
-
-.icon-maximize {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-maximize-100.png?fileID=2800000&guid=d0b75369014ffae43869eec0e1a69ca8&type=3#icons8-maximize-100");
-}
-
-.icon-minimize {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-minimize-100.png?fileID=2800000&guid=ee6c1041bd84b7e428013d487076f62c&type=3#icons8-minimize-100");
-}
-
-.icon-close-window {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-close-window-100.png?fileID=2800000&guid=ceac9c6bbc9f4e24e8addf3b98177ed9&type=3#icons8-close-window-100");
-}
-
-.icon-undo {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-undo-100.png?fileID=2800000&guid=267a326c15e1a354ca839923c1d7e6e4&type=3#icons8-undo-100");
-}
-
-.icon-redo {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-redo-100.png?fileID=2800000&guid=efe77e6124614264697b049b6c9876d8&type=3#icons8-redo-100");
-}
-
-.icon-mute {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-mute-100.png?fileID=2800000&guid=49773e198a09d934086f187ecbc825e4&type=3#icons8-mute-100");
-}
-
-.icon-voice {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-voice-100.png?fileID=2800000&guid=3868decce873d364fa608a795ed7a492&type=3#icons8-voice-100");
-}
-
-.icon-find {
-    background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-find-100.png?fileID=2800000&guid=a943ddb2fea1485b8a1036d7260e0ca7&type=3#icons8-find-100");
-}
+.icon-zoom-in { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/zoom_in.png?fileID=2800000&guid=6e6ea39182f9d8a46a6d5af65b2f1d27&type=3#zoom_in"); }
+.icon-zoom-out { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/zoom_out.png?fileID=2800000&guid=aa3bda48e56a2e941ad88a004820ed9e&type=3#zoom_out"); }
+.icon-page-up { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/page_up.png?fileID=2800000&guid=355ee87013fa81044850926e11871dda&type=3#page_up"); }
+.icon-page-down { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/page_down.png?fileID=2800000&guid=1ffdaf5ccf4ebab4aa4df8b745d16a7b&type=3#page_down"); }
+.icon-home { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icon-home.png?fileID=2800000&guid=4b28b571169ad6b41b1d22188ad26c66&type=3#icon-home"); }
+.icon-settings { background-image: url("project://database/Assets/UI/settings_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg?fileID=7388822144124034973&guid=d671468dc8e08a343ab4eca2623f67b6&type=3#settings_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24"); }
+.icon-back { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-back-100.png?fileID=2800000&guid=f96a634f1643a49409cc050b3c3e5b6e&type=3#icons8-back-100"); }
+.icon-forward { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-back-100.png?fileID=2800000&guid=f96a634f1643a49409cc050b3c3e5b6e&type=3#icons8-back-100"); }
+.icon-cycle-left { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/curved-arrow-right.png?fileID=2800000&guid=68540a7089b819a468235cb8b707beb7&type=3#curved-arrow-right"); scale: -1 1; }
+.icon-cycle-right { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/curved-arrow-right.png?fileID=2800000&guid=68540a7089b819a468235cb8b707beb7&type=3#curved-arrow-right"); }
+.icon-refresh { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-refresh-100.png?fileID=2800000&guid=6a1158c2acb6a1048873f512d29a9706&type=3#icons8-refresh-100"); }
+.icon-new-tab { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-new-tab-100.png?fileID=2800000&guid=7b5bf487b4c353246a1032c4b52dd8d3&type=3#icons8-new-tab-100"); }
+.icon-close-tab { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-close-tab-100.png?fileID=2800000&guid=e658da7770cf5174d8f7e7a597f2cecb&type=3#icons8-close-tab-100"); }
+.icon-switch-window { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-cycle-100.png?fileID=2800000&guid=99a322d8a134b4e43a7fff5201979592&type=3#icons8-cycle-100"); }
+.icon-screenshot { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-screenshot-100.png?fileID=2800000&guid=f1153cd999d1f9f4ea6d04f1d61de5c3&type=3#icons8-screenshot-100"); }
+.icon-snap-left { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-box-move-left-100.png?fileID=2800000&guid=d0633b608c2299a46babe47a18d64d20&type=3#icons8-box-move-left-100"); }
+.icon-snap-right { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-box-move-left-100.png?fileID=2800000&guid=d0633b608c2299a46babe47a18d64d20&type=3#icons8-box-move-left-100"); }
+.icon-maximize { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-maximize-100.png?fileID=2800000&guid=d0b75369014ffae43869eec0e1a69ca8&type=3#icons8-maximize-100"); }
+.icon-minimize { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-minimize-100.png?fileID=2800000&guid=ee6c1041bd84b7e428013d487076f62c&type=3#icons8-minimize-100"); }
+.icon-close-window { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-close-window-100.png?fileID=2800000&guid=ceac9c6bbc9f4e24e8addf3b98177ed9&type=3#icons8-close-window-100"); }
+.icon-undo { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-undo-100.png?fileID=2800000&guid=267a326c15e1a354ca839923c1d7e6e4&type=3#icons8-undo-100"); }
+.icon-redo { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-redo-100.png?fileID=2800000&guid=efe77e6124614264697b049b6c9876d8&type=3#icons8-redo-100"); }
+.icon-mute { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-mute-100.png?fileID=2800000&guid=49773e198a09d934086f187ecbc825e4&type=3#icons8-mute-100"); }
+.icon-voice { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-voice-100.png?fileID=2800000&guid=3868decce873d364fa608a795ed7a492&type=3#icons8-voice-100"); }
+.icon-find { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icons8-find-100.png?fileID=2800000&guid=a943ddb2fea1485b8a1036d7260e0ca7&type=3#icons8-find-100"); }
+.icon-settings { background-image: url("project://database/Assets/Scripts/MacroSystem/Icons/icon-settings.png?fileID=21300000&guid=9c868875241d24343806555f3e036089&type=3#icon-settings"); }
