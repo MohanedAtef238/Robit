@@ -17,7 +17,7 @@
     position: absolute;
     right: 12%; /* Anchored to bottom right near mascot */
     bottom: 12%;
-    margin-bottom: 200px; /* Bring it 200px higher to avoid overlap */
+    margin-bottom: 0px; /* Reduced from 200px to fix floating too high since SetWorldAnchor provides position */
     width: 120px;
     height: auto; 
     translate: 50% 50%;
@@ -44,7 +44,7 @@
 
 .macro-button {
     position: relative; 
-    margin-bottom: 30px; /* Balanced spacing to stretch high but fit the screen */
+    margin-bottom: 5px; /* Tighter spacing to restore the original clustered look */
     width: var(--button-size);
     height: var(--button-size);
     border-radius: 50%;
@@ -81,8 +81,16 @@
 
 .slot-prev, .slot-next {
     border-width: 0;
-    background-color: rgb(255, 255, 255);
+    background-color: rgba(255, 255, 255, 0.45);
+    scale: 0.8;  /* Smaller than the macro action buttons */
 }
+
+/* Dark icon on white background — consistent for both arrows */
+.slot-prev .btn-icon, .slot-next .btn-icon {
+    -unity-background-image-tint-color: rgb(15, 20, 40);
+}
+
+/* Restore reactive hover/active — these now work because there are no inline styles blocking them */
 
 /* Active MVVM State Classes */
 .macro-state--visible {

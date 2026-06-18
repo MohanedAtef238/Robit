@@ -5,8 +5,8 @@
     <Style src="project://database/Assets/UI/buttonSwap.uss?fileID=7433441132597879392&amp;guid=6196617ce9a402b4dad4811a91c8e22c&amp;type=3#buttonSwap"/>
     <Style src="project://database/Assets/UI/documents/home-dashboard.uss?fileID=7433441132597879392&amp;guid=638afb89b35376049a8412c1df5543e0&amp;type=3#home-dashboard"/>
     <Style src="project://database/Assets/UI/new_starter.uss?fileID=7433441132597879392&amp;guid=2ffbe168f40aac2448a8856843e80980&amp;type=3#new_starter"/>
-    <Style src="project://database/Assets/opening_animation.uss?fileID=7433441132597879392&amp;guid=fc9ef41fea931e34db745857067f7f09&amp;type=3#opening_animation"/>
-    <Style src="project://database/Assets/resolution-btn.uss?fileID=7433441132597879392&amp;guid=1af4d815db40c8f4787ca9b604e34243&amp;type=3#resolution-btn"/>
+    <Style src="project://database/Assets/UI/opening_animation.uss?fileID=7433441132597879392&amp;guid=fc9ef41fea931e34db745857067f7f09&amp;type=3#opening_animation"/>
+    <Style src="project://database/Assets/UI/resolution-btn.uss?fileID=7433441132597879392&amp;guid=1af4d815db40c8f4787ca9b604e34243&amp;type=3#resolution-btn"/>
     <ui:VisualElement picking-mode="Ignore" class="dashboard-element-1 hidden-panel" style="opacity: 1; top: -7px; left: -12px;">
         <ui:VisualElement name="VisualElement" class="dashboard-element-5" style="background-image: url(&quot;project://database/Assets/UI/icons2/flower5.png?fileID=2800000&amp;guid=1560c2c15a040424cb3a3319bd0c3677&amp;type=3#flower5&quot;);"/>
         <ui:VisualElement name="VisualElement" class="dashboard-element-4" style="background-image: url(&quot;project://database/Assets/UI/icons2/flower3.png?fileID=2800000&amp;guid=44048395a9f595c42959c0225b58c035&amp;type=3#flower3&quot;); height: 94px; top: 863px; width: 120px; left: 124px;"/>
@@ -49,18 +49,14 @@
         <ui:VisualElement name="brightness" class="brightness-style-31">
             <ui:Label name="brightnessValueLabel" text="100%&#10;" class="brightnessValueLabel-style-32"/>
             <ui:VisualElement name="sunIcon" style="background-image: url(&quot;project://database/Assets/Prefabs/COMICOMI/VFX_FirelyFlare/Art/Textures/sparkle3.png?fileID=2800000&amp;guid=6eafc1a51ff61174abfe403602dad939&amp;type=3#sparkle3&quot;); height: 116px; width: 112px; top: 9px; left: 49px; -unity-background-scale-mode: scale-to-fit;"/>
-            <ui:Button name="brightnessDecBtn" text="" class="hover-scaler brightnessDecBtn-style-34" style="background-image: url(&quot;project://database/Assets/UI/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=5923138177525885446&amp;guid=9a78a73fc1aee3e46b312389b1b26a0d&amp;type=3#arrow-left&quot;); background-color: rgba(255, 255, 255, 0); -unity-background-image-tint-color: rgb(255, 255, 255);"/>
-            <ui:Button name="brightnessIncBtn" text="" class="hover-scaler brightnessIncBtn-style-36" style="background-image: url(&quot;project://database/Assets/UI/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=5923138177525885446&amp;guid=9a78a73fc1aee3e46b312389b1b26a0d&amp;type=3#arrow-left&quot;); background-color: rgba(255, 255, 255, 0); rotate: 180deg;">
-                <ui:VisualElement picking-mode="Ignore" class="dashboard-element-37" style="background-image: url(&quot;project://database/Assets/UI/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=-4521532143779581420&amp;guid=9a78a73fc1aee3e46b312389b1b26a0d&amp;type=3#arrow-right&quot;); rotate: 180deg; background-color: rgba(255, 255, 255, 0);"/>
-            </ui:Button>
+            <ui:Button name="brightnessDecBtn" text="◀" class="hover-scaler brightnessDecBtn-style-34" style="background-image: none; background-color: rgba(0, 0, 0, 0); border-width: 0; color: white; font-size: 32px; -unity-text-align: middle-center; padding: 0;"/>
+            <ui:Button name="brightnessIncBtn" text="▶" class="hover-scaler brightnessIncBtn-style-36" style="background-image: none; background-color: rgba(0, 0, 0, 0); border-width: 0; color: white; font-size: 32px; -unity-text-align: middle-center; padding: 0;"/>
         </ui:VisualElement>
         <ui:VisualElement name="Sound" class="Sound-style-38">
-            <ui:VisualElement name="soundIcon" style="background-image: url(&quot;project://database/Assets/UI/icons2/sound4.png?fileID=2800000&amp;guid=494c6f6d714804043a51c5c5227c99ab&amp;type=3#sound4&quot;); height: 73px; width: 84px; -unity-background-scale-mode: scale-to-fit;"/>
-            <ui:Button name="soundDecBtn" text="" class="hover-scaler soundDecBtn-style-40" style="background-image: url(&quot;project://database/Assets/UI/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=5923138177525885446&amp;guid=9a78a73fc1aee3e46b312389b1b26a0d&amp;type=3#arrow-left&quot;); background-color: rgba(153, 204, 153, 0);"/>
+            <ui:VisualElement name="soundIcon" style="background-image: url(&quot;project://database/Assets/UI/icons2/sound4.png?fileID=2800000&amp;guid=494c6f6d714804043a51c5c5227c99ab&amp;type=3#sound4&quot;); height: 73px; width: 84px; left: 63px; -unity-background-scale-mode: scale-to-fit;"/>
+            <ui:Button name="soundDecBtn" text="◀" class="hover-scaler soundDecBtn-style-40" style="background-image: none; background-color: rgba(0, 0, 0, 0); border-width: 0; color: white; font-size: 32px; -unity-text-align: middle-center; padding: 0;"/>
             <ui:Slider label="Slider" value="42" high-value="100" name="soundSlider" class="soundSlider-style-41"/>
-            <ui:Button name="soundIncBtn" text="" class="hover-scaler soundIncBtn-style-42" style="background-color: rgba(153, 204, 153, 0); background-image: url(&quot;project://database/Assets/UI/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=-4521532143779581420&amp;guid=9a78a73fc1aee3e46b312389b1b26a0d&amp;type=3#arrow-right&quot;);">
-                <ui:VisualElement picking-mode="Ignore" class="dashboard-element-43" style="background-image: url(&quot;project://database/Assets/UI/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=-4521532143779581420&amp;guid=9a78a73fc1aee3e46b312389b1b26a0d&amp;type=3#arrow-right&quot;); rotate: 0;"/>
-            </ui:Button>
+            <ui:Button name="soundIncBtn" text="▶" class="hover-scaler soundIncBtn-style-42" style="background-image: none; background-color: rgba(0, 0, 0, 0); border-width: 0; color: white; font-size: 32px; -unity-text-align: middle-center; padding: 0;"/>
             <ui:Label name="soundValueLabel" text="100%" class="soundValueLabel-style-44"/>
         </ui:VisualElement>
     </ui:VisualElement>
@@ -70,12 +66,11 @@
     <ui:VisualElement name="refresh" class="hover-scaler refresh-style-48 opening_animation" style="background-image: url(&quot;project://database/Assets/UI/icons2/refresh.png?fileID=2800000&amp;guid=3c2349e7c3b322247975471be78faf20&amp;type=3#refresh&quot;); -unity-background-scale-mode: scale-to-fit; background-size: 50% 54%;"/>
     <ui:VisualElement name="dialogueBox" class="dialogueBox-style-49 opening_animation"/>
     <ui:VisualElement name="dialogueBox" class="dialogueBox-style-50 opening_animation">
-        <ui:Button text="&#10;" name="inputButton" class="hover-scaler inputButton-style-51" style="background-image: url(&quot;project://database/Assets/UI/icons2/flower4.png?fileID=2800000&amp;guid=8cb6fb2d5e21cbf488e43176c7f05d45&amp;type=3#flower4&quot;);"/>
+        <ui:Button text="&#10;" name="inputButton" class="hover-scaler inputButton-style-51" style="background-image: url(&quot;project://database/Assets/UI/icons2/flower4.png?fileID=2800000&amp;guid=8cb6fb2d5e21cbf488e43176c7f05d45&amp;type=3#flower4&quot;); translate: -331px 0%;"/>
         <ui:Label text="output&#10;" name="outputDialogueLabel" focusable="false" picking-mode="Position" class="outputDialogueLabel-style-52"/>
         <ui:TextField label="" placeholder-text="Ask Robit" name="inputDialogueField" vertical-scroller-visibility="Auto" picking-mode="Position" multiline="true" auto-correction="true" select-all-on-focus="true" emoji-fallback-support="false" class="inputDialogueField-style-53"/>
     </ui:VisualElement>
-    <ui:Button text="T" name="keyboard" class="keyboard-style-54 opening_animation"/>
-    <ui:Button text="" name="mick" class="mick-style-55 opening_animation" style="background-image: url(&quot;project://database/Assets/UI/icons2/mikeYes.png?fileID=2800000&amp;guid=5c688ce895361d74dbf8bce616af1ba5&amp;type=3#mikeYes&quot;);"/>
+    <ui:Button text="" name="mick" class="mick-style-55 opening_animation" style="background-image: url(&quot;project://database/Assets/UI/icons2/mikeYes.png?fileID=2800000&amp;guid=5c688ce895361d74dbf8bce616af1ba5&amp;type=3#mikeYes&quot;); top: 1091px; left: 1646px; scale: 1.5 1.5; translate: -71% -68%;"/>
     <ui:VisualElement name="reminder" class="reminder-style-56 opening_animation"/>
     <ui:VisualElement name="reminder" class="hover-scaler reminder-style-57 opening_animation">
         <ui:VisualElement class="dashboard-element-58"/>
@@ -93,6 +88,7 @@
         <ui:VisualElement style="flex-grow: 1; position: absolute; height: 88px; width: 12px; top: 80px; left: 623px; background-color: rgba(246, 156, 175, 0.72); border-top-left-radius: 4px; border-top-right-radius: 4px; border-bottom-right-radius: 4px; border-bottom-left-radius: 4px;"/>
     </ui:VisualElement>
     <ui:VisualElement name="VisualElement" class="dashboard-element-3 opening_animation" style="background-image: url(&quot;project://database/Assets/UI/icons2/flower3.png?fileID=2800000&amp;guid=44048395a9f595c42959c0225b58c035&amp;type=3#flower3&quot;); top: 905px; left: 303px;"/>
+    <ui:Button text="T" name="keyboard" class="keyboard-style-54 opening_animation" style="top: 1087px; left: 1761px; scale: 1.5 1.5; translate: 141% 112%;"/>
     <ui:VisualElement name="sizer" class="reminder-style-56 opening_animation" style="top: 316px; left: 826px;"/>
     <ui:VisualElement name="sizer" class="hover-scaler reminder-style-57 opening_animation" style="top: 191px; left: 838px; height: 174px;">
         <ui:VisualElement class="dashboard-element-58"/>

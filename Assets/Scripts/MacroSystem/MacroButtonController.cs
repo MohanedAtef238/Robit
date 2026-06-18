@@ -99,7 +99,48 @@ public class MacroButtonController : MonoBehaviour
         => viewModel?.Open();
 
     public void ShowWithBounceAtWorldPosition(Vector3 worldPos, Vector2 panelOffset, Camera renderCamera = null)
-        => viewModel?.Open();
+    {
+        SetWorldAnchor(worldPos, renderCamera, panelOffset);
+        viewModel?.Open();
+    }
+
+    /// <summary>
+    /// Projects a world-space anchor point to the UI panel's pixel space and positions
+    /// the macro-container so it floats above that point.
+    /// </summary>
+    private void SetWorldAnchor(Vector3 worldPos, Camera cam, Vector2 extraOffset = default)
+    {
+        if (macroContainer == null) return;
+
+        // Resolve camera
+        if (cam == null) cam = Camera.main;
+        if (cam == null) cam = UnityEngine.Object.FindFirstObjectByType<Camera>();
+        if (cam == null) return;
+
+        var panel = uiDocument?.rootVisualElement?.panel;
+        if (panel == null) return;
+
+        // World → viewport → screen
+        Vector3 vp = cam.WorldToViewportPoint(worldPos);
+        if (vp.z < 0) return; // behind camera
+
+        Vector2 screenPx = new Vector2(vp.x * Screen.width, vp.y * Screen.height);
+
+        // Screen → panel
+        Vector2 panelPx = RuntimePanelUtils.ScreenToPanel(panel, screenPx);
+        panelPx += extraOffset;
+
+        // UI Toolkit absolute positioning: right = (panel width − x), bottom = y
+        var panelSize = panel.visualTree.layout;
+        float right  = panelSize.width  - panelPx.x;
+        float bottom = panelPx.y;
+
+        macroContainer.style.right  = new StyleLength(right);
+        macroContainer.style.bottom = new StyleLength(bottom);
+        // Clear the conflicting position properties set in the UXML inline style
+        macroContainer.style.left = StyleKeyword.Auto;
+        macroContainer.style.top  = StyleKeyword.Auto;
+    }
 
     public void HideImmediate()
     {

@@ -43,19 +43,28 @@ public class ViewCoordinator : MonoBehaviour
             return;
         }
 
-        bool isOpening = !_homePage.IsOpen;
-
-        // If we are about to open the Home Page, enforce mutual exclusivity
-        if (isOpening && _appLauncher != null && _appLauncher.IsOpen)
-        {
-            _appLauncher.Close();
-        }
-
         if (_homePage.IsOpen)
+        {
             _homePage.Close();
+        }
         else
+        {
+            // Dynamically find AppLauncher if it wasn't cached, since Start() runs before the scene loads.
+            if (_appLauncher == null)
+                _appLauncher = Object.FindFirstObjectByType<AppLauncherUIToolkit>();
+
+            // Close the App Cycler first (synchronously sets _isOpen=false).
+            // Its HidePanel coroutine will detect that the Home Page is now open
+            // and will skip the SetAcrylicBlur(false) call — preventing the stomp.
+            if (_appLauncher != null && _appLauncher.IsOpen)
+                _appLauncher.Close();
+
+            // HomePageController.Open() handles all window state internally:
+            // PausePolling, SetAcrylicBlur(true), SetClickThrough(false), FocusWindow.
             _homePage.Open();
+        }
     }
+
 
     public void ToggleAppCycler()
     {
@@ -69,6 +78,10 @@ public class ViewCoordinator : MonoBehaviour
         }
 
         bool isOpening = !_appLauncher.IsOpen;
+
+        // Dynamically find HomePage if it wasn't cached, since Start() runs before the scene loads.
+        if (_homePage == null)
+            _homePage = Object.FindFirstObjectByType<HomePageController>();
 
         // If we are about to open the App Cycler, enforce mutual exclusivity
         if (isOpening && _homePage != null && _homePage.IsOpen)

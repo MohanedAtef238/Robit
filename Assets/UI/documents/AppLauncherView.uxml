@@ -1,40 +1,21 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
-
-    <!-- Styles: own panel stylesheet + card component stylesheet -->
-    <Style src="project://database/Assets/UI/documents/AppLauncherView.uss" />
-    <Style src="project://database/Assets/Scripts/AppLauncher/DesktopCard.uss" />
-
-    <!--
-        launcher-panel: full-screen dark background element.
-        HomePageController shows/hides this UIDocument's root and adds
-        .view-visible / .view-hidden to launcher-panel to drive the CSS transition.
-        AppLauncherUIToolkit.Initialize() receives launcher-panel as its root.
-    -->
-    <ui:VisualElement name="launcher-panel" class="launcher-panel" picking-mode="Ignore">
-
-        <!-- Decorative accent lines (picking-mode Ignore so they don't eat clicks) -->
-        <ui:VisualElement class="launcher-header-accent" picking-mode="Ignore" />
-        <ui:VisualElement class="launcher-footer-accent" picking-mode="Ignore" />
-
-        <!-- Spinner / error status -->
-        <ui:Label name="status-text" class="status-text" picking-mode="Ignore" />
-
-        <!-- Carousel: nav arrows + paged card grid -->
-        <ui:VisualElement name="carousel-shell" class="carousel-shell">
-
-            <ui:Button name="nav-left" text="&#8249;" class="nav-button nav-left" />
-
-            <ui:VisualElement name="carousel-center" class="carousel-center">
-                <ui:VisualElement name="cards-container" class="cards-container"
-                    style="flex-wrap: wrap; flex-direction: row; justify-content: center;" />
-                <ui:Label name="page-indicator" text="1 / 1" class="page-indicator"
-                    picking-mode="Ignore" />
+    <Style src="project://database/Assets/UI/documents/AppLauncherView.uss?fileID=7433441132597879392&amp;guid=c5b180542f0f0804d9ab2e53b74a5baf&amp;type=3#AppLauncherView"/>
+    <Style src="project://database/Assets/Scripts/AppLauncher/DesktopCard.uss?fileID=7433441132597879392&amp;guid=3ca87a7b6b0882a40ab01b8b56b03ad6&amp;type=3#DesktopCard"/>
+    <ui:VisualElement name="launcher-panel" picking-mode="Ignore" class="launcher-panel">
+        <ui:VisualElement picking-mode="Ignore" class="launcher-header-accent" style="background-color: rgba(255, 0, 2, 0);"/>
+        <ui:VisualElement picking-mode="Ignore" class="launcher-footer-accent" style="background-color: rgba(255, 0, 62, 0);"/>
+        <ui:Label name="status-text" picking-mode="Ignore" class="status-text" style="color: rgba(86, 184, 137, 0.9);"/>
+        <ui:VisualElement name="carousel-shell" class="carousel-shell" style="background-color: rgba(255, 255, 255, 0);">
+            <ui:Button name="nav-left" text="‹" class="nav-button nav-left" style="border-left-color: rgb(255, 255, 255); border-right-color: rgb(255, 255, 255); border-top-color: rgb(255, 255, 255); border-bottom-color: rgb(255, 255, 255); background-color: rgb(234, 146, 170); border-top-width: 10px; border-right-width: 10px; border-bottom-width: 10px; border-left-width: 10px; color: rgb(255, 255, 255); font-size: 80px;"/>
+            <ui:VisualElement name="carousel-center" class="carousel-center" style="background-color: rgba(255, 255, 255, 0);">
+                <ui:VisualElement name="cards-container" class="cards-container" style="flex-wrap: wrap; flex-direction: row; justify-content: center; background-color: rgba(255, 0, 0, 0);"/>
+                <ui:Label name="page-indicator" text="1 / 1" picking-mode="Ignore" class="page-indicator" style="color: rgba(255, 255, 255, 0.38); font-size: 40px; -unity-font-definition: url(&quot;project://database/Assets/Fonts/Gouttes.ttf?fileID=12800000&amp;guid=26657f46fc3c6a84b8ce76e9e82ebf64&amp;type=3#Gouttes&quot;);"/>
             </ui:VisualElement>
-
-            <ui:Button name="nav-right" text="&#8250;" class="nav-button nav-right" />
-
+            <ui:Button name="nav-right" text="›" class="nav-button nav-right" style="background-color: rgb(228, 149, 171); border-left-color: rgb(255, 255, 255); border-right-color: rgb(255, 255, 255); border-top-color: rgb(255, 255, 255); border-bottom-color: rgb(255, 255, 255); border-top-width: 10px; border-right-width: 10px; border-bottom-width: 10px; border-left-width: 10px; font-size: 80px; color: rgb(255, 255, 255);"/>
         </ui:VisualElement>
-
+        <ui:VisualElement name="flower" picking-mode="Ignore" style="flex-grow: 1; position: absolute; background-image: url(&quot;project://database/Assets/UI/icons2/flower5.png?fileID=2800000&amp;guid=1560c2c15a040424cb3a3319bd0c3677&amp;type=3#flower5&quot;); height: 132px; top: -1px; width: 108px; -unity-background-scale-mode: scale-to-fit; left: -2px;"/>
+        <ui:VisualElement name="flower" picking-mode="Ignore" style="flex-grow: 1; position: absolute; background-image: url(&quot;project://database/Assets/UI/icons2/flower5.png?fileID=2800000&amp;guid=1560c2c15a040424cb3a3319bd0c3677&amp;type=3#flower5&quot;); height: 132px; top: -1px; width: 108px; -unity-background-scale-mode: scale-to-fit; left: -2px; scale: 1 -1; translate: 0 996%;"/>
+        <ui:VisualElement name="flower" picking-mode="Ignore" style="flex-grow: 1; position: absolute; background-image: url(&quot;project://database/Assets/UI/icons2/flower5.png?fileID=2800000&amp;guid=1560c2c15a040424cb3a3319bd0c3677&amp;type=3#flower5&quot;); height: 132px; top: -1px; width: 108px; -unity-background-scale-mode: scale-to-fit; left: -2px; translate: 1823px 0%; scale: -1 1;"/>
+        <ui:VisualElement name="flower" picking-mode="Ignore" style="flex-grow: 1; position: absolute; background-image: url(&quot;project://database/Assets/UI/icons2/flower5.png?fileID=2800000&amp;guid=1560c2c15a040424cb3a3319bd0c3677&amp;type=3#flower5&quot;); height: 132px; top: -1px; width: 108px; -unity-background-scale-mode: scale-to-fit; left: -2px; translate: 1823px 984%; scale: -1 -1;"/>
     </ui:VisualElement>
-
 </ui:UXML>

@@ -10,7 +10,7 @@ public class ZoomPickerController : MonoBehaviour
     private const string SelectedClass = "zoom-selected";
 
     private static readonly int[] Steps = { 100, 125, 150, 200 };
-    private static readonly string[] BtnNames = { "zoom100Btn", "zoom125Btn", "zoom150Btn", "zoom200Btn" };
+    private static readonly string[] BtnNames = { "100", "125", "150", "200" };
 
     private Button[] _buttons = new Button[4];
     private int      _currentPercent;
@@ -39,7 +39,7 @@ public class ZoomPickerController : MonoBehaviour
         }
 
         if (foundCount == 0)
-            RobitLogger.LogError("[ZoomPickerController] No zoom buttons were found in the active UI document.");
+            RobitLogger.LogWarning("[ZoomPickerController] No zoom buttons were found in the active UI document (This is fine if the current UI layout doesn't support zooming).");
 
         _currentPercent = Win32DisplayScaleInterop.GetScalePercent();
         RefreshHighlight();

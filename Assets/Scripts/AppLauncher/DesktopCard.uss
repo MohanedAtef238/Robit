@@ -1,10 +1,8 @@
-/* --- CLEAN SOFTER PASTEL GREEN CARD COMPONENT --- */
-
 .container {
     position: relative;
     width: 270px;
     height: 360px;
-    margin: 20px; 
+    margin: 20px;
     transition-duration: 200ms;
     opacity: 1;
     scale: 1;
@@ -26,14 +24,16 @@
 
 .card {
     position: absolute;
-    left: 0; right: 0; top: 0; bottom: 0;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
     display: flex;
     justify-content: center;
     align-items: center;
     border-radius: 24px;
     transition-duration: 300ms;
-    /* Soft, translucent sage base */
-    background-color: rgba(30, 45, 35, 0.4); 
+    background-color: rgba(192, 222, 243, 0.63);
     border-width: 1.5px;
     border-color: rgba(153, 204, 153, 0.25);
     overflow: hidden;
@@ -41,7 +41,7 @@
 
 .card:hover {
     transition-duration: 200ms;
-    background-color: rgba(45, 65, 50, 0.6); 
+    background-color: rgba(227, 241, 255, 0.6);
     scale: 1.05;
     border-color: rgba(153, 204, 153, 0.8);
 }
@@ -52,7 +52,7 @@
     height: 150%;
     left: -25%;
     top: -25%;
-    background-color: rgba(153, 204, 153, 0.05);
+    background-color: rgba(246, 156, 175, 0.4);
     border-radius: 50%;
     opacity: 0;
     transition-duration: 300ms;
@@ -64,21 +64,26 @@
 
 .card-border-accent {
     position: absolute;
-    bottom: 0; left: 15%; right: 15%;
+    bottom: 0;
+    left: 15%;
+    right: 15%;
     height: 3px;
     border-radius: 1.5px;
-    background-color: rgba(153, 204, 153, 0.0);
+    background-color: rgba(153, 204, 153, 0);
     transition-duration: 300ms;
 }
 
 .container:hover .card-border-accent {
-    background-color: rgba(153, 204, 153, 0.8);
-    bottom: 20px; /* Rises up nicely on hover */
+    background-color: rgb(255, 255, 255);
+    bottom: 20px;
 }
 
 .card-content {
     position: absolute;
-    left: 0; right: 0; top: 0; bottom: 0;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
 }
 
 #prompt {
@@ -97,7 +102,7 @@
 
 .container:hover #prompt {
     opacity: 1;
-    bottom: 45px; /* Appears clearly above the accent line (which is at bottom: 20px) */
+    bottom: 45px;
 }
 
 .icon-container {
@@ -112,7 +117,7 @@
 }
 
 .container:hover .icon-container {
-    opacity: 0.15; /* Fade out icon so title is clear */
+    opacity: 0.15;
     scale: 0.85;
 }
 
@@ -133,7 +138,7 @@
 }
 
 .container:hover .title {
-    color: #ffffff;
+    color: rgb(255, 255, 255);
     text-shadow: 0 0 15px rgba(153, 204, 153, 0.6);
 }
 
@@ -149,5 +154,8 @@
 
 .tracker {
     position: absolute;
-    left: 0; right: 0; top: 0; bottom: 0;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
 }
