@@ -12,8 +12,8 @@ public class FaceGestureRunner : BaseProcessRunner<FaceGestureRunner>
     public event Action<string> OnGestureDetected;
 
     [Header("Face Gesture Setup")]
-    [SerializeField] private string relativeWorkingDirectory = @"D:/Projects/face_gestures";
-    [SerializeField] private string relativeExecutablePath = @"D:/Projects/face_gestures/dist/main/main.exe";
+    [SerializeField] private string relativeWorkingDirectory = @"Multimodal_UDP/unity_gestures_bridge";
+    [SerializeField] private string relativeExecutablePath = @"Multimodal_UDP/unity_gestures_bridge/unity_gestures_bridge.exe";
     [SerializeField] private string executableArguments = "";
     [SerializeField] private bool autoStartOnAwake = true;
 
