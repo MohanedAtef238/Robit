@@ -1,6 +1,6 @@
 # Requires -RunAsAdministrator
 
-$workspaceRoot = "d:\Projects\Robit Ui Automation System\Robit-UI-Automation"
+$workspaceRoot = $PSScriptRoot
 $logFile = "$workspaceRoot\deploy_log.txt"
 
 Start-Transcript -Path $logFile -Force
