@@ -103,3 +103,7 @@ Multimodal_UDP
 /Repos/UiAutomation/Robit-UI-Automation/deploy_log.txt
 /Repos/UiAutomation/Robit-UI-Automation/temp_uiaccess.cer
 Output
+
+build
+.venv
+dist

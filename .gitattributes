@@ -1,2 +1,10 @@
-# Auto detect text files and perform LF normalization
+# Set the default behavior to automatically handle text files.
+# Git will try to normalize line endings to LF in the repository.
 * text=auto
+
+# Explicitly declare file types that should always have LF line endings.
+# This is a good practice for cross-platform scripts.
+*.ps1 eol=lf
+*.py  eol=lf
+*.sh  eol=lf
+*.md  eol=lf

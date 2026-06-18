@@ -1,29 +1,61 @@
+# build_bridges.ps1
+
+# This script builds the python bridges for the Robit project.
+# It iterates through the subdirectories of the Repos folder,
+# installs dependencies from requirements.txt, and then (as a placeholder)
+# would run the build script for each bridge.
+
 $ErrorActionPreference = "Stop"
 
-$GazeDir = "D:\Projects\GazeFollower"
-$EmgDir  = "C:\Users\Mohaned\Downloads\robit_stuff\emg-work-main\emg-work-main"
-$OutDir  = $PSScriptRoot
+$reposDir = "d:\Projects\Robit\Repos"
 
-# ── Gaze Bridge ──────────────────────────────────────────────────────────────
-# MUST use the project .venv — it contains mediapipe 0.10.10 with the
-# face_landmark model files (.binarypb / .tflite) that PyInstaller bundles.
-# The global Python313 does NOT have these files and will produce a broken EXE.
-$GazeVenvPython = "$GazeDir\.venv\Scripts\python.exe"
-if (-not (Test-Path $GazeVenvPython)) {
-    Write-Error "Gaze .venv not found at '$GazeVenvPython'. Run: python -m venv .venv && .venv\Scripts\pip install -r requirements.txt"
+# Get all subdirectories in the Repos directory
+$bridgeDirs = Get-ChildItem -Path $reposDir -Directory
+
+foreach ($bridgeDir in $bridgeDirs) {
+    $projectPath = $bridgeDir.FullName
+    Write-Host "Processing bridge in: $projectPath"
+
+    # Set location to the bridge directory
+    Push-Location -Path $projectPath
+
+    # Check for python files before proceeding
+    $pythonFiles = Get-ChildItem -Path . -Filter *.py -Recurse
+    if ($pythonFiles.Count -eq 0) {
+        Write-Host "No python files found, skipping folder: $projectPath"
+        Pop-Location
+        continue
+    }
+
+    # Check for requirements.txt
+    if (-not (Test-Path "requirements.txt" -PathType Leaf)) {
+        Write-Host "'requirements.txt' not found. Generating it using pipreqs."
+
+        # Check if pipreqs is installed
+        $pipreqsCheck = pip list | findstr "pipreqs"
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "pipreqs not found, installing..."
+            pip install pipreqs
+        }
+
+        # Generate requirements.txt
+        # Using --force to overwrite any existing (even though we checked)
+        # We point it to the current directory '.'
+        pipreqs . --force
+        Write-Host "'requirements.txt' generated."
+    }
+
+    # Install dependencies
+    Write-Host "Installing dependencies from requirements.txt..."
+    pip install -r requirements.txt
+
+    # Placeholder for running the actual python build/run script
+    Write-Host "Dependencies installed. Ready to run the bridge."
+    # Example: python main.py
+    # (Your actual script to run may vary)
+
+    # Return to the original directory
+    Pop-Location
 }
 
-Write-Host "Building Gaze Bridge (using .venv)..." -ForegroundColor Cyan
-Set-Location $GazeDir
-
-# Use the .spec file — it sets datas=collect_data_files('mediapipe') and
-# hiddenimports=['SharedMemoryCamera']. Do NOT use --onefile directly as
-# it skips the spec and produces a broken EXE missing the model files.
-& $GazeVenvPython -m PyInstaller unity_gaze_bridge.spec --distpath $OutDir --noconfirm
-
-# ── EMG Bridge ───────────────────────────────────────────────────────────────
-Write-Host "Building EMG Bridge..." -ForegroundColor Cyan
-Set-Location $EmgDir
-python -m PyInstaller --onefile unity_emg_bridge.py --distpath $OutDir --name unity_emg_bridge --noconfirm
-
-Write-Host "Builds complete! Executables are in: $OutDir" -ForegroundColor Green
+Write-Host "All bridges processed."
