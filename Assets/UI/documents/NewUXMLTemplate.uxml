@@ -65,12 +65,12 @@
     <ui:VisualElement name="refresh" class="refresh-style-47 opening_animation"/>
     <ui:VisualElement name="refresh" class="hover-scaler refresh-style-48 opening_animation" style="background-image: url(&quot;project://database/Assets/UI/icons2/refresh.png?fileID=2800000&amp;guid=3c2349e7c3b322247975471be78faf20&amp;type=3#refresh&quot;); -unity-background-scale-mode: scale-to-fit; background-size: 50% 54%;"/>
     <ui:VisualElement name="dialogueBox" class="dialogueBox-style-49 opening_animation"/>
-    <ui:VisualElement name="dialogueBox" class="dialogueBox-style-50 opening_animation">
-        <ui:Button text="&#10;" name="inputButton" class="hover-scaler inputButton-style-51" style="background-image: url(&quot;project://database/Assets/UI/icons2/flower4.png?fileID=2800000&amp;guid=8cb6fb2d5e21cbf488e43176c7f05d45&amp;type=3#flower4&quot;); translate: -331px 0%;"/>
+    <ui:VisualElement name="dialogueBox" picking-mode="Position" class="dialogueBox-style-50 opening_animation">
+        <ui:Button text="&#10;" name="inputButton" class="hover-scaler inputButton-style-51" style="background-image: url(&quot;project://database/Assets/UI/icons2/flower4.png?fileID=2800000&amp;guid=8cb6fb2d5e21cbf488e43176c7f05d45&amp;type=3#flower4&quot;); translate: -103px 0%;"/>
         <ui:Label text="output&#10;" name="outputDialogueLabel" focusable="false" picking-mode="Position" class="outputDialogueLabel-style-52"/>
         <ui:TextField label="" placeholder-text="Ask Robit" name="inputDialogueField" vertical-scroller-visibility="Auto" picking-mode="Position" multiline="true" auto-correction="true" select-all-on-focus="true" emoji-fallback-support="false" class="inputDialogueField-style-53"/>
     </ui:VisualElement>
-    <ui:Button text="" name="mick" class="mick-style-55 opening_animation" style="background-image: url(&quot;project://database/Assets/UI/icons2/mikeYes.png?fileID=2800000&amp;guid=5c688ce895361d74dbf8bce616af1ba5&amp;type=3#mikeYes&quot;); top: 1091px; left: 1646px; scale: 1.5 1.5; translate: -71% -68%;"/>
+    <ui:Button text="" name="mick" class="mick-style-55 opening_animation" style="background-image: url(&quot;project://database/Assets/UI/icons2/mikeYes.png?fileID=2800000&amp;guid=5c688ce895361d74dbf8bce616af1ba5&amp;type=3#mikeYes&quot;); top: 1091px; left: 1646px; scale: 1.5 1.5; translate: -71% -91%;"/>
     <ui:VisualElement name="reminder" class="reminder-style-56 opening_animation"/>
     <ui:VisualElement name="reminder" class="hover-scaler reminder-style-57 opening_animation">
         <ui:VisualElement class="dashboard-element-58"/>
