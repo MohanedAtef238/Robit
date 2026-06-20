@@ -1,83 +1,74 @@
-# Robit
+# Robit - EMG and Eye-Gaze Hybrid Interface for Assistive Computer Control
 
-> A low-cost, multimodal, hands-free Windows OS wrapper that fuses **eye-gaze tracking** with **EMG-based jaw-clench triggers** for reliable assistive computer control.
+Robit is a low-cost, multimodal Windows operating-system wrapper that fuses **eye-gaze tracking**, **EMG-based jaw-clench triggers**, and **computer-vision eyebrow-raise detection** into a single, hands-free computer control system. Gaze provides continuous, low-effort cursor positioning across the whole screen, a deliberate jaw clench (captured by a custom ESP32-C3 EMG headband) acts as an instantaneous click, and an eyebrow raise activates a localized UI-snapping grid for high-precision selection on dense interfaces. The system runs as a transparent, click-through overlay on top of any Windows application, requiring no driver installation or modifications to the underlying software.
 
 ---
 
 ## Table of Contents
 
-- [EMG-NOW Headband Firmware Setup](#emg-now-headband-firmware-setup)
-- [System Architecture Overview](#system-architecture-overview)
-- [Bootstrap & Scene Lifecycle](#bootstrap--scene-lifecycle)
-- [Camera Pipeline](#camera-pipeline)
-- [Gaze Tracking (Black Box)](#gaze-tracking-black-box)
-- [EMG Input (Black Box)](#emg-input-black-box)
-- [Virtual Input State & Cursor Driver](#virtual-input-state--cursor-driver)
-- [UI Automation Subsystem](#ui-automation-subsystem)
-- [Process Lifecycle Management](#process-lifecycle-management)
-- [IPC Architecture — Rejected Alternatives](#ipc-architecture--rejected-alternatives)
-- [Windows API & Transparency Layer](#windows-api--transparency-layer)
-- [Macro Button System (MVVM)](#macro-button-system-mvvm)
-- [Component Reference](#component-reference)
+- [Robit - EMG and Eye-Gaze Hybrid Interface for Assistive Computer Control](#robit---emg-and-eye-gaze-hybrid-interface-for-assistive-computer-control)
+  - [Table of Contents](#table-of-contents)
+  - [Team Members](#team-members)
+  - [Problem Statement](#problem-statement)
+  - [Features](#features)
+  - [System Architecture](#system-architecture)
+  - [Technologies Used](#technologies-used)
+  - [Setup Instructions](#setup-instructions)
+    - [1. Install the Application](#1-install-the-application)
+    - [2. Assemble and Flash the EMG Headband Hardware](#2-assemble-and-flash-the-emg-headband-hardware)
+    - [3. Software Environment](#3-software-environment)
+  - [Deployment Instructions](#deployment-instructions)
+  - [Usage Guide](#usage-guide)
+    - [EMG Headband Placement](#emg-headband-placement)
+    - [Eye-Gaze Calibration](#eye-gaze-calibration)
+    - [Basic Interaction (Eye Gaze + Bite)](#basic-interaction-eye-gaze--bite)
+    - [UI Element Snapping (precision targeting)](#ui-element-snapping-precision-targeting)
+    - [Overlay UI](#overlay-ui)
+  - [Screenshots / Demo](#screenshots--demo)
 
 ---
 
-## EMG-NOW Headband Firmware Setup
+## Team Members
 
-This section details the ESP32-C3 firmware for the wireless EMG headband system located in `Repos/EMG-NOW-Headband`. It uses the ESP-NOW protocol to achieve ultra-low latency, high-frequency (500Hz) data transmission from the headband directly to a USB receiver dongle.
+| Name | ID | Program |
+|---|---|---|
+| Mohaned Atef | 202100383 | SWAPD |
+| Farha Ahmed | 202200169 | DSAI |
+| Rofida Khaled | 202201413 | SWGCG |
+| Elhusseain Aboulfetouh | 202202239 | SWAPD |
 
-### Repository Structure
-This setup requires two ESP32-C3 boards and consists of three main Arduino sketches:
-1. **`Mac_Address_Reader`**: A tiny utility to discover the MAC address of your Receiver board.
-2. **`Sender`**: The firmware for the ESP32 attached to the headband and EMG sensor.
-3. **`Receiver`**: The firmware for the ESP32 USB dongle that plugs into your PC.
+**Supervisor**
+Dr. Mayada Hadhoud
 
-### Setup Guide
-
-#### Setup Hardware
-
-**Step 1: Find the Receiver's MAC Address**
-ESP-NOW requires the Sender to know exactly who it is talking to. We need to find the MAC address of your Receiver ESP32.
-1. Plug the **Receiver ESP32** (the one that will act as your USB dongle) into your PC.
-2. Open the `Mac_Address_Reader` sketch in the Arduino IDE.
-3. Upload it to the board.
-4. Open the **Serial Monitor** (set baud rate to `115200`).
-5. Copy the MAC address printed on the screen (e.g., `94:A9:90:7B:63:24`).
-
-**Step 2: Flash the Sender (Headband)**
-1. Open the `Sender` sketch in the Arduino IDE.
-2. At the top of the file, locate the `receiverAddress` variable.
-3. Replace the placeholder MAC address with the one you copied in Step 1.
-   *(Example: `uint8_t receiverAddress[] = {0x94, 0xA9, 0x90, 0x7B, 0x63, 0x24};`)*
-4. Connect the **Headband ESP32** to your PC.
-5. Upload the sketch.
-
-**Wiring for Sender:**
-- **GPIO 3**: EMG Signal (White wire)
-- **GPIO 4**: EMG Detect/Reference (Yellow wire)
-- **5V**: Power (Switch placed on this positive wire)
-- **GND**: Ground
-
-**Step 3: Flash the Receiver (USB Dongle)**
-1. Plug your **Receiver ESP32** back into your PC.
-2. Open the `Receiver` sketch in the Arduino IDE.
-3. Upload the sketch.
-4. *(Optional)* Open the Arduino **Serial Plotter** at `115200` baud. When you turn on the Headband, you will instantly see the raw signal and envelope graphed in real-time.
-
-#### Setup Software
-*(Software setup instructions to be added later)*
-
-### How it Works
-- The **Sender** reads analog data from the EMG sensor at exactly 500Hz using a hardware timer.
-- It batches 10 samples together and instantly fires them off over the ESP-NOW protocol (taking only ~1-2 milliseconds).
-- The **Receiver** catches the packet, parses it, and spits the data out over USB-Serial to the PC. It also features a built-in LED watchdog (the blue LED turns on when receiving data and turns off if the headband disconnects).
-- The PC (running our Python Machine Learning pipeline) reads this serial data to predict muscle clicks.
+*Zewail City of Science and Technology - School of Computational Sciences and Artificial Intelligence (CSAI)*
+*Bachelor of Science in CSAI - Graduation Project, June 2026*
 
 ---
 
-## System Architecture Overview
+## Problem Statement
 
-Robit is split across two tiers: a **Unity C# frontend** that owns the UI, OS windowing, and input composition, and a set of **headless Python/C# executables** that own the machine learning inference and webcam capture. All communication between tiers is performed via shared memory (video frames) and UDP datagrams (coordinates and click events).
+Approximately 1.3 billion people worldwide live with a significant disability, a large share of which involves motor impairment for example, up to 85% of stroke survivors experience upper-limb impairments that limit independent computer use. Existing assistive technologies typically rely on a single input modality, and each modality has well-documented limitations: gaze-only systems suffer from the **"Midas touch" problem** (unintentional selection from simply looking at a target) and visual fatigue from dwell-time clicking, while EMG-only systems suffer from accuracy drift, repeated muscle effort, and fatigue during continuous control. On top of these technical limitations, roughly 80% of people with significant disabilities live in low- and middle-income regions where commercial eye-trackers and Brain-Computer Interface (BCI) systems, often costing thousands of dollars, are financially out of reach.
+
+Robit addresses this gap by combining three complementary, low-cost input modalities (gaze, EMG, and facial gesture recognition) into a single hands-free interface, eliminating the trade-off between accuracy, fatigue, and cost that limits existing single-modality and high-end commercial solutions.
+
+---
+
+## Features
+
+- **Continuous gaze-based cursor control**: full-screen coverage using the GazeFollower/MGazeNet deep-learning model with a 13-point, white-background calibration (45 frames per point).
+- **EMG jaw-clench click detection**: a 4-feature, optimized neural-network classifier (`filt_AR_2`, `filt_AR_3`, `env_AR_3`, `env_WAMP`) achieving 80.39% accuracy, 0.81 recall, and 0.81 AUC-ROC, validated across 13 users.
+- **Eyebrow-raise secondary trigger**: Euclidean-distance-based detection (MediaPipe Face Mesh) that opens a localized UI-snapping grid when eyebrow elevation exceeds the calibrated baseline by more than 12%.
+- **UI Automation fallback**: holding a jaw clench for ≥2 seconds queries the Windows UIAutomation API (via FlaUI) to highlight the six nearest interactable elements, enabling pixel-imprecise selection of small/dense UI targets.
+- **Seamless OS-level transparency**: a fully transparent, always-on-top, click-through Unity overlay (P/Invoke into `user32.dll`/`dwmapi.dll`) that works directly with unmodified desktop applications.
+- **Custom wireless EMG headband**: a dry-electrode sEMG sensor on an ESP32-C3 microcontroller, communicating over the low-latency ESP-NOW protocol to a USB receiver dongle (no Bluetooth pairing or cloud connectivity required).
+- **Overlay macro system, app launcher, and home-control widget**: quick-access OS actions (zoom, tab switching, page up/down), an application launcher with search, and a dashboard for volume, brightness, display scale, time, and weather.
+- **Privacy-by-design**: all biometric data (EMG signals, gaze patterns) stays local to the device and is never transmitted to the cloud or third parties; users can recalibrate at any time without vendor involvement.
+
+---
+
+## System Architecture
+
+Robit is split across two tiers: a **Unity C# frontend** that owns the UI, OS windowing, and input composition (following a strict **Model-View-ViewModel** pattern), and a set of **headless Python/C# executables** that own machine-learning inference and webcam capture. Communication between tiers is performed via shared **Memory-Mapped Files (MMF)** for high-bandwidth video frames and **asynchronous UDP sockets** for low-latency coordinate/click telemetry. Empirical profiling shows a median frame time of 16.666 ms (60 Hz), under 0.5 ms of CPU time per frame, and a stable memory footprint of ~348 MB.
 
 ```mermaid
 graph TD
@@ -88,11 +79,11 @@ graph TD
 
     subgraph PYTHON["Python Backends (Headless Executables)"]
         SHARE_CAM["share_camera.exe\nOpenCV / DirectShow"]
-        GAZE_BRIDGE["unity_gaze_bridge.exe\nMediaPipe Face Mesh"]
+        GAZE_BRIDGE["unity_gaze_bridge.exe\nMediaPipe Face Mesh + GazeFollower"]
         EMG_BRIDGE["unity_emg_bridge.exe\nTensorFlow / EMG ML Model"]
     end
 
-    subgraph UNITY["Unity C# Frontend"]
+    subgraph UNITY["Unity C# Frontend (MVVM)"]
         SCC["SharedCameraCapture.cs\nMMF Reader + Preview"]
         GFR["GazeFollowerRunner.cs\nUDP Receiver"]
         EPR["EmgPredictionRunner.cs\nUDP Receiver"]
@@ -108,7 +99,7 @@ graph TD
     end
 
     CAM -->|"DirectShow"| SHARE_CAM
-    HEADBAND -->|"Serial / COM4"| EMG_BRIDGE
+    HEADBAND -->|"ESP-NOW → Serial"| EMG_BRIDGE
 
     SHARE_CAM -->|"MMF: RobitCameraFrame\n(double-buffered RGBA32)"| SCC
     SHARE_CAM -->|"MMF: RobitCameraFrame\n(same buffer, zero-copy read)"| GAZE_BRIDGE
@@ -130,342 +121,123 @@ graph TD
     UIAUTO -->|"CMD_RESPONSE JSON"| UAR
 ```
 
----
-
-## Bootstrap & Scene Lifecycle
-
-Every major runner is a persistent singleton. They bootstrap themselves before any scene loads using `[RuntimeInitializeOnLoadMethod]` and call `DontDestroyOnLoad()` to survive scene transitions.
-
-```mermaid
-sequenceDiagram
-    participant Engine as Unity Engine
-    participant BPR as BaseProcessRunner
-    participant GFR as GazeFollowerRunner
-    participant EPR as EmgPredictionRunner
-    participant VPD as VirtualPointerDriver
-    participant SCC as SharedCameraCapture
-
-    Engine->>GFR: RuntimeInitializeOnLoadMethod (BeforeSceneLoad)
-    GFR->>BPR: Awake() → SetParent(null) → DontDestroyOnLoad
-    GFR->>SCC: EnsureSpawned()
-    SCC->>SCC: DontDestroyOnLoad
-
-    Engine->>EPR: RuntimeInitializeOnLoadMethod (BeforeSceneLoad)
-    EPR->>BPR: Awake() → SetParent(null) → DontDestroyOnLoad
-
-    Engine->>VPD: RuntimeInitializeOnLoadMethod (BeforeSceneLoad)
-    VPD->>VPD: Awake() → DontDestroyOnLoad
-
-    Note over GFR,VPD: All singletons now survive every subsequent scene load
-```
+The system topology is organized into three conceptual layers: an **Input Module** that collects raw physiological/visual data, a **Cleaning and Acquisition Module** that filters streams and interprets intent (gaze SVR calibration, EMG feature extraction/classification, eyebrow-distance evaluation), and an **Interface Module** that turns clean intent signals into OS-level commands while rendering the transparent overlay. A complete diagram-by-diagram breakdown of each subsystem (bootstrap lifecycle, camera pipeline, fusion logic, UI Automation, IPC design trade-offs, and the component reference table) is provided in the [Appendix](#appendix-technical-architecture-deep-dive).
 
 ---
 
-## Camera Pipeline
+## Technologies Used
 
-The webcam is owned **exclusively** by `share_camera.exe` to avoid handle conflicts between Unity and Python. Unity's `SharedCameraCapture.cs` and the gaze bridge both read from the same **Memory Mapped File**, making this a zero-copy, zero-conflict distribution pattern.
-
-```mermaid
-sequenceDiagram
-    participant SCC as SharedCameraCapture (Unity)
-    participant EXE as share_camera.exe (Python/OpenCV)
-    participant MMF as "MMF: RobitCameraFrame"
-    participant GAZE as unity_gaze_bridge.exe
-
-    SCC->>EXE: Process.Start() -- device 0 --width 640 --height 480 --fps 30
-    EXE->>MMF: CreateOrOpen("RobitCameraFrame")
-    EXE->>MMF: Write MAGIC, VERSION, width, height, frameId each frame
-    EXE->>MMF: Write pixel data to active double-buffer slot (0 or 1)
-
-    loop Every Unity frame
-        SCC->>MMF: ReadInt32(0) — check MAGIC
-        SCC->>MMF: ReadInt64(20) — check frameId (skip if unchanged)
-        SCC->>MMF: ReadArray(offset, pixels) — CPU-only, no GPU readback
-        SCC->>SCC: SetPixels32() → Apply() → expose PreviewTexture
-    end
-
-    GAZE->>MMF: OpenExisting("RobitCameraFrame")
-    loop Every inference tick
-        GAZE->>MMF: Read pixels from active buffer (same zero-copy read)
-        GAZE->>GAZE: Run MediaPipe Face Mesh inference
-    end
-```
-
-**MMF Buffer Layout:**
-
-| Offset | Size | Field |
-|--------|------|-------|
-| 0 | 4 | `MAGIC` — `0x524F4254` (`"ROBT"`) |
-| 4 | 4 | `VERSION` — currently `1` |
-| 8 | 4 | `width` |
-| 12 | 4 | `height` |
-| 16 | 4 | `format` — `1 = RGBA32` |
-| 20 | 8 | `frameId` — monotonically increasing `int64` |
-| 28 | 8 | `timestamp` — Windows FILETIME ticks |
-| 36 | 4 | `activeBuffer` — `0` or `1` (double-buffered) |
-| 40+ | ... | pixel data — two slots of `MAX_WIDTH × MAX_HEIGHT × 4` |
+- **Frontend / Overlay Engine:** Unity 6000.3.8f1 (Universal Render Pipeline), C#, Unity UI Toolkit, MVVM architecture, Platform Invocation Services (P/Invoke) into `user32.dll` / `dwmapi.dll`
+- **Backend (Signal Processing & ML Inference):** Python 3.11, TensorFlow/Keras (EMG classifier, `.h5`), GazeFollower + MGazeNet (Alibaba MNN runtime), MediaPipe Face Mesh, OpenCV, NumPy, Statsmodels (autoregressive features), scikit-learn, imbalanced-learn (SMOTE), Pandas
+- **Inter-Process Communication:** Windows Memory-Mapped Files (zero-copy camera frames), asynchronous UDP sockets (gaze/EMG telemetry), WebSocket + stdin/stdout bridge (UI Automation)
+- **UI Automation Fallback:** .NET WinForms, FlaUI (UIA3 wrapper), Newtonsoft.Json
+- **Hardware / Firmware:** ESP32-C3 microcontroller ×2 (Arduino C/C++), dry-electrode sEMG sensor, ESP-NOW wireless protocol, PLA 3D-printed headband enclosure
+- **Experiment Tracking & Optimization:** MLflow (training run/metric logging), Grey Wolf Optimization (hyperparameter search)
+- **Testing:** Unity Test Framework (UTF/NUnit), EditMode unit tests and PlayMode (coroutine) integration tests
+- **3D/Art Pipeline:** Blender 4.5 (modeling, rigging, animation), Adobe Substance Painter (PBR texturing), Adobe Illustrator/Figma (UI assets and design tokens), toon/cel shader for the "Robit" mascot
+- **Data & Privacy:** All biometric data (EMG, gaze) is processed and stored locally, no cloud services or third-party data transmission
 
 ---
 
-## Gaze Tracking (Black Box)
+## Setup Instructions
 
-From Unity's perspective, the gaze bridge is an opaque executable. `GazeFollowerRunner.cs` only cares about its inputs and outputs.
+### 1. Install the Application
+1. Open the official Robit GitHub repository: `https://github.com/MohanedAtef238/Robit`.
+2. Go to the repository's **Releases** page and download the latest `setup.exe` installer.
+3. Run `setup.exe` and follow the installation wizard to extract the application files to your chosen directory.
 
-```mermaid
-flowchart LR
-    subgraph UNITY_GAZE["Unity — GazeFollowerRunner"]
-        direction TB
-        A["Process.Start(unity_gaze_bridge.exe\n--port {dynamic} --mode run-saved\n--profile {id})"]
-        B["UdpClient.ReceiveAsync()\n(background thread)"]
-        C["ConcurrentQueue&lt;Vector2&gt;\ngazePacketQueue"]
-        D["Update() — drain queue\nkeep only LATEST packet"]
-        E["VirtualInputState\n.SetGazePosition(x, y)"]
-    end
+### 2. Assemble and Flash the EMG Headband Hardware
+The wearable bridge requires **two ESP32-C3 boards** (a Sender on the headband, and a Receiver as a USB dongle) communicating over **ESP-NOW** for ultra-low-latency transmission.
 
-    MMF["MMF: RobitCameraFrame"] -->|"read frames"| EXE
-    EXE["unity_gaze_bridge.exe\nMediaPipe Face Mesh ⬛"] -->|"UDP (x,y)"| B
-    A --> EXE
-    B --> C --> D --> E
-```
+**Step 1 - Find the Receiver's MAC address**
+1. Plug the **Receiver ESP32** (USB dongle) into your PC.
+2. Open the `Mac_Address_Reader` sketch in the Arduino IDE and upload it to the board.
+3. Open the Serial Monitor at `115200` baud and copy the printed MAC address (e.g., `94:A9:90:7B:63:24`).
 
-**Why only the latest packet?** Gaze coordinates arrive faster than the 60 FPS Unity loop. Replaying stale packets would cause the cursor to lag behind the user's eye. The queue is drained completely each frame and only the newest value is applied.
+**Step 2 - Flash the Sender (headband)**
+1. Open the `Sender` sketch in the Arduino IDE.
+2. Replace the placeholder `receiverAddress` array with the MAC address copied above, e.g.:
+   `uint8_t receiverAddress[] = {0x94, 0xA9, 0x90, 0x7B, 0x63, 0x24};`
+3. Connect the **Headband ESP32** and upload the sketch.
 
----
+   **Wiring for the Sender:**
+   - `GPIO 3` -> EMG Signal
+   - `GPIO 4` -> EMG Detect/Reference
+   - `5V` -> Power (switch placed on this positive wire)
+   - `GND` -> Ground
 
-## EMG Input (Black Box)
+**Step 3 - Flash the Receiver (USB dongle)**
+1. Plug the Receiver ESP32 back into the PC.
+2. Open the `Receiver` sketch in the Arduino IDE and upload it.
 
-`EmgPredictionRunner.cs` follows the same pattern. The EMG bridge reads raw serial data from the ESP32 wearable, runs an ML classifier, and sends a binary 0/1 UDP signal.
-
-```mermaid
-flowchart LR
-    subgraph UNITY_EMG["Unity — EmgPredictionRunner"]
-        direction TB
-        A2["Process.Start(unity_emg_bridge.exe\n--port {dynamic} --com-port COM4)"]
-        B2["UdpClient.ReceiveAsync()"]
-        C2["ConcurrentQueue&lt;bool&gt;\nemgPacketQueue"]
-        D2["Update() — drain queue"]
-        E2["VirtualInputState\n.SetEmgPrediction(active, confidence)"]
-    end
-
-    ESP["ESP32-C3 Wearable (EMG Sensors)"]
-    EXE2["unity_emg_bridge.exe\nTF ML Classifier ⬛"]
-
-    ESP -->|"COM4 Serial\n115200 baud"| EXE2
-    EXE2 -->|"EMG_STATUS:OK"| B2
-    EXE2 -->|"UDP: '1' or '0'"| B2
-    A2 --> EXE2
-    B2 --> C2 --> D2 --> E2
-```
-
-On process exit, `OnProcessExited` enqueues a `false` signal so the cursor never gets stuck in a held-down click state after the bridge dies.
+### 3. Software Environment
+- **OS:** Windows 11 (the transparency/click-through overlay relies on the Windows 11 Desktop Window Manager).
+- **Backend runtime:** Python 3.11 (required for compatibility with the `gazefollower` package and TensorFlow/Keras).
+- **Frontend runtime:** Unity 6000.3.8f1 with URP (only required if building from source).
+- Minimum recommended PC spec: Windows 10+, 4 GB RAM, a standard 720p+ webcam.
 
 ---
 
-## Virtual Input State & Cursor Driver
+## Deployment Instructions
 
-`VirtualInputState` is the fusion point. It receives gaze positions and EMG predictions independently and exposes them as a unified interface to `VirtualPointerDriver`.
+1. **Plug in the receiver:** Keep the Receiver ESP32 dongle plugged into a USB port on the PC at all times.
+2. **Power the headband:** Put on the headband and flip the power switch on the Headband ESP32. The Receiver's blue LED turns on as soon as it receives a data packet; it turns off if the headband disconnects, loses power, or goes out of range.
+3. **Launch Robit:** Start the application from the installed shortcut/executable. On launch, the Unity frontend automatically spawns the headless backend executables (`share_camera.exe`, `unity_gaze_bridge.exe`, `unity_emg_bridge.exe`, and the .NET UI Automation process) as managed child processes attached to a Windows Job Object, so they are cleanly terminated even if Unity is force-closed.
+4. **First-run calibration:** On first launch, the gaze calibration UI and EMG headband placement guide appear automatically (see [Usage Guide](#usage-guide)).
+5. **Verify connectivity (optional):** Open the Arduino Serial Plotter at `115200` baud while wearing the headband to visually confirm muscle signals are being captured in real time.
 
-```mermaid
-flowchart TD
-    subgraph FUSION["VirtualInputState (Singleton)"]
-        GS["GazePosition : Vector2"]
-        EA["IsEmgActive : bool"]
-        HC["HasGazePosition : bool"]
-    end
-
-    subgraph DRIVER["VirtualPointerDriver (Singleton, DontDestroyOnLoad)"]
-        direction TB
-        SM["Smoothing\nVector2.Lerp(smoothed, target,\nTime.deltaTime × smoothingSpeed)"]
-        MC["UpdateWindowsCursor()\nWin32Interop.SetCursorPos(x, y)"]
-        MB["UpdateMouseButton()\nWin32Interop.SendInput()"]
-        DRAG["Drag Detection\nif held > dragToMessageTime:\nSendGetClosest() via WebSocket"]
-    end
-
-    GFR["GazeFollowerRunner"] -->|"SetGazePosition"| GS
-    EPR["EmgPredictionRunner"] -->|"SetEmgPrediction"| EA
-    GS --> SM --> MC
-    EA --> MB
-    MB -->|"click duration ≥ minClickHoldTime\n& < maxClickDuration"| CLICK["OS LeftDown + LeftUp"]
-    MB --> DRAG
-    DRAG -->|"WebSocket JSON"| UAR["UiAutomationRunner"]
-```
-
-**Click vs. Drag logic in `VirtualPointerDriver`:**
-- Signal starts → record `emgStartTime`
-- Signal ends after `minClickHoldTime` → fire `LeftDown` + `LeftUp` (intentional tap)
-- Signal ends before `minClickHoldTime` → discard (electrical noise)
-- Signal held past `dragToMessageTime` (default 2s) → fire `getClosest` WebSocket message to the UI Automation server and release the click
+> The system is designed to run entirely locally; no servers, containers, or cloud deployment steps are required.
 
 ---
 
-## UI Automation Subsystem
+## Usage Guide
 
-When a user performs a sustained gaze-and-hold gesture, Robit surfaces a smart "closest UI element" selection overlay via the Windows UIAutomation API rather than relying on the user hitting a pixel-perfect target.
+### EMG Headband Placement
+1. Place the headband securely on your head and locate the temporalis muscle (just above and slightly forward of the ear).
+2. Adjust the headband so the dry EMG sensor sits flush against the temporalis muscle, with its indicator lines horizontal.
+3. Fasten the headband firmly enough for consistent skin contact without sacrificing comfort.
 
-```mermaid
-sequenceDiagram
-    participant VPD as VirtualPointerDriver
-    participant WS as WebSocket (ws://127.0.0.1:8181)
-    participant UAR as UiAutomationRunner (Unity)
-    participant PROC as Robit-UI-Automation.exe (.NET)
-    participant WIN as Windows UIAutomation API
+### Eye-Gaze Calibration
+1. On first use, the calibration UI displays 13 points on a white background, one at a time.
+2. Focus your gaze on each point while the system collects 45 frames, then wait for the next point to appear.
+3. Once all 13 points are completed, calibration finishes and the system is ready to use.
+4. Recalibration can be triggered at any time from the application settings/overlay if gaze accuracy degrades.
 
-    VPD->>WS: {"type":"getClosest"}
-    WS->>UAR: OnMessage received
-    UAR->>PROC: stdin JSON command
-    PROC->>WIN: FindAll(TreeScope.Descendants, condition)
-    WIN-->>PROC: List of AutomationElement near cursor
-    PROC-->>UAR: CMD_RESPONSE: [{name, rect, type}, ...]
-    UAR->>UAR: mainThreadContext.Post → OnMessageReceived event
-    Note over UAR: Unity UI renders selection overlay\nUser gaze-targets & jaw-clenches to confirm
-```
+### Basic Interaction (Eye Gaze + Bite)
+1. Look at a location on screen to move the cursor there.
+2. Position your gaze over the desired target.
+3. Perform a jaw-clench ("bite") gesture to click, by default, a single bite performs a left-click.
 
----
+### UI Element Snapping (precision targeting)
+1. Move your gaze near a small or densely packed interactive element.
+2. Hold the bite gesture to activate snapping mode; the system highlights up to six nearby interactable elements with index labels.
+3. Select the desired index using your configured interaction method; the cursor snaps to that element.
+4. Bite again to activate/interact with the snapped element.
 
-## Process Lifecycle Management
-
-```mermaid
-flowchart TD
-    START(( )) -->|Awake, DontDestroyOnLoad| IDLE[Idle]
-    
-    IDLE -->|StartRunner called| STARTING[Starting]
-    STARTING -->|Process.Start OK\nChildProcessTracker.AddProcess| RUNNING[Running]
-    
-    RUNNING -->|stdout/stderr forwarded\nto RobitLogger| RUNNING
-    RUNNING -->|process.Exited event| DEAD[Dead]
-    RUNNING -->|StopRunner called\nOnApplicationQuit / OnDestroy| TERMINATING[Terminating]
-    
-    DEAD -->|OnProcessExited\nenqueue reset value| IDLE
-    TERMINATING -->|process.Kill\nUnhookAndDispose\nInstance = null| END(( ))
-```
-
-**Key design decisions:**
-- `ChildProcessTracker.cs` creates a Windows **Job Object** and assigns every spawned process to it. If Unity crashes (e.g. killed via Task Manager), the OS automatically terminates all child processes in the job, eliminating zombie processes entirely.
-- `BaseProcessRunner<T>` calls `SetParent(null)` before `DontDestroyOnLoad` because Unity only preserves **root** GameObjects across scene loads. A child object would be silently destroyed, severing the MMF and UDP connections.
+### Overlay UI
+- A small green marker in the bottom-left corner opens the 3D "Robit" mascot and the main button panel.
+- **Macros:** quick OS actions such as zoom in/out, tab switching, and Page Up/Down.
+- **Home Control:** a dashboard for volume, brightness, display scale, time, and weather.
+- **App Launcher:** browse or search installed applications and launch them directly from the overlay.
 
 ---
 
-## IPC Architecture — Rejected Alternatives
+## Screenshots / Demo
 
-| Alternative | Why it was rejected |
-|---|---|
-| **Unity Barracuda / Sentis (C# ML)** | Lacks support for custom TensorFlow ops used by our MediaPipe and EMG models. Converting to ONNX produced unsupported-layer errors and measurable precision loss. |
-| **Python for Unity (embedded interpreter)** | Python's GIL and heavy inference calls block the Unity thread pool. Even on a background thread, GIL contention causes frame-time spikes that destroy our 16.666 ms budget. |
-| **TCP Sockets instead of UDP** | TCP guarantees ordered delivery — exactly the wrong property for a live gaze stream. A stale (x, y) packet queued behind newer ones causes visible cursor lag. UDP lets us discard stale data intentionally. |
-| **HTTP / REST API** | Round-trip latency of HTTP is measured in ms to tens of ms per request. At 60 Hz the gaze bridge fires ~60 position updates per second, making HTTP completely unsuitable. |
-| **Unity WebCamTexture (built-in)** | Creates a GPU→CPU readback stall every frame. Also holds an exclusive DirectShow handle that blocks the Python gaze bridge from opening the same webcam. The external `share_camera.exe` + MMF design eliminates both problems. |
-| **Shared memory direct from Unity** | Unity's C# runtime cannot efficiently write raw pixel arrays to MMF without unsafe buffer copies. Having `share_camera.exe` own the camera entirely avoids the Unity rendering pipeline dependency and ensures a full 1280×720 feed at zero frame drops. |
+### Opening UI (profile/setup screen)
+![Opening UI](screenshots/openingUI.png)
 
----
+### Widget Menu (time, weather, display, reminders, "Ask Robit")
+![Widget Menu](screenshots/widget%20menu.jpeg)
 
-## Windows API & Transparency Layer
+### EMG Headband Prototype
+| View 1 | View 2 |
+|--------|--------|
+| ![Headband Front](screenshots/headband_final1.png) | ![Headband Back](screenshots/headband_final2.png) |
 
-Robit renders as a transparent, always-on-top, click-through overlay window using direct `user32.dll` and `Dwmapi.dll` P/Invokes.
-
-```mermaid
-flowchart TD
-    subgraph WINAPI["Win32 API Calls on Startup"]
-        A["GetActiveWindow() → HWND"]
-        B["DwmExtendFrameIntoClientArea(HWND, MARGINS{-1})\nExtend DWM glass to full window → true transparency"]
-        C["SetWindowLong(HWND, GWL_EXSTYLE,\nWS_EX_LAYERED | WS_EX_TRANSPARENT)\nEnable layered + click-through"]
-        D["SetWindowPos(HWND, HWND_TOPMOST, ...)\nForce always-on-top"]
-    end
-
-    subgraph TRANSPARENCY["Transparency.cs — Per-Frame Loop"]
-        E["GetCursorPos() → global POINT\n(works even in click-through mode)"]
-        F["ScreenToClient(HWND, point)\nConvert to Unity window coords"]
-        G["EventSystem.RaycastAll()\nAny Unity UI hit?"]
-        H_YES["SetWindowLong(..., WS_EX_LAYERED)\nRemove WS_EX_TRANSPARENT\n→ clicks reach Unity"]
-        H_NO["SetWindowLong(..., WS_EX_LAYERED | WS_EX_TRANSPARENT)\nRestore click-through\n→ clicks pass to app below"]
-    end
-
-    A --> B --> C --> D
-    E --> F --> G
-    G -->|"Yes (over UI)"| H_YES
-    G -->|"No"| H_NO
-```
-
-**The click-through paradox:** When `WS_EX_TRANSPARENT` is active, Windows does not deliver any mouse events to Unity — including `OnPointerEnter`. The only way to detect hover is to poll the cursor position ourselves via `GetCursorPos()`, which always works regardless of window style, then raycasting from Unity's side.
-
----
-
-## Macro Button System (MVVM)
-
-The overlay macro panel uses a strict **Model-View-ViewModel** architecture via Unity UI Toolkit.
-
-```mermaid
-classDiagram
-    class MacroViewModel {
-        +Groups : MacroGroup[] (static)
-        +IsOpen : bool
-        +OnMenuToggled : Action~bool~
-        +OnGroupChanged : Action~MacroGroup~
-        +Open()
-        +Close()
-        +PrevGroup()
-        +NextGroup()
-        +GetCurrentGroup() MacroGroup
-    }
-
-    class MacroButtonController {
-        -viewModel : MacroViewModel
-        +OnEnable()
-        +OnDisable()
-        -OnMenuToggled(bool isOpen)
-        -OnGroupChanged(MacroGroup group)
-        -RevealGroup(MacroGroup group)
-    }
-
-    class IMacroAction {
-        <<interface>>
-        +ActionId : string
-        +DisplayName : string
-        +Execute()
-    }
-
-    class MacroActionFactory {
-        +Create(MacroActionType) IMacroAction
-    }
-
-    class IInputProvider {
-        <<interface>>
-        +Attach(VisualElement, Action)
-        +Detach(VisualElement)
-    }
-
-    class PointerInputProvider {
-        +Attach(VisualElement, Action)
-        +Detach(VisualElement)
-    }
-
-    MacroButtonController --> MacroViewModel : binds to events
-    MacroButtonController --> MacroActionFactory : creates actions
-    MacroButtonController --> IInputProvider : attaches to buttons
-    MacroActionFactory --> IMacroAction : instantiates
-    IInputProvider <|.. PointerInputProvider
-```
-
-- **Adding a new action**: implement `IMacroAction`, add to `MacroActionType` enum, add a case in `MacroActionFactory.Create()`.
-- **Adding a new input modality** (e.g. gaze dwell): implement `IInputProvider` and swap it in `MacroButtonController.OnEnable()`.
-
----
-
-## Component Reference
-
-| File | Location | Role |
+### "Robit" Mascot — Shading & Shape Keys
+| Shaded Model | Shape Keying | Shape Keys |
 |---|---|---|
-| `BaseProcessRunner.cs` | `OverlaySystem/` | Generic singleton base — process start, I/O redirect, teardown |
-| `BaseUdpProcessRunner.cs` | `OverlaySystem/` | Extends base with UDP port binding and async receive loop |
-| `ChildProcessTracker.cs` | `OverlaySystem/` | Windows Job Object — guarantees child process cleanup on crash |
-| `SharedCameraCapture.cs` | `OverlaySystem/` | Launches `share_camera.exe`, reads MMF, exposes `Texture2D` |
-| `GazeFollowerRunner.cs` | `OverlaySystem/` | Manages `unity_gaze_bridge.exe`, UDP → `VirtualInputState` |
-| `EmgPredictionRunner.cs` | `Input/` | Manages `unity_emg_bridge.exe`, UDP → `VirtualInputState` |
-| `VirtualPointerDriver.cs` | `Input/` | Reads `VirtualInputState`, drives OS cursor + click via P/Invoke |
-| `UiAutomationRunner.cs` | `OverlaySystem/` | Bridges WebSocket from `VirtualPointerDriver` to `.NET` UIAutomation server |
-| `GazeCalibrationController.cs` | `OverlaySystem/` | Orchestrates gaze calibration phases via UDP, persists profiles |
-| `MacroViewModel.cs` | `MacroSystem/` | MVVM ViewModel — macro group state and menu open/close |
-| `MacroButtonController.cs` | `MacroSystem/` | MVVM View — binds UI Toolkit elements to ViewModel events |
-| `MacroActionFactory.cs` | `MacroSystem/` | Factory — creates `IMacroAction` instances from enum |
-| `Win32Interop.cs` | `Utils/` | All P/Invoke declarations (`SetCursorPos`, `SendInput`, etc.) |
-| `WindowManager.cs` | `Utils/` | Window HWND caching + extended style helpers |
-| `RobitLogger.cs` | `Utils/` | Thread-safe Unity log wrapper used across all systems |
+| ![Shaded Robit](screenshots/shaded%20robit.jpeg) | ![Shape Keying](screenshots/shape%20keying.png) | ![Shape Keys](screenshots/shape%20keys.png) |
+
+---
